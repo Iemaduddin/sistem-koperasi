@@ -1,4 +1,5 @@
 import type { PropsWithChildren, ReactNode } from 'react';
+import { ToastContainer } from 'react-toastify';
 
 type AuthLayoutProps = PropsWithChildren<{
     title?: string;
@@ -14,6 +15,7 @@ export default function AuthLayout({
 }: AuthLayoutProps) {
     return (
         <div className="min-h-screen bg-slate-100 text-slate-900">
+            <ToastContainer position="top-right" autoClose={3000} />
             {title || subtitle || footer ? (
                 <div className="sr-only">
                     {title ? <h1>{title}</h1> : null}

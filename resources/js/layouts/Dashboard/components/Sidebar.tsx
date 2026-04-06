@@ -9,22 +9,39 @@ import {
     type Dispatch,
     type SetStateAction,
 } from 'react';
-import { LuChevronDown, LuCircleDot, LuLogOut } from 'react-icons/lu';
+import {
+    LuChartColumnIncreasing,
+    LuCircleDollarSign,
+    LuClipboardList,
+    LuCreditCard,
+    LuFileSpreadsheet,
+    LuHandshake,
+    LuHouse,
+    LuPiggyBank,
+    LuUserRound,
+    LuUsers,
+    LuChevronDown,
+    LuCircleDot,
+    LuLogOut,
+} from 'react-icons/lu';
 import type { IconType } from 'react-icons';
 import Button from '../../../components/button';
 import { toast } from 'react-toastify';
+import { dashboard } from '@/routes';
+import { index as usersIndex } from '@/routes/users';
 
 type SidebarItem = {
     id?: string;
     label: string;
     href?: string;
+    routeName?: string;
     icon?: IconType;
     children?: SidebarItem[];
 };
 
 type SidebarSection = {
     id?: string;
-    title: string;
+    title?: string;
     items: SidebarItem[];
 };
 
@@ -44,13 +61,28 @@ const getItemId = (item: SidebarItem, parentId = '') => {
 const isItemActive = (item: SidebarItem, pathname: string): boolean => {
     const currentPath = normalizePath(pathname);
 
-    if (item.href && normalizePath(item.href) === currentPath) {
+    const itemHref = resolveItemHref(item);
+
+    if (itemHref && normalizePath(itemHref) === currentPath) {
         return true;
     }
 
     return Boolean(
         item.children?.some((child) => isItemActive(child, currentPath)),
     );
+};
+
+const routeNameToUrl: Record<string, () => string> = {
+    dashboard: () => dashboard.url(),
+    'users.index': () => usersIndex.url(),
+};
+
+const resolveItemHref = (item: SidebarItem): string | undefined => {
+    if (item.routeName) {
+        return routeNameToUrl[item.routeName]?.();
+    }
+
+    return item.href;
 };
 
 type SidebarEntryProps = {
@@ -130,7 +162,7 @@ function FlyoutEntry({
                 </button>
             ) : (
                 <Link
-                    href={item.href ?? '#'}
+                    href={resolveItemHref(item) ?? '#'}
                     className={baseClass}
                     onClick={onNavigate}
                 >
@@ -142,7 +174,7 @@ function FlyoutEntry({
                 <ul className="mt-1 space-y-1">
                     {item.children?.map((child) => (
                         <FlyoutEntry
-                            key={child.id}
+                            key={getItemId(child, itemId)}
                             item={child}
                             parentId={itemId}
                             pathname={pathname}
@@ -247,7 +279,7 @@ function SidebarEntry({
                 </button>
             ) : (
                 <Link
-                    href={item.href ?? '#'}
+                    href={resolveItemHref(item) ?? '#'}
                     className={baseClass}
                     title={collapsed ? item.label : undefined}
                     onClick={onNavigate}
@@ -260,7 +292,7 @@ function SidebarEntry({
                 <ul className="mt-1 space-y-1">
                     {item.children?.map((child) => (
                         <SidebarEntry
-                            key={child.id}
+                            key={getItemId(child, itemId)}
                             item={child}
                             parentId={itemId}
                             depth={Math.min(depth + 1, 2)}
@@ -284,7 +316,7 @@ function SidebarEntry({
                     <ul className="space-y-1">
                         {item.children?.map((child) => (
                             <FlyoutEntry
-                                key={child.id}
+                                key={getItemId(child, itemId)}
                                 item={child}
                                 parentId={itemId}
                                 pathname={pathname}
@@ -300,9 +332,121 @@ function SidebarEntry({
     );
 }
 
+const menuSections: SidebarSection[] = [
+    {
+        id: 'dashboard',
+        items: [
+            {
+                id: 'dashboard',
+                label: 'Dashboard',
+                routeName: 'dashboard',
+                icon: LuHouse,
+            },
+        ],
+    },
+    {
+        id: 'users',
+        items: [
+            {
+                id: 'users',
+                label: 'Users Management',
+                routeName: 'users.index',
+                icon: LuUsers,
+            },
+        ],
+    },
+    {
+        id: 'master-data',
+        title: 'Master Data',
+        items: [
+            {
+                id: 'anggota',
+                label: 'Anggota',
+                icon: LuUsers,
+                children: [
+                    {
+                        id: 'anggota-daftar',
+                        label: 'Daftar Anggota',
+                        href: '/anggota',
+                        icon: LuUserRound,
+                    },
+                    {
+                        id: 'anggota-kelompok',
+                        label: 'Kelompok Anggota',
+                        href: '/anggota/kelompok',
+                        icon: LuUsers,
+                    },
+                ],
+            },
+        ],
+    },
+    {
+        id: 'transaksi',
+        title: 'Transaksi',
+        items: [
+            {
+                id: 'transaksi',
+                label: 'Transaksi',
+                icon: LuHandshake,
+                children: [
+                    {
+                        id: 'transaksi-simpanan',
+                        label: 'Simpanan',
+                        icon: LuPiggyBank,
+                        children: [
+                            {
+                                id: 'simpanan-setoran',
+                                label: 'Setoran',
+                                href: '/simpanan/setoran',
+                                icon: LuCreditCard,
+                            },
+                            {
+                                id: 'simpanan-penarikan',
+                                label: 'Penarikan',
+                                href: '/simpanan/penarikan',
+                                icon: LuCircleDollarSign,
+                            },
+                        ],
+                    },
+                    {
+                        id: 'transaksi-pinjaman',
+                        label: 'Pinjaman',
+                        icon: LuClipboardList,
+                        children: [
+                            {
+                                id: 'pinjaman-pengajuan',
+                                label: 'Pengajuan',
+                                href: '/pinjaman/pengajuan',
+                                icon: LuFileSpreadsheet,
+                            },
+                            {
+                                id: 'pinjaman-angsuran',
+                                label: 'Angsuran',
+                                href: '/pinjaman/angsuran',
+                                icon: LuChartColumnIncreasing,
+                            },
+                        ],
+                    },
+                ],
+            },
+        ],
+    },
+    {
+        id: 'laporan',
+        title: 'Analitik',
+        items: [
+            {
+                id: 'laporan',
+                label: 'Laporan',
+                href: '/laporan',
+                icon: LuChartColumnIncreasing,
+            },
+        ],
+    },
+];
+
 type SidebarProps = {
     items?: SidebarItem[];
-    sections?: SidebarSection[];
     currentPath: string;
     mobileOpen: boolean;
     collapsed: boolean;
@@ -311,7 +455,6 @@ type SidebarProps = {
 
 export default function Sidebar({
     items = [],
-    sections,
     currentPath,
     mobileOpen,
     collapsed,
@@ -325,22 +468,21 @@ export default function Sidebar({
         }
     };
     const resolvedSections = useMemo<SidebarSection[]>(() => {
-        if (sections?.length) {
-            return sections;
+        if (menuSections.length) {
+            return menuSections;
         }
 
         if (items.length) {
             return [
                 {
                     id: 'menu',
-                    title: 'Menu',
                     items,
                 },
             ];
         }
 
         return [];
-    }, [sections, items]);
+    }, [items]);
 
     const pathname = useMemo(
         () => normalizePath(currentPath || '/'),
@@ -361,7 +503,10 @@ export default function Sidebar({
 
         for (const section of resolvedSections) {
             const sectionId =
-                section.id ?? section.title.toLowerCase().replace(/\s+/g, '-');
+                section.id ??
+                (section.title
+                    ? section.title.toLowerCase().replace(/\s+/g, '-')
+                    : 'section');
             walk(section.items, sectionId);
         }
 
@@ -492,44 +637,47 @@ export default function Sidebar({
                         {resolvedSections.map((section, sectionIndex) => {
                             const sectionId =
                                 section.id ??
-                                section.title
-                                    .toLowerCase()
-                                    .replace(/\s+/g, '-');
+                                (section.title
+                                    ? section.title
+                                          .toLowerCase()
+                                          .replace(/\s+/g, '-')
+                                    : `section-${sectionIndex}`);
 
                             return (
                                 <div key={sectionId} className="space-y-1">
-                                    <p
-                                        className={`overflow-hidden px-2 pb-1 text-[11px] font-semibold tracking-wide text-slate-400 uppercase transition-all duration-300 sm:text-xs ${collapsed ? 'max-h-0 opacity-0' : 'max-h-6 opacity-100'}`}
-                                    >
-                                        {section.title}
-                                    </p>
+                                    {section.title && (
+                                        <p
+                                            className={`overflow-hidden px-2 pb-1 text-[11px] font-semibold tracking-wide text-slate-400 uppercase transition-all duration-300 sm:text-xs ${collapsed ? 'max-h-0 opacity-0' : 'max-h-6 opacity-100'}`}
+                                        >
+                                            {section.title}
+                                        </p>
+                                    )}
                                     <ul className="space-y-1">
-                                        {section.items.map(
-                                            (item, itemIndex) => (
-                                                <SidebarEntry
-                                                    key={`${sectionId}-${item.id ?? item.label}-${itemIndex}`}
-                                                    item={item}
-                                                    parentId={sectionId}
-                                                    depth={0}
-                                                    pathname={pathname}
-                                                    openItems={openItems}
-                                                    setOpenItems={setOpenItems}
-                                                    collapsed={collapsed}
-                                                    openFlyoutId={openFlyoutId}
-                                                    setOpenFlyoutId={
-                                                        setOpenFlyoutId
-                                                    }
-                                                    onNavigate={handleNavigate}
-                                                />
-                                            ),
-                                        )}
+                                        {section.items.map((item) => (
+                                            <SidebarEntry
+                                                key={getItemId(item, sectionId)}
+                                                item={item}
+                                                parentId={sectionId}
+                                                depth={0}
+                                                pathname={pathname}
+                                                openItems={openItems}
+                                                setOpenItems={setOpenItems}
+                                                collapsed={collapsed}
+                                                openFlyoutId={openFlyoutId}
+                                                setOpenFlyoutId={
+                                                    setOpenFlyoutId
+                                                }
+                                                onNavigate={handleNavigate}
+                                            />
+                                        ))}
                                     </ul>
                                     {sectionIndex <
-                                        resolvedSections.length - 1 && (
-                                        <div
-                                            className={`mx-2 mt-3 h-px bg-blue-100 transition-opacity duration-300 ${collapsed ? 'opacity-0' : 'opacity-100'}`}
-                                        />
-                                    )}
+                                        resolvedSections.length - 1 &&
+                                        section.title && (
+                                            <div
+                                                className={`mx-2 mt-3 h-px bg-blue-100 transition-opacity duration-300 ${collapsed ? 'opacity-0' : 'opacity-100'}`}
+                                            />
+                                        )}
                                 </div>
                             );
                         })}

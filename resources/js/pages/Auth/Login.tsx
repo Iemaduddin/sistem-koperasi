@@ -103,6 +103,22 @@ export default function Login() {
                                             required
                                         />
                                     </div>
+
+                                    <label className="flex items-center gap-2 text-sm text-slate-600">
+                                        <input
+                                            type="checkbox"
+                                            checked={data.remember}
+                                            onChange={(event) =>
+                                                setData(
+                                                    'remember',
+                                                    event.target.checked,
+                                                )
+                                            }
+                                            className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                        />
+                                        Ingat saya
+                                    </label>
+
                                     <Button
                                         type="submit"
                                         disabled={processing}

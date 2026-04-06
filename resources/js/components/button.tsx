@@ -161,7 +161,19 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
             : styleMode === 'gloss'
               ? glossVariantClasses[variant]
               : solidVariantClasses[variant];
+    const leftContent =
+        loading && loadingPosition === 'left' ? (
+            <Spinner />
+        ) : (
+            (leftIcon ?? null)
+        );
 
+    const rightContent =
+        loading && loadingPosition === 'right' ? (
+            <Spinner />
+        ) : (
+            (rightIcon ?? null)
+        );
     return (
         <button
             ref={ref}
@@ -180,9 +192,9 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
             )}
             {...props}
         >
-            {loading && loadingPosition === 'left' ? <Spinner /> : leftIcon}
-            {label}
-            {loading && loadingPosition === 'right' ? <Spinner /> : rightIcon}
+            <span className="contents">{leftContent}</span>
+            <span className="contents">{label}</span>
+            <span className="contents">{rightContent}</span>
         </button>
     );
 });

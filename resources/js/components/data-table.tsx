@@ -40,6 +40,7 @@ export type DataTableProps<TData> = {
     pageSizeOptions?: number[];
     initialPageSize?: number;
     initialSortState?: { columnId: string; direction: SortDirection } | null;
+    selectable?: boolean;
     onSelectionChange?: (selectedIds: string[]) => void;
     selectionResetKey?: string | number;
 };
@@ -94,6 +95,7 @@ export default function DataTable<TData>({
     pageSizeOptions = [10, 20, 50],
     initialPageSize = 10,
     initialSortState = null,
+    selectable = true,
     onSelectionChange,
     selectionResetKey,
 }: DataTableProps<TData>) {
@@ -246,7 +248,7 @@ export default function DataTable<TData>({
                 </div>
 
                 <div className="flex items-center gap-2">
-                    {selectedIds.size > 0 && (
+                    {selectable && selectedIds.size > 0 && (
                         <Button
                             variant="soft"
                             size="sm"
@@ -276,20 +278,22 @@ export default function DataTable<TData>({
                 <table className="min-w-full border-separate border-spacing-0 text-sm">
                     <thead>
                         <tr>
-                            <th className="w-10 border-b border-blue-100 px-2 py-3 text-left">
-                                <input
-                                    type="checkbox"
-                                    checked={allPageSelected}
-                                    ref={(input) => {
-                                        if (input)
-                                            input.indeterminate =
-                                                !allPageSelected &&
-                                                somePageSelected;
-                                    }}
-                                    onChange={toggleSelectAllPage}
-                                    className="h-4 w-4 rounded border-blue-300 text-blue-600 focus:ring-blue-500"
-                                />
-                            </th>
+                            {selectable && (
+                                <th className="w-10 border-b border-blue-100 px-2 py-3 text-left">
+                                    <input
+                                        type="checkbox"
+                                        checked={allPageSelected}
+                                        ref={(input) => {
+                                            if (input)
+                                                input.indeterminate =
+                                                    !allPageSelected &&
+                                                    somePageSelected;
+                                        }}
+                                        onChange={toggleSelectAllPage}
+                                        className="h-4 w-4 rounded border-blue-300 text-blue-600 focus:ring-blue-500"
+                                    />
+                                </th>
+                            )}
                             {columns.map((column) => {
                                 const isSorted =
                                     sortState?.columnId === column.id;
@@ -338,7 +342,9 @@ export default function DataTable<TData>({
                         {paginatedRows.length === 0 ? (
                             <tr>
                                 <td
-                                    colSpan={columns.length + 2}
+                                    colSpan={
+                                        columns.length + (selectable ? 2 : 1)
+                                    }
                                     className="px-3 py-8 text-center text-sm text-slate-500"
                                 >
                                     {emptyMessage}
@@ -353,16 +359,20 @@ export default function DataTable<TData>({
                                 return (
                                     <Fragment key={rowId}>
                                         <tr className="hover:bg-blue-50/60">
-                                            <td className="border-b border-blue-100 px-2 py-3 align-top">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={isSelected}
-                                                    onChange={() =>
-                                                        toggleSelectRow(rowId)
-                                                    }
-                                                    className="h-4 w-4 rounded border-blue-300 text-blue-600 focus:ring-blue-500"
-                                                />
-                                            </td>
+                                            {selectable && (
+                                                <td className="border-b border-blue-100 px-2 py-3 align-top">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isSelected}
+                                                        onChange={() =>
+                                                            toggleSelectRow(
+                                                                rowId,
+                                                            )
+                                                        }
+                                                        className="h-4 w-4 rounded border-blue-300 text-blue-600 focus:ring-blue-500"
+                                                    />
+                                                </td>
+                                            )}
 
                                             {columns.map((column) => {
                                                 const cell = column.render
@@ -414,7 +424,8 @@ export default function DataTable<TData>({
                                                 <tr className="md:hidden">
                                                     <td
                                                         colSpan={
-                                                            columns.length + 2
+                                                            columns.length +
+                                                            (selectable ? 2 : 1)
                                                         }
                                                         className="border-b border-blue-100 px-3 py-3"
                                                     >
