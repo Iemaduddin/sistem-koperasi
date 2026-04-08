@@ -136,7 +136,10 @@ const FloatingInput = forwardRef<HTMLInputElement, FloatingInputProps>(
                             errorText && 'peer-focus:text-red-500',
                         )}
                     >
-                        {label}
+                        {label}{' '}
+                        {props.required && (
+                            <span className="text-red-500">*</span>
+                        )}
                     </label>
                 </div>
                 {errorText ? (

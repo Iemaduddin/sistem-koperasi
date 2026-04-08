@@ -187,7 +187,8 @@ export default function FloatingSelect({
                         errorText && isOpen && 'text-red-500',
                     )}
                 >
-                    {label}
+                    {label}{' '}
+                    {required && <span className="text-red-500">*</span>}
                 </label>
 
                 {isOpen && (

@@ -25,6 +25,7 @@ const FloatingTextarea = forwardRef<HTMLTextAreaElement, FloatingTextareaProps>(
             errorText,
             placeholder,
             disabled,
+            required,
             ...props
         },
         ref,
@@ -39,6 +40,7 @@ const FloatingTextarea = forwardRef<HTMLTextAreaElement, FloatingTextareaProps>(
                         ref={ref}
                         id={resolvedId}
                         placeholder={placeholder ?? ' '}
+                        required={required}
                         disabled={disabled}
                         className={cn(
                             'peer min-h-28 w-full rounded-lg border bg-white px-3 pt-6 pb-2 text-sm text-slate-800 transition outline-none',
@@ -63,7 +65,8 @@ const FloatingTextarea = forwardRef<HTMLTextAreaElement, FloatingTextareaProps>(
                             errorText && 'peer-focus:text-red-500',
                         )}
                     >
-                        {label}
+                        {label}{' '}
+                        {required && <span className="text-red-500">*</span>}
                     </label>
                 </div>
 

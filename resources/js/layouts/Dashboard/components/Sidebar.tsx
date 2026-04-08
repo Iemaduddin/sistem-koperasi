@@ -23,6 +23,7 @@ import {
     LuChevronDown,
     LuCircleDot,
     LuLogOut,
+    LuUserCog,
 } from 'react-icons/lu';
 import type { IconType } from 'react-icons';
 import Button from '../../../components/button';
@@ -75,6 +76,7 @@ const isItemActive = (item: SidebarItem, pathname: string): boolean => {
 const routeNameToUrl: Record<string, () => string> = {
     dashboard: () => dashboard.url(),
     'users.index': () => usersIndex.url(),
+    'anggota.index': () => '/anggota',
 };
 
 const resolveItemHref = (item: SidebarItem): string | undefined => {
@@ -362,21 +364,8 @@ const menuSections: SidebarSection[] = [
             {
                 id: 'anggota',
                 label: 'Anggota',
-                icon: LuUsers,
-                children: [
-                    {
-                        id: 'anggota-daftar',
-                        label: 'Daftar Anggota',
-                        href: '/anggota',
-                        icon: LuUserRound,
-                    },
-                    {
-                        id: 'anggota-kelompok',
-                        label: 'Kelompok Anggota',
-                        href: '/anggota/kelompok',
-                        icon: LuUsers,
-                    },
-                ],
+                icon: LuUserCog,
+                routeName: 'anggota.index',
             },
         ],
     },
@@ -619,7 +608,7 @@ export default function Sidebar({
                         className="h-10 w-10 rounded-2xl object-cover sm:h-12 sm:w-12"
                     />
                     <div
-                        className={`flex flex-col overflow-hidden whitespace-nowrap transition-all duration-300 ${collapsed ? 'max-w-0 opacity-0' : 'max-w-[220px] opacity-100'}`}
+                        className={`flex flex-col overflow-hidden whitespace-nowrap transition-all duration-300 ${collapsed ? 'max-w-0 opacity-0' : 'max-w-55 opacity-100'}`}
                     >
                         <h1 className="text-base font-bold tracking-tight text-slate-900 sm:text-xl">
                             A Z Z A H W A
