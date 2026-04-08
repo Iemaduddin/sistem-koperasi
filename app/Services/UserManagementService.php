@@ -9,6 +9,33 @@ use Illuminate\Support\Facades\DB;
 
 class UserManagementService
 {
+
+    public function getUserManagementIndexData(): array
+    {
+         $users = User::query()
+            ->with('roles')
+            ->orderBy('name')
+            ->get()
+            ->map(fn (User $user): array => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'roles' => $user->roles->pluck('name')->values()->all(),
+                'is_super_admin' => $user->hasRole('Super Admin'),
+                'created_at' => $user->created_at?->toDateTimeString(),
+            ])
+            ->values()
+            ->all();
+
+        $roles = Role::query()
+            ->orderBy('name')
+            ->pluck('name')
+            ->values()
+            ->all();
+
+        return compact('users', 'roles');
+    }
+
     /**
      * @param array{name: string, email: string, password: string, roles: array<int, string>} $payload
      */
