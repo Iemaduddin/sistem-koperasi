@@ -175,15 +175,8 @@ export default function Navbar({
                     {openMenu === 'avatar' && (
                         <div className="absolute right-0 z-20 mt-2 w-44 rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
                             <button
-                                type="button"
-                                className="flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100"
-                            >
-                                <LuUser className="h-4 w-4" />
-                                Profile
-                            </button>
-                            <button
                                 onClick={handleSignOut}
-                                className="flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100"
+                                className="flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm text-red-700 hover:bg-red-100"
                             >
                                 <LuLogOut className="h-4 w-4" />
                                 Logout

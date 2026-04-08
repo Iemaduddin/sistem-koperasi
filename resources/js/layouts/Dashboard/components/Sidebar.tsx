@@ -17,8 +17,7 @@ import {
     LuFileSpreadsheet,
     LuHandshake,
     LuHouse,
-    LuPiggyBank,
-    LuUserRound,
+    LuBanknote,
     LuUsers,
     LuChevronDown,
     LuCircleDot,
@@ -77,6 +76,7 @@ const routeNameToUrl: Record<string, () => string> = {
     dashboard: () => dashboard.url(),
     'users.index': () => usersIndex.url(),
     'anggota.index': () => '/anggota',
+    'jenis-simpanan.index': () => '/jenis-simpanan',
 };
 
 const resolveItemHref = (item: SidebarItem): string | undefined => {
@@ -367,6 +367,12 @@ const menuSections: SidebarSection[] = [
                 icon: LuUserCog,
                 routeName: 'anggota.index',
             },
+            {
+                id: 'jenis-simpanan',
+                label: 'Jenis Simpanan',
+                icon: LuBanknote,
+                routeName: 'jenis-simpanan.index',
+            },
         ],
     },
     {
@@ -381,7 +387,7 @@ const menuSections: SidebarSection[] = [
                     {
                         id: 'transaksi-simpanan',
                         label: 'Simpanan',
-                        icon: LuPiggyBank,
+                        icon: LuBanknote,
                         children: [
                             {
                                 id: 'simpanan-setoran',

@@ -1,10 +1,17 @@
 'use client';
 
-import { forwardRef, useId, useState, type InputHTMLAttributes } from 'react';
+import {
+    forwardRef,
+    useId,
+    useState,
+    type ChangeEvent,
+    type InputHTMLAttributes,
+} from 'react';
 
 type FloatingInputType =
     | InputHTMLAttributes<HTMLInputElement>['type']
-    | 'currency';
+    | 'currency'
+    | 'rupiah';
 
 export type CurrencyValue = {
     raw: string;
@@ -64,7 +71,7 @@ const FloatingInput = forwardRef<HTMLInputElement, FloatingInputProps>(
     ) {
         const generatedId = useId();
         const resolvedId = id ?? generatedId;
-        const isCurrency = type === 'currency';
+        const isCurrency = type === 'currency' || type === 'rupiah';
         const isControlled = value !== undefined;
 
         const [internalValue, setInternalValue] = useState(() => {
@@ -80,7 +87,7 @@ const FloatingInput = forwardRef<HTMLInputElement, FloatingInputProps>(
         const inputType: InputHTMLAttributes<HTMLInputElement>['type'] =
             isCurrency ? 'text' : type;
 
-        const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
             if (!isCurrency) {
                 if (!isControlled) {
                     setInternalValue(event.currentTarget.value);
@@ -123,7 +130,7 @@ const FloatingInput = forwardRef<HTMLInputElement, FloatingInputProps>(
                             'placeholder:text-transparent',
                             'disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500',
                             errorText && 'border-red-400 focus:border-red-500',
-                            errorText && className,
+                            className,
                         )}
                         {...props}
                     />

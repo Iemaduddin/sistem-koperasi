@@ -2,64 +2,61 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\JenisSimpanan\StoreJenisSimpananRequest;
+use App\Http\Requests\JenisSimpanan\UpdateJenisSimpananRequest;
 use App\Models\JenisSimpanan;
-use Illuminate\Http\Request;
+use App\Services\JenisSimpananService;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\RedirectResponse;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class JenisSimpananController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function __construct(private readonly JenisSimpananService $jenisSimpananService)
     {
-        //
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function index(): Response
     {
-        //
+        return Inertia::render('JenisSimpanan/Index', [
+            'jenis_simpanan' => $this->jenisSimpananService->getIndexData(),
+        ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function store(StoreJenisSimpananRequest $request): RedirectResponse
     {
-        //
+        $this->jenisSimpananService->create($request->validated());
+
+        return redirect()
+            ->route('jenis-simpanan.index')
+            ->with('success', 'Jenis simpanan berhasil ditambahkan.');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(JenisSimpanan $jenisSimpanan)
+    public function update(
+        UpdateJenisSimpananRequest $request,
+        JenisSimpanan $jenis_simpanan,
+    ): RedirectResponse
     {
-        //
+        $this->jenisSimpananService->update($jenis_simpanan, $request->validated());
+
+        return redirect()
+            ->route('jenis-simpanan.index')
+            ->with('success', 'Jenis simpanan berhasil diperbarui.');
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(JenisSimpanan $jenisSimpanan)
+    public function destroy(JenisSimpanan $jenis_simpanan): RedirectResponse
     {
-        //
-    }
+        try {
+            $this->jenisSimpananService->delete($jenis_simpanan);
+        } catch (QueryException) {
+            return redirect()
+                ->route('jenis-simpanan.index')
+                ->with('error', 'Jenis simpanan tidak dapat dihapus karena masih digunakan data lain.');
+        }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, JenisSimpanan $jenisSimpanan)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(JenisSimpanan $jenisSimpanan)
-    {
-        //
+        return redirect()
+            ->route('jenis-simpanan.index')
+            ->with('success', 'Jenis simpanan berhasil dihapus.');
     }
 }

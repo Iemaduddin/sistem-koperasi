@@ -40,6 +40,7 @@ export default function AnggotaIndex() {
         tanggal_keluar: new Date().toISOString().slice(0, 10),
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSetKeluarSubmitting, setIsSetKeluarSubmitting] = useState(false);
 
     const createForm = useForm<AnggotaForm>(initialAnggotaForm);
     const updateForm = useForm<AnggotaForm>(initialAnggotaForm);
@@ -197,7 +198,7 @@ export default function AnggotaIndex() {
             return;
         }
 
-        setIsSubmitting(true);
+        setIsSetKeluarSubmitting(true);
         router.post(
             `/anggota/${setKeluarTarget.id}/set-keluar`,
             setKeluarForm,
@@ -215,7 +216,7 @@ export default function AnggotaIndex() {
                     );
                 },
                 onFinish: () => {
-                    setIsSubmitting(false);
+                    setIsSetKeluarSubmitting(false);
                 },
             },
         );
@@ -277,7 +278,7 @@ export default function AnggotaIndex() {
                     )
                 }
                 onClose={() => {
-                    if (!isSubmitting) {
+                    if (!isSetKeluarSubmitting) {
                         setSetKeluarTarget(null);
                     }
                 }}
@@ -286,7 +287,7 @@ export default function AnggotaIndex() {
                         <button
                             type="button"
                             onClick={() => setSetKeluarTarget(null)}
-                            disabled={isSubmitting}
+                            disabled={isSetKeluarSubmitting}
                             className="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
                         >
                             Batal
@@ -294,10 +295,12 @@ export default function AnggotaIndex() {
                         <button
                             type="button"
                             onClick={submitSetKeluar}
-                            disabled={isSubmitting}
+                            disabled={isSetKeluarSubmitting}
                             className="inline-flex h-10 items-center justify-center rounded-md bg-amber-600 px-4 text-sm font-medium text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-70"
                         >
-                            {isSubmitting ? 'Menyimpan...' : 'Set Keluar'}
+                            {isSetKeluarSubmitting
+                                ? 'Menyimpan...'
+                                : 'Set Keluar'}
                         </button>
                     </>
                 }
