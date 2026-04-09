@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\AnggotaController;
 use App\Http\Controllers\JenisSimpananController;
+use App\Http\Controllers\RekeningKoperasiController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/login')->name('home');
@@ -21,9 +22,15 @@ Route::middleware('auth')->group(function (): void {
 	Route::inertia('/dashboard', 'Dashboard/Dashboard')->name('dashboard');
 
 	Route::middleware(['role:Super Admin'])->group(function (): void {
+		// users management
 		Route::resource('/users', UserManagementController::class)->except(['show', 'create', 'edit']);
+		// jenis simpanan
 		Route::resource('/jenis-simpanan', JenisSimpananController::class)
 			->parameters(['jenis-simpanan' => 'jenis_simpanan'])
+			->except(['show', 'create', 'edit']);
+		// rekening koperasi
+		Route::resource('/rekening-koperasi', RekeningKoperasiController::class)
+			->parameters(['rekening-koperasi' => 'rekening_koperasi'])
 			->except(['show', 'create', 'edit']);
 		Route::post('/anggota/{anggota}/set-keluar', [AnggotaController::class, 'setKeluar'])
 			->name('anggota.set-keluar');

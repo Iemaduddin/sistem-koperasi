@@ -24,6 +24,12 @@ import {
     LuLogOut,
     LuUserCog,
 } from 'react-icons/lu';
+import {
+    TbCashBanknoteMoveBack,
+    TbCashBanknoteMove,
+    TbCashRegister,
+    TbBuildingBank,
+} from 'react-icons/tb';
 import type { IconType } from 'react-icons';
 import Button from '../../../components/button';
 import { toast } from 'react-toastify';
@@ -77,6 +83,10 @@ const routeNameToUrl: Record<string, () => string> = {
     'users.index': () => usersIndex.url(),
     'anggota.index': () => '/anggota',
     'jenis-simpanan.index': () => '/jenis-simpanan',
+    'rekening-koperasi.index': () => '/rekening-koperasi',
+    'simpanan.index': () => '/simpanan',
+    'pinjaman.index': () => '/pinjaman',
+    'deposito.index': () => '/deposito',
 };
 
 const resolveItemHref = (item: SidebarItem): string | undefined => {
@@ -373,12 +383,36 @@ const menuSections: SidebarSection[] = [
                 icon: LuBanknote,
                 routeName: 'jenis-simpanan.index',
             },
+            {
+                id: 'rekening-koperasi',
+                label: 'Rekening Koperasi',
+                icon: TbBuildingBank,
+                routeName: 'rekening-koperasi.index',
+            },
         ],
     },
     {
         id: 'transaksi',
         title: 'Transaksi',
         items: [
+            {
+                id: 'simpanan',
+                label: 'Simpanan',
+                icon: TbCashBanknoteMoveBack,
+                routeName: 'simpanan.index',
+            },
+            {
+                id: 'pinjaman',
+                label: 'Pinjaman',
+                icon: TbCashBanknoteMove,
+                routeName: 'pinjaman.index',
+            },
+            {
+                id: 'deposito',
+                label: 'Deposito',
+                icon: TbCashRegister,
+                routeName: 'deposito.index',
+            },
             {
                 id: 'transaksi',
                 label: 'Transaksi',

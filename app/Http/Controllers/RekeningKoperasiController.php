@@ -3,63 +3,60 @@
 namespace App\Http\Controllers;
 
 use App\Models\RekeningKoperasi;
-use Illuminate\Http\Request;
+use App\Http\Requests\RekeningKoperasi\StoreRekeningKoperasiRequest;
+use App\Http\Requests\RekeningKoperasi\UpdateRekeningKoperasiRequest;
+use App\Services\RekeningKoperasiService;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\RedirectResponse;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class RekeningKoperasiController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function __construct(private readonly RekeningKoperasiService $rekeningKoperasiService)
     {
-        //
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function index(): Response
     {
-        //
+        return Inertia::render('RekeningKoperasi/Index', [
+            'rekening_koperasi' => $this->rekeningKoperasiService->getIndexData(),
+        ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function store(StoreRekeningKoperasiRequest $request): RedirectResponse
     {
-        //
+        $this->rekeningKoperasiService->create($request->validated());
+
+        return redirect()
+            ->route('rekening-koperasi.index')
+            ->with('success', 'Rekening koperasi berhasil ditambahkan.');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(RekeningKoperasi $rekeningKoperasi)
+    public function update(
+        UpdateRekeningKoperasiRequest $request,
+        RekeningKoperasi $rekening_koperasi,
+    ): RedirectResponse
     {
-        //
+        $this->rekeningKoperasiService->update($rekening_koperasi, $request->validated());
+
+        return redirect()
+            ->route('rekening-koperasi.index')
+            ->with('success', 'Rekening koperasi berhasil diperbarui.');
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(RekeningKoperasi $rekeningKoperasi)
+    public function destroy(RekeningKoperasi $rekening_koperasi): RedirectResponse
     {
-        //
-    }
+        try {
+            $this->rekeningKoperasiService->delete($rekening_koperasi);
+        } catch (QueryException) {
+            return redirect()
+                ->route('rekening-koperasi.index')
+                ->with('error', 'Rekening koperasi tidak dapat dihapus karena masih digunakan data lain.');
+        }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, RekeningKoperasi $rekeningKoperasi)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(RekeningKoperasi $rekeningKoperasi)
-    {
-        //
+        return redirect()
+            ->route('rekening-koperasi.index')
+            ->with('success', 'Rekening koperasi berhasil dihapus.');
     }
 }
