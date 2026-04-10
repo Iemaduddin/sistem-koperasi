@@ -1,6 +1,7 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import type { FormEvent, ReactElement } from 'react';
 import { useMemo, useState } from 'react';
+import { LuTrash } from 'react-icons/lu';
 import { toast } from 'react-toastify';
 import ConfirmDialog from '@/components/confirm-dialog';
 import DashboardLayout from '@/layouts/Dashboard/DasboardLayout';
@@ -217,6 +218,8 @@ export default function RekeningKoperasiIndex() {
                         ? `Apakah Anda yakin ingin menghapus rekening koperasi ${deleteTarget.nama}? Tindakan ini tidak dapat dibatalkan.`
                         : ''
                 }
+                tone="danger"
+                icon={<LuTrash className="h-7 w-7" />}
                 confirmText="Hapus"
                 isLoading={false}
                 onConfirm={confirmDelete}
