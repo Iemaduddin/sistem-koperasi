@@ -89,7 +89,7 @@ export default function Navbar({
     };
 
     return (
-        <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-blue-100 bg-white px-3 sm:h-16 sm:px-4 lg:h-[72px] lg:px-6">
+        <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-blue-100 bg-white/95 px-3 backdrop-blur sm:h-16 sm:px-4 lg:h-18 lg:px-6">
             <div className="flex min-w-0 items-center gap-2 sm:gap-3">
                 <button
                     type="button"

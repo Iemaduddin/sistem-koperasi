@@ -78,7 +78,7 @@ export default function DashboardLayout({
     const currentPath = url || '/dashboard';
 
     return (
-        <div className="min-h-dvh overflow-x-hidden bg-slate-100 text-slate-900">
+        <div className="h-dvh overflow-hidden bg-slate-100 text-slate-900">
             <ToastContainer position="top-right" autoClose={3000} />
             <Sidebar
                 currentPath={currentPath}
@@ -90,8 +90,8 @@ export default function DashboardLayout({
             <div
                 className={
                     collapsed
-                        ? 'relative flex min-h-dvh flex-col lg:ml-20'
-                        : 'relative flex min-h-dvh flex-col lg:ml-72'
+                        ? 'relative flex h-dvh flex-col lg:ml-20'
+                        : 'relative flex h-dvh flex-col lg:ml-72'
                 }
             >
                 <Navbar
@@ -104,7 +104,7 @@ export default function DashboardLayout({
                     onToggleCollapsed={() => setCollapsed((value) => !value)}
                 />
 
-                <main className="flex-1 px-3 py-4 sm:px-6 sm:py-6">
+                <main className="flex-1 overflow-y-auto px-3 py-4 sm:px-6 sm:py-6">
                     {children}
                 </main>
 
