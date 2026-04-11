@@ -15,8 +15,8 @@ const anggotaSchema = z
         nik: z
             .string()
             .trim()
-            .min(1, 'NIK harus diisi')
-            .max(255, 'NIK maksimal 255 karakter'),
+            .min(16, 'NIK minimal 16 karakter')
+            .max(16, 'NIK maksimal 16 karakter'),
         nama: z
             .string()
             .trim()

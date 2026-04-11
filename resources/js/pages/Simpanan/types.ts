@@ -26,6 +26,7 @@ export type RekeningSimpananOption = {
     jenis_simpanan?: {
         nama: string | null;
         kode: string | null;
+        jumlah_maksimum?: number | string | null;
     };
 };
 

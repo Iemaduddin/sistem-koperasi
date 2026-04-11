@@ -7,11 +7,17 @@ import type { SimpananRow, TipeTransaksiOption } from '../types';
 
 type Props = {
     rows: SimpananRow[];
+    onRequestTarik: (payload: {
+        anggotaId: string;
+        anggotaLabel: string;
+        maxTarikSukarela: number;
+    }) => void;
 };
 
 type AnggotaNominalRow = {
     id: string;
     anggota_key: string;
+    anggota_id: string | null;
     no_anggota: string;
     nama: string;
     pokok: number;
@@ -82,7 +88,7 @@ function isPengalihanDanaDariWajib(keterangan: string | null): boolean {
         .startsWith('pengalihan dana dari simpanan wajib');
 }
 
-export default function SimpananTableCard({ rows }: Props) {
+export default function SimpananTableCard({ rows, onRequestTarik }: Props) {
     const [selectedAnggota, setSelectedAnggota] =
         useState<AnggotaNominalRow | null>(null);
 
@@ -124,6 +130,7 @@ export default function SimpananTableCard({ rows }: Props) {
             const current = grouped.get(anggotaId) ?? {
                 id: anggotaId,
                 anggota_key: anggotaId,
+                anggota_id: rekening.anggota?.id ?? null,
                 no_anggota: noAnggota,
                 nama: anggotaNama,
                 pokok: 0,
@@ -211,18 +218,38 @@ export default function SimpananTableCard({ rows }: Props) {
                 id: 'actions',
                 header: 'Aksi',
                 render: (row) => (
-                    <Button
-                        size="sm"
-                        variant="info"
-                        onClick={() => setSelectedAnggota(row)}
-                    >
-                        <LuEye className="h-4 w-4" />
-                        Lihat Transaksi
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button
+                            size="sm"
+                            variant="info"
+                            onClick={() => setSelectedAnggota(row)}
+                        >
+                            <LuEye className="h-4 w-4" />
+                            Lihat Transaksi
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant="warning"
+                            disabled={!row.anggota_id || row.sukarela <= 0}
+                            onClick={() => {
+                                if (!row.anggota_id || row.sukarela <= 0) {
+                                    return;
+                                }
+
+                                onRequestTarik({
+                                    anggotaId: row.anggota_id,
+                                    anggotaLabel: `${row.no_anggota} - ${row.nama}`,
+                                    maxTarikSukarela: row.sukarela,
+                                });
+                            }}
+                        >
+                            Tarik Sukarela
+                        </Button>
+                    </div>
                 ),
             },
         ],
-        [],
+        [onRequestTarik],
     );
 
     const columns = useMemo<DataTableColumn<SimpananRow>[]>(

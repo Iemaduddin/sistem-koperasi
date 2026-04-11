@@ -85,9 +85,22 @@ class SimpananService
 
             $overflowToSukarela = 0.0;
 
-            if ($wajibInput > 0) {
-                $wajibJenis = $jenisByKode['WAJIB'];
-                $wajibRekening = $this->firstOrCreateRekeningSimpanan($anggotaId, $wajibJenis->id);
+            $wajibJenis = $jenisByKode['WAJIB'];
+            $wajibRekening = $this->firstOrCreateRekeningSimpanan($anggotaId, $wajibJenis->id);
+            $wajibMax = $wajibJenis->jumlah_maksimum !== null
+                ? (float) $wajibJenis->jumlah_maksimum
+                : null;
+            $wajibSudahPenuh = $wajibMax !== null && (float) $wajibRekening->saldo >= $wajibMax;
+
+            if ($wajibSudahPenuh) {
+                if ($wajibInput > 0) {
+                    throw new RuntimeException('Simpanan wajib sudah mencapai batas maksimal. Tidak dapat menerima setoran wajib lagi.');
+                }
+            } else {
+                if ($wajibInput <= 0) {
+                    throw new RuntimeException('Simpanan wajib wajib diisi selama saldo wajib belum mencapai batas maksimal.');
+                }
+
                 $this->validateInputAmount('wajib', $wajibInput, $wajibJenis, false);
 
                 [$wajibAccepted, $overflowToSukarela] = $this->splitWajibAmount(
@@ -184,6 +197,71 @@ class SimpananService
             $simpanan->save();
 
             return $simpanan->refresh();
+        });
+    }
+
+    public function tarikSukarela(array $data): Simpanan
+    {
+        return DB::transaction(function () use ($data): Simpanan {
+            $timestamp = Carbon::parse((string) ($data['created_at'] ?? now()));
+            $jumlah = $this->toAmount($data['jumlah']);
+
+            if ($jumlah <= 0) {
+                throw new RuntimeException('Nominal tarik harus lebih dari 0.');
+            }
+
+            $rekeningKoperasi = RekeningKoperasi::query()
+                ->lockForUpdate()
+                ->findOrFail($data['rekening_koperasi_id']);
+
+            $saldoKasSaatIni = (float) $rekeningKoperasi->saldo;
+            if ($saldoKasSaatIni < $jumlah) {
+                throw new RuntimeException('Saldo rekening koperasi tidak mencukupi untuk transaksi tarik.');
+            }
+
+            $sukarelaJenis = $this->getJenisSimpananByKode()['SUKARELA'];
+            $rekeningSukarela = RekeningSimpanan::query()
+                ->where('anggota_id', $data['anggota_id'])
+                ->where('jenis_simpanan_id', $sukarelaJenis->id)
+                ->lockForUpdate()
+                ->first();
+
+            if ($rekeningSukarela === null) {
+                throw new RuntimeException('Anggota belum memiliki rekening simpanan sukarela.');
+            }
+
+            $saldoSukarelaSaatIni = (float) $rekeningSukarela->saldo;
+            if ($saldoSukarelaSaatIni < $jumlah) {
+                throw new RuntimeException('Saldo simpanan sukarela anggota tidak mencukupi untuk ditarik.');
+            }
+
+            $keterangan = $this->normalizeText($data['keterangan'] ?? null);
+
+            $rekeningSukarela->saldo = round($saldoSukarelaSaatIni - $jumlah, 2);
+            $rekeningSukarela->save();
+
+            $transaksiSimpanan = Simpanan::query()->create([
+                'rekening_simpanan_id' => $rekeningSukarela->id,
+                'jenis_transaksi' => 'tarik',
+                'jumlah' => $jumlah,
+                'keterangan' => $keterangan,
+                'created_at' => $timestamp,
+            ]);
+
+            $rekeningKoperasi->saldo = round($saldoKasSaatIni - $jumlah, 2);
+            $rekeningKoperasi->save();
+
+            TransaksiKasKoperasi::query()->create([
+                'rekening_koperasi_id' => $rekeningKoperasi->id,
+                'jenis' => 'keluar',
+                'jumlah' => $jumlah,
+                'sumber_tipe' => 'simpanan',
+                'sumber_id' => $transaksiSimpanan->id,
+                'keterangan' => $keterangan,
+                'created_at' => $timestamp,
+            ]);
+
+            return $transaksiSimpanan;
         });
     }
 

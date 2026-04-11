@@ -9,6 +9,8 @@ type Props = {
     isSubmitting: boolean;
     isPokokLocked: boolean;
     pokokInfoText: string;
+    isWajibLocked: boolean;
+    wajibInfoText: string;
     rekeningKoperasiOptions: Array<{ value: string; label: string }>;
     anggotaOptions: Array<{ value: string; label: string }>;
     onSubmit: (event: FormEvent<HTMLFormElement>) => void;
@@ -23,6 +25,8 @@ export default function SimpananFormCard({
     isSubmitting,
     isPokokLocked,
     pokokInfoText,
+    isWajibLocked,
+    wajibInfoText,
     rekeningKoperasiOptions,
     anggotaOptions,
     onSubmit,
@@ -153,7 +157,13 @@ export default function SimpananFormCard({
                                 <p className="text-sm font-medium text-slate-800">
                                     Simpanan Wajib
                                 </p>
-                                <p className="text-xs text-rose-600">Wajib</p>
+                                <p
+                                    className={`text-xs ${isWajibLocked ? 'text-emerald-600' : 'text-rose-600'}`}
+                                >
+                                    {isWajibLocked
+                                        ? 'Sudah penuh'
+                                        : 'Wajib sampai batas maksimal'}
+                                </p>
                             </div>
                             <div className="lg:col-span-4">
                                 <FloatingInput
@@ -166,8 +176,13 @@ export default function SimpananFormCard({
                                             value.raw,
                                         )
                                     }
-                                    placeholder="Wajib diisi"
-                                    required
+                                    disabled={isWajibLocked}
+                                    required={!isWajibLocked}
+                                    placeholder={
+                                        isWajibLocked
+                                            ? 'Simpanan wajib sudah penuh'
+                                            : 'Wajib diisi'
+                                    }
                                 />
                             </div>
                             <div className="lg:col-span-5">
@@ -181,8 +196,16 @@ export default function SimpananFormCard({
                                         )
                                     }
                                     placeholder="Opsional"
+                                    disabled={isWajibLocked}
                                 />
                             </div>
+                            {wajibInfoText ? (
+                                <div className="lg:col-span-12">
+                                    <p className="text-xs text-slate-600">
+                                        {wajibInfoText}
+                                    </p>
+                                </div>
+                            ) : null}
                         </div>
 
                         <div className="grid grid-cols-1 gap-3 rounded-lg border border-slate-200 bg-white p-3 lg:grid-cols-12">

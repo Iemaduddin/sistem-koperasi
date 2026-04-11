@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\PerluKonfirmasiAlihSisaWajibException;
 use App\Http\Requests\Simpanan\StoreSimpananRequest;
+use App\Http\Requests\Simpanan\TarikSukarelaRequest;
 use App\Http\Requests\Simpanan\UpdateSimpananRequest;
 use App\Models\Simpanan;
 use App\Services\SimpananService;
@@ -57,6 +58,23 @@ class SimpananController extends Controller
         return redirect()
             ->route('simpanan.index')
             ->with('success', 'Transaksi simpanan berhasil ditambahkan.');
+    }
+
+    public function tarikSukarela(TarikSukarelaRequest $request): RedirectResponse
+    {
+        $validated = $request->validated();
+
+        try {
+            $this->simpananService->tarikSukarela($validated);
+        } catch (QueryException|\RuntimeException $exception) {
+            return redirect()
+                ->route('simpanan.index')
+                ->with('error', $exception->getMessage());
+        }
+
+        return redirect()
+            ->route('simpanan.index')
+            ->with('success', 'Tarik saldo simpanan sukarela berhasil diproses.');
     }
 
     /**

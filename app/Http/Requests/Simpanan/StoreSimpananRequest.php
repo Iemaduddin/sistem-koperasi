@@ -23,7 +23,7 @@ class StoreSimpananRequest extends FormRequest
             'jenis_transaksi' => ['required', Rule::in(['setor'])],
             'simpanan_pokok_jumlah' => ['nullable', 'numeric', 'min:0.01'],
             'simpanan_pokok_keterangan' => ['nullable', 'string', 'max:1000'],
-            'simpanan_wajib_jumlah' => ['required', 'numeric', 'min:0.01'],
+            'simpanan_wajib_jumlah' => ['nullable', 'numeric', 'min:0.01'],
             'simpanan_wajib_keterangan' => ['nullable', 'string', 'max:1000'],
             'simpanan_sukarela_jumlah' => ['nullable', 'numeric', 'min:0.01'],
             'simpanan_sukarela_keterangan' => ['nullable', 'string', 'max:1000'],

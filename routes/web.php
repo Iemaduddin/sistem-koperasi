@@ -41,6 +41,8 @@ Route::middleware('auth')->group(function (): void {
 			->parameters(['anggota' => 'anggota'])
 			->except(['show', 'create', 'edit']);
 		// Simpanan management
+		Route::post('/simpanan/tarik-sukarela', [SimpananController::class, 'tarikSukarela'])
+			->name('simpanan.tarik-sukarela');
 		Route::resource('/simpanan', SimpananController::class)
 			->parameters(['simpanan' => 'simpanan'])
 			->except(['show', 'create', 'edit', 'update', 'destroy']);
