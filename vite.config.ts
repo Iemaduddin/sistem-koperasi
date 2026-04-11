@@ -10,13 +10,13 @@ export default defineConfig({
         host: '0.0.0.0',
         port: 5173,
         strictPort: true,
-        origin: 'http://sistem-koperasi.didin:5173',
+        origin: 'http://sistem-koperasi.test:5173',
         cors: {
-            origin: ['http://sistem-koperasi.didin'],
+            origin: ['http://sistem-koperasi.test'],
             credentials: true,
         },
         hmr: {
-            host: 'sistem-koperasi.didin',
+            host: 'sistem-koperasi.test',
         },
     },
     plugins: [
