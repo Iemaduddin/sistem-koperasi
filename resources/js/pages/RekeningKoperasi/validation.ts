@@ -28,7 +28,7 @@ const hasFilledValue = (value: unknown): boolean => {
     return String(value).trim() !== '';
 };
 
-const rekeningKoperasiSchema = z
+const createRekeningKoperasiBaseSchema = z
     .object({
         nama: z
             .string()
@@ -82,15 +82,31 @@ const rekeningKoperasiSchema = z
         }
     });
 
-export const createRekeningKoperasiSchema = rekeningKoperasiSchema;
+export const createRekeningKoperasiSchema = createRekeningKoperasiBaseSchema;
 
-export const updateRekeningKoperasiSchema = rekeningKoperasiSchema;
+export const updateRekeningKoperasiSchema = z.object({
+    nama: z
+        .string()
+        .trim()
+        .min(1, 'Nama harus diisi')
+        .max(255, 'Nama maksimal 255 karakter'),
+    nomor_rekening: z
+        .string()
+        .trim()
+        .min(1, 'Nomor rekening harus diisi')
+        .max(255, 'Nomor rekening maksimal 255 karakter'),
+});
 
-export const buildPayload = (data: RekeningKoperasiForm) => ({
+export const buildCreatePayload = (data: RekeningKoperasiForm) => ({
     nama: data.nama.trim(),
     jenis: data.jenis,
     nomor_rekening: data.nomor_rekening.trim(),
     saldo: toNumberOrNull(data.saldo),
+});
+
+export const buildUpdatePayload = (data: RekeningKoperasiForm) => ({
+    nama: data.nama.trim(),
+    nomor_rekening: data.nomor_rekening.trim(),
 });
 
 export const getFirstValidationError = (error: z.ZodError) =>

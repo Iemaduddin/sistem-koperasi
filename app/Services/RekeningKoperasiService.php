@@ -54,17 +54,11 @@ class RekeningKoperasiService
         return DB::transaction(function () use ($rekeningKoperasi, $payload): RekeningKoperasi {
             $rekeningKoperasi->update([
                 'nama' => $payload['nama'],
-                'jenis' => $payload['jenis'],
                 'nomor_rekening' => $payload['nomor_rekening'],
-                'saldo' => $payload['saldo'] ?? null,
             ]);
 
             return $rekeningKoperasi;
         });
     }
 
-    public function delete(RekeningKoperasi $rekeningKoperasi): void
-    {
-        $rekeningKoperasi->delete();
-    }
 }

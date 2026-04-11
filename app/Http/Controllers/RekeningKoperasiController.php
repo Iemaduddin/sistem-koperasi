@@ -6,7 +6,6 @@ use App\Models\RekeningKoperasi;
 use App\Http\Requests\RekeningKoperasi\StoreRekeningKoperasiRequest;
 use App\Http\Requests\RekeningKoperasi\UpdateRekeningKoperasiRequest;
 use App\Services\RekeningKoperasiService;
-use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -43,20 +42,5 @@ class RekeningKoperasiController extends Controller
         return redirect()
             ->route('rekening-koperasi.index')
             ->with('success', 'Rekening koperasi berhasil diperbarui.');
-    }
-
-    public function destroy(RekeningKoperasi $rekening_koperasi): RedirectResponse
-    {
-        try {
-            $this->rekeningKoperasiService->delete($rekening_koperasi);
-        } catch (QueryException) {
-            return redirect()
-                ->route('rekening-koperasi.index')
-                ->with('error', 'Rekening koperasi tidak dapat dihapus karena masih digunakan data lain.');
-        }
-
-        return redirect()
-            ->route('rekening-koperasi.index')
-            ->with('success', 'Rekening koperasi berhasil dihapus.');
     }
 }

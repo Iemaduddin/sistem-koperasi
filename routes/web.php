@@ -32,7 +32,7 @@ Route::middleware('auth')->group(function (): void {
 		// rekening koperasi
 		Route::resource('/rekening-koperasi', RekeningKoperasiController::class)
 			->parameters(['rekening-koperasi' => 'rekening_koperasi'])
-			->except(['show', 'create', 'edit']);
+			->except(['show', 'create', 'edit', 'destroy']);
 		// set anggota koperasi keluar
 		Route::post('/anggota/{anggota}/set-keluar', [AnggotaController::class, 'setKeluar'])
 			->name('anggota.set-keluar');
@@ -43,6 +43,6 @@ Route::middleware('auth')->group(function (): void {
 		// Simpanan management
 		Route::resource('/simpanan', SimpananController::class)
 			->parameters(['simpanan' => 'simpanan'])
-			->except(['show', 'create', 'edit']);
+			->except(['show', 'create', 'edit', 'update', 'destroy']);
 	});
 });

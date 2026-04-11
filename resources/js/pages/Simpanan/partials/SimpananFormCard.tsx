@@ -153,9 +153,7 @@ export default function SimpananFormCard({
                                 <p className="text-sm font-medium text-slate-800">
                                     Simpanan Wajib
                                 </p>
-                                <p className="text-xs text-slate-500">
-                                    Opsional
-                                </p>
+                                <p className="text-xs text-rose-600">Wajib</p>
                             </div>
                             <div className="lg:col-span-4">
                                 <FloatingInput
@@ -168,7 +166,8 @@ export default function SimpananFormCard({
                                             value.raw,
                                         )
                                     }
-                                    placeholder="Opsional"
+                                    placeholder="Wajib diisi"
+                                    required
                                 />
                             </div>
                             <div className="lg:col-span-5">

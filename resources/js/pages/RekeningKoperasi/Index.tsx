@@ -1,9 +1,7 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import type { FormEvent, ReactElement } from 'react';
 import { useMemo, useState } from 'react';
-import { LuTrash } from 'react-icons/lu';
 import { toast } from 'react-toastify';
-import ConfirmDialog from '@/components/confirm-dialog';
 import DashboardLayout from '@/layouts/Dashboard/DasboardLayout';
 import type {
     RekeningKoperasiForm,
@@ -12,7 +10,8 @@ import type {
 } from './types';
 import { initialRekeningKoperasiForm } from './types';
 import {
-    buildPayload,
+    buildCreatePayload,
+    buildUpdatePayload,
     createRekeningKoperasiSchema,
     getFirstValidationError,
     updateRekeningKoperasiSchema,
@@ -28,9 +27,6 @@ export default function RekeningKoperasiIndex() {
     const [editingRekeningKoperasiId, setEditingRekeningKoperasiId] = useState<
         string | null
     >(null);
-    const [deleteTarget, setDeleteTarget] =
-        useState<RekeningKoperasiRow | null>(null);
-
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const createForm = useForm<RekeningKoperasiForm>(
@@ -49,7 +45,7 @@ export default function RekeningKoperasiIndex() {
     );
 
     const submitCreate = () => {
-        const payload = buildPayload(createForm.data);
+        const payload = buildCreatePayload(createForm.data);
         const validation = createRekeningKoperasiSchema.safeParse(payload);
 
         if (!validation.success) {
@@ -80,7 +76,7 @@ export default function RekeningKoperasiIndex() {
     const submitUpdate = () => {
         if (!editingRekeningKoperasiId) return;
 
-        const payload = buildPayload(updateForm.data);
+        const payload = buildUpdatePayload(updateForm.data);
         const validation = updateRekeningKoperasiSchema.safeParse(payload);
 
         if (!validation.success) {
@@ -144,33 +140,6 @@ export default function RekeningKoperasiIndex() {
         });
     };
 
-    const removeRekeningKoperasi = (id: string, nama: string) => {
-        setDeleteTarget(
-            rekeningKoperasi.find((item) => item.id === id) ?? {
-                id,
-                nama,
-                jenis: 'tunai',
-                nomor_rekening: null,
-                saldo: null,
-                created_at: null,
-                updated_at: null,
-            },
-        );
-    };
-
-    const confirmDelete = () => {
-        if (!deleteTarget) {
-            return;
-        }
-
-        router.delete(`/rekening-koperasi/${deleteTarget.id}`, {
-            preserveScroll: true,
-            onFinish: () => {
-                setDeleteTarget(null);
-            },
-        });
-    };
-
     return (
         <>
             <Head title="Management Rekening Koperasi" />
@@ -206,25 +175,8 @@ export default function RekeningKoperasiIndex() {
                 <RekeningKoperasiTableCard
                     rekening_koperasi={rekeningKoperasi}
                     onStartEdit={startEdit}
-                    onRemove={removeRekeningKoperasi}
                 />
             </section>
-
-            <ConfirmDialog
-                open={deleteTarget !== null}
-                title="Hapus Rekening Koperasi"
-                description={
-                    deleteTarget
-                        ? `Apakah Anda yakin ingin menghapus rekening koperasi ${deleteTarget.nama}? Tindakan ini tidak dapat dibatalkan.`
-                        : ''
-                }
-                tone="danger"
-                icon={<LuTrash className="h-7 w-7" />}
-                confirmText="Hapus"
-                isLoading={false}
-                onConfirm={confirmDelete}
-                onCancel={() => setDeleteTarget(null)}
-            />
         </>
     );
 }

@@ -29,7 +29,9 @@ const simpananSchema = z.object({
     simpanan_pokok_keterangan: z
         .string()
         .max(1000, 'Keterangan simpanan pokok maksimal 1000 karakter'),
-    simpanan_wajib_jumlah: z.number().positive().optional(),
+    simpanan_wajib_jumlah: z
+        .number()
+        .positive('Simpanan wajib harus diisi dan lebih dari 0'),
     simpanan_wajib_keterangan: z
         .string()
         .max(1000, 'Keterangan simpanan wajib maksimal 1000 karakter'),
@@ -58,8 +60,7 @@ export function buildPayload(
         simpanan_pokok_jumlah:
             normalizeNumber(data.simpanan_pokok_jumlah) ?? undefined,
         simpanan_pokok_keterangan: data.simpanan_pokok_keterangan.trim(),
-        simpanan_wajib_jumlah:
-            normalizeNumber(data.simpanan_wajib_jumlah) ?? undefined,
+        simpanan_wajib_jumlah: normalizeNumber(data.simpanan_wajib_jumlah) ?? 0,
         simpanan_wajib_keterangan: data.simpanan_wajib_keterangan.trim(),
         simpanan_sukarela_jumlah:
             normalizeNumber(data.simpanan_sukarela_jumlah) ?? undefined,

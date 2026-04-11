@@ -18,9 +18,9 @@ class UpdateRekeningKoperasiRequest extends FormRequest
     {
         return [
             'nama' => ['required', 'string', 'max:255'],
-            'jenis' => ['required', 'in:tunai,bank'],
             'nomor_rekening' => ['required', 'string', 'max:255'],
-            'saldo' => ['required', 'numeric', 'min:0'],
+            'jenis' => ['prohibited'],
+            'saldo' => ['prohibited'],
         ];
     }
 

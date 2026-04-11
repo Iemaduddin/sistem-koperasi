@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { LuEye, LuTrash, LuX } from 'react-icons/lu';
+import { LuEye, LuX } from 'react-icons/lu';
 import Button from '@/components/button';
 import DataTable, { type DataTableColumn } from '@/components/data-table';
 import { formatCurrency } from '@/lib/utils';
@@ -7,7 +7,6 @@ import type { SimpananRow, TipeTransaksiOption } from '../types';
 
 type Props = {
     rows: SimpananRow[];
-    onRemove: (row: SimpananRow) => void;
 };
 
 type AnggotaNominalRow = {
@@ -83,7 +82,7 @@ function isPengalihanDanaDariWajib(keterangan: string | null): boolean {
         .startsWith('pengalihan dana dari simpanan wajib');
 }
 
-export default function SimpananTableCard({ rows, onRemove }: Props) {
+export default function SimpananTableCard({ rows }: Props) {
     const [selectedAnggota, setSelectedAnggota] =
         useState<AnggotaNominalRow | null>(null);
 
@@ -311,23 +310,8 @@ export default function SimpananTableCard({ rows, onRemove }: Props) {
                     );
                 },
             },
-            {
-                id: 'actions',
-                header: 'Aksi',
-                render: (row) => (
-                    <div className="flex gap-2">
-                        <Button
-                            size="sm"
-                            variant="danger"
-                            onClick={() => onRemove(row)}
-                        >
-                            <LuTrash className="h-4 w-4" />
-                        </Button>
-                    </div>
-                ),
-            },
         ],
-        [onRemove],
+        [],
     );
 
     return (

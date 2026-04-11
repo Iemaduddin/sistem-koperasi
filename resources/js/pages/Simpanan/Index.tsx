@@ -1,7 +1,6 @@
 ﻿import { Head, router, usePage } from '@inertiajs/react';
 import type { FormEvent, ReactElement } from 'react';
 import { useEffect, useMemo, useState } from 'react';
-import { LuTrash } from 'react-icons/lu';
 import { toast } from 'react-toastify';
 import ConfirmDialog from '@/components/confirm-dialog';
 import DashboardLayout from '@/layouts/Dashboard/DasboardLayout';
@@ -11,7 +10,6 @@ import {
     initialSimpananForm,
     type SimpananForm,
     type SimpananPageProps,
-    type SimpananRow,
 } from './types';
 import {
     buildPayload,
@@ -28,7 +26,6 @@ export default function SimpananIndex() {
     const rekeningSimpananData = pageProps.rekening_simpanan ?? [];
 
     const [formData, setFormData] = useState<SimpananForm>(initialSimpananForm);
-    const [deleteTarget, setDeleteTarget] = useState<SimpananRow | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [overflowConfirmMessage, setOverflowConfirmMessage] = useState('');
     const [isOverflowConfirmOpen, setIsOverflowConfirmOpen] = useState(false);
@@ -156,31 +153,6 @@ export default function SimpananIndex() {
         submitSimpanan(true);
     };
 
-    const handleDelete = () => {
-        if (!deleteTarget) {
-            return;
-        }
-
-        router.delete(`/simpanan/${deleteTarget.id}`, {
-            preserveScroll: true,
-            onSuccess: () => {
-                setDeleteTarget(null);
-            },
-            onError: (errors) => {
-                const firstError = Object.values(errors)[0];
-                toast.error(
-                    firstError
-                        ? String(firstError)
-                        : 'Terjadi kesalahan saat menghapus transaksi simpanan',
-                );
-                setDeleteTarget(null);
-            },
-            onFinish: () => {
-                setDeleteTarget(null);
-            },
-        });
-    };
-
     return (
         <>
             <Head title="Simpanan" />
@@ -197,24 +169,8 @@ export default function SimpananIndex() {
                     onChangeField={onChangeField}
                 />
 
-                <SimpananTableCard rows={rows} onRemove={setDeleteTarget} />
+                <SimpananTableCard rows={rows} />
             </section>
-
-            <ConfirmDialog
-                open={deleteTarget !== null}
-                title="Hapus Transaksi Simpanan"
-                description={
-                    deleteTarget
-                        ? `Apakah Anda yakin ingin menghapus transaksi ${deleteTarget.id}? Tindakan ini tidak dapat dibatalkan.`
-                        : ''
-                }
-                tone="danger"
-                icon={<LuTrash className="h-7 w-7" />}
-                confirmText="Hapus"
-                isLoading={false}
-                onConfirm={handleDelete}
-                onCancel={() => setDeleteTarget(null)}
-            />
 
             <ConfirmDialog
                 open={isOverflowConfirmOpen}
