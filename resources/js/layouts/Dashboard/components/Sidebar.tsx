@@ -11,11 +11,6 @@ import {
 } from 'react';
 import {
     LuChartColumnIncreasing,
-    LuCircleDollarSign,
-    LuClipboardList,
-    LuCreditCard,
-    LuFileSpreadsheet,
-    LuHandshake,
     LuHouse,
     LuBanknote,
     LuUsers,
@@ -413,51 +408,51 @@ const menuSections: SidebarSection[] = [
                 icon: TbCashRegister,
                 routeName: 'deposito.index',
             },
-            {
-                id: 'transaksi',
-                label: 'Transaksi',
-                icon: LuHandshake,
-                children: [
-                    {
-                        id: 'transaksi-simpanan',
-                        label: 'Simpanan',
-                        icon: LuBanknote,
-                        children: [
-                            {
-                                id: 'simpanan-setoran',
-                                label: 'Setoran',
-                                href: '/simpanan/setoran',
-                                icon: LuCreditCard,
-                            },
-                            {
-                                id: 'simpanan-penarikan',
-                                label: 'Penarikan',
-                                href: '/simpanan/penarikan',
-                                icon: LuCircleDollarSign,
-                            },
-                        ],
-                    },
-                    {
-                        id: 'transaksi-pinjaman',
-                        label: 'Pinjaman',
-                        icon: LuClipboardList,
-                        children: [
-                            {
-                                id: 'pinjaman-pengajuan',
-                                label: 'Pengajuan',
-                                href: '/pinjaman/pengajuan',
-                                icon: LuFileSpreadsheet,
-                            },
-                            {
-                                id: 'pinjaman-angsuran',
-                                label: 'Angsuran',
-                                href: '/pinjaman/angsuran',
-                                icon: LuChartColumnIncreasing,
-                            },
-                        ],
-                    },
-                ],
-            },
+            // {
+            //     id: 'transaksi',
+            //     label: 'Transaksi',
+            //     icon: LuHandshake,
+            //     children: [
+            //         {
+            //             id: 'transaksi-simpanan',
+            //             label: 'Simpanan',
+            //             icon: LuBanknote,
+            //             children: [
+            //                 {
+            //                     id: 'simpanan-setoran',
+            //                     label: 'Setoran',
+            //                     href: '/simpanan/setoran',
+            //                     icon: LuCreditCard,
+            //                 },
+            //                 {
+            //                     id: 'simpanan-penarikan',
+            //                     label: 'Penarikan',
+            //                     href: '/simpanan/penarikan',
+            //                     icon: LuCircleDollarSign,
+            //                 },
+            //             ],
+            //         },
+            //         {
+            //             id: 'transaksi-pinjaman',
+            //             label: 'Pinjaman',
+            //             icon: LuClipboardList,
+            //             children: [
+            //                 {
+            //                     id: 'pinjaman-pengajuan',
+            //                     label: 'Pengajuan',
+            //                     href: '/pinjaman/pengajuan',
+            //                     icon: LuFileSpreadsheet,
+            //                 },
+            //                 {
+            //                     id: 'pinjaman-angsuran',
+            //                     label: 'Angsuran',
+            //                     href: '/pinjaman/angsuran',
+            //                     icon: LuChartColumnIncreasing,
+            //                 },
+            //             ],
+            //         },
+            //     ],
+            // },
         ],
     },
     {
@@ -637,30 +632,28 @@ export default function Sidebar({
                 ref={sidebarRef}
                 className={`${baseAsideClass} fixed inset-y-0 left-0 z-30 mt-14 h-dvh w-72 transform transition-[transform,opacity,width] ${isMounted ? 'duration-300 ease-in-out' : 'duration-0'} will-change-transform md:mt-0 lg:fixed ${mobileOpen ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0'} ${collapsed ? 'lg:w-20' : 'lg:w-72'} lg:translate-x-0 lg:opacity-100`}
             >
-                <div
-                    className={`flex items-center p-3 transition-all duration-300 sm:p-4 ${collapsed ? 'justify-center' : 'gap-2'}`}
-                >
-                    <img
-                        src="/favicon.ico"
-                        alt="Logo"
-                        width={32}
-                        height={32}
-                        className="h-10 w-10 rounded-2xl object-cover sm:h-12 sm:w-12"
-                    />
-                    <div
-                        className={`flex flex-col overflow-hidden whitespace-nowrap transition-all duration-300 ${collapsed ? 'max-w-0 opacity-0' : 'max-w-55 opacity-100'}`}
-                    >
-                        <h1 className="text-base font-bold tracking-tight text-slate-900 sm:text-xl">
-                            A Z Z A H W A
-                        </h1>
-                        <p className="text-xs text-slate-500 sm:text-sm">
-                            Mitra Koperasi
-                        </p>
-                    </div>
+                <div className="flex justify-start p-3">
+                    {collapsed ? (
+                        <img
+                            src="/logo-azzahwa.png"
+                            alt="Logo"
+                            width={48}
+                            height={48}
+                            className="mx-auto h-12 w-12 object-contain"
+                        />
+                    ) : (
+                        <img
+                            src="/logo-azzahwa-horizontal.png"
+                            alt="Logo"
+                            width={300}
+                            height={64}
+                            className="h-16 w-auto max-w-full object-contain"
+                        />
+                    )}
                 </div>
 
                 <nav
-                    className={`flex-1 py-3 transition-all duration-300 ${collapsed ? 'overflow-visible px-2' : 'overflow-y-auto px-4'}`}
+                    className={`-mt-3 flex-1 py-3 transition-all duration-300 ${collapsed ? 'overflow-visible px-2' : 'overflow-y-auto px-4'}`}
                 >
                     <div className="space-y-4">
                         {resolvedSections.map((section, sectionIndex) => {

@@ -28,7 +28,7 @@ export default function Login() {
 
             <div className="flex min-h-screen items-center bg-slate-100 p-4 md:p-6">
                 <main className="relative mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-6xl items-center">
-                    <div className="grid w-full overflow-hidden rounded-3xl border border-slate-200 bg-slate-900 shadow-2xl backdrop-blur xl:grid-cols-2">
+                    <div className="grid w-full overflow-hidden rounded-3xl border border-slate-200 bg-slate-900 shadow-md backdrop-blur xl:grid-cols-2">
                         <section className="hidden p-10 text-slate-100 xl:flex xl:flex-col xl:justify-between">
                             <div>
                                 <p className="inline-flex rounded-full border border-white/20 px-3 py-1 text-xs font-semibold tracking-wide text-slate-200">
@@ -55,9 +55,13 @@ export default function Login() {
 
                         <section className="flex items-center bg-white p-6 sm:p-8 lg:p-10">
                             <div className="mx-auto w-full max-w-md">
-                                <p className="text-xs font-semibold tracking-[0.2em] text-slate-500 uppercase xl:hidden">
-                                    Sistem Koperasi
-                                </p>
+                                <img
+                                    src="/logo-azzahwa-horizontal.png"
+                                    alt="Logo Azzahwa"
+                                    width={300}
+                                    height={64}
+                                    className="-ml-3 h-28 w-auto object-contain md:-ml-5"
+                                />
                                 <h2 className="mt-2 text-2xl font-semibold text-slate-900 sm:text-3xl">
                                     Masuk ke akun Anda
                                 </h2>

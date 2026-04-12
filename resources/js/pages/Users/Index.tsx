@@ -1,6 +1,7 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import type { FormEvent, ReactElement } from 'react';
 import { useMemo, useState } from 'react';
+import { LuTrash } from 'react-icons/lu';
 import { toast } from 'react-toastify';
 import DashboardLayout from '@/layouts/Dashboard/DasboardLayout';
 import ConfirmDialog from '@/components/confirm-dialog';
@@ -224,6 +225,8 @@ export default function UsersIndex() {
                         ? `Apakah Anda yakin ingin menghapus user ${deleteTarget.name}? Tindakan ini tidak dapat dibatalkan.`
                         : ''
                 }
+                tone="danger"
+                icon={<LuTrash className="h-7 w-7" />}
                 confirmText="Hapus"
                 isLoading={false}
                 onConfirm={confirmDelete}

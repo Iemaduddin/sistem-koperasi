@@ -42,6 +42,7 @@ export default function RekeningKoperasiFormCard({
     const isProcessing = editingRekeningKoperasi
         ? updateProcessing
         : createProcessing;
+    const isEditMode = editingRekeningKoperasi !== null;
 
     return (
         <article className="rounded-xl border border-slate-200 bg-white p-4">
@@ -82,6 +83,7 @@ export default function RekeningKoperasiFormCard({
                         ]}
                         onValueChange={(value) => onChangeField('jenis', value)}
                         searchable={false}
+                        disabled={isEditMode}
                     />
 
                     <FloatingInput
@@ -94,8 +96,16 @@ export default function RekeningKoperasiFormCard({
                         errorText={errors.saldo}
                         placeholder="Contoh: 50000"
                         required
+                        disabled={isEditMode}
                     />
                 </div>
+
+                {isEditMode ? (
+                    <p className="mt-3 text-xs text-slate-500">
+                        Jenis dan saldo merupakan master data, tidak dapat
+                        diubah saat edit.
+                    </p>
+                ) : null}
 
                 <div className="mt-4 flex gap-2">
                     <Button

@@ -2,13 +2,12 @@ import { useMemo } from 'react';
 import Button from '@/components/button';
 import DataTable, { type DataTableColumn } from '@/components/data-table';
 import type { RekeningKoperasiRow } from '../types';
-import { LuPen, LuTrash } from 'react-icons/lu';
+import { LuPen } from 'react-icons/lu';
 import { formatCurrency } from '@/lib/utils';
 
 type Props = {
     rekening_koperasi: RekeningKoperasiRow[];
     onStartEdit: (item: RekeningKoperasiRow) => void;
-    onRemove: (id: string, nama: string) => void;
 };
 
 function formatIndonesianDateTime(value: string): string {
@@ -34,7 +33,6 @@ function formatIndonesianDateTime(value: string): string {
 export default function RekeningKoperasiTableCard({
     rekening_koperasi,
     onStartEdit,
-    onRemove,
 }: Props) {
     const columns = useMemo<DataTableColumn<RekeningKoperasiRow>[]>(
         () => [
@@ -87,18 +85,11 @@ export default function RekeningKoperasiTableCard({
                         >
                             <LuPen className="h-4 w-4" />
                         </Button>
-                        <Button
-                            size="sm"
-                            variant="danger"
-                            onClick={() => onRemove(row.id, row.nama)}
-                        >
-                            <LuTrash className="h-4 w-4" />
-                        </Button>
                     </div>
                 ),
             },
         ],
-        [onRemove, onStartEdit],
+        [onStartEdit],
     );
 
     return (
