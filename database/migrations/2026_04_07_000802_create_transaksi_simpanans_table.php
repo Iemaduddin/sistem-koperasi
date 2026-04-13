@@ -14,10 +14,13 @@ return new class extends Migration
         Schema::create('transaksi_simpanan', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('rekening_simpanan_id')->constrained('rekening_simpanan')->cascadeOnDelete();
+            $table->foreignUuid('batch_id')->constrained('transaksi_simpanan_batch')->restrictOnDelete();
             $table->enum('jenis_transaksi', ['setor', 'tarik']);
             $table->decimal('jumlah', 15, 2);
             $table->text('keterangan')->nullable();
             $table->timestamp('created_at');
+
+            $table->index('batch_id');
         });
     }
 
