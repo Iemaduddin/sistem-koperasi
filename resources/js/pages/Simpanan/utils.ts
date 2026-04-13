@@ -104,8 +104,8 @@ export async function buildInvoiceHtml(batch: SimpananBatch): Promise<string> {
                     <td>${escapeHtml(anggota?.no_anggota ?? '-')}</td>
                     <td>${escapeHtml(anggota?.nama ?? '-')}</td>
                     <td>${escapeHtml(jenisSimpanan)}</td>
-                    <td>${escapeHtml(formatCurrency(Number(transaction.jumlah ?? 0)))}</td>
                     <td>${escapeHtml(transaction.keterangan ?? '-')}</td>
+                    <td>${escapeHtml(formatCurrency(Number(transaction.jumlah ?? 0)))}</td>
                 </tr>
             `;
         })
@@ -144,6 +144,7 @@ export async function buildInvoiceHtml(batch: SimpananBatch): Promise<string> {
                     object-position: left center;
                 }
                 .desc-kop {
+                    margin-left:-16px;
                     font-size: 12px;
                     text-align: right;
                 }
@@ -159,6 +160,7 @@ export async function buildInvoiceHtml(batch: SimpananBatch): Promise<string> {
                     align-items: flex-start;
                     gap: 16px;
                     margin-bottom: 20px;
+                    padding-top: 16px;
                     padding-bottom: 16px;
                     border-bottom: 2px solid #e2e8f0;
                 }
@@ -289,8 +291,6 @@ export async function buildInvoiceHtml(batch: SimpananBatch): Promise<string> {
             <div class="meta">
                 <div><strong>Anggota</strong><br/>${escapeHtml(batch.anggota?.no_anggota ?? '-')} - ${escapeHtml(batch.anggota?.nama ?? '-')}</div>
                 <div><strong>Petugas</strong><br/>${escapeHtml(batch.user?.name ?? '-')}</div>
-                <div><strong>Tanggal Transaksi</strong><br/>${escapeHtml(formatDateOnly(batch.tanggal_transaksi))}</div>
-                <div><strong>Total</strong><br/>Rp ${escapeHtml(formatCurrency(summary.total))}</div>
             </div>
 
             <table>
@@ -301,12 +301,16 @@ export async function buildInvoiceHtml(batch: SimpananBatch): Promise<string> {
                         <th>No Anggota</th>
                         <th>Nama</th>
                         <th>Jenis Simpanan</th>
-                        <th>Jumlah</th>
                         <th>Keterangan</th>
+                        <th>Jumlah</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${rowsHtml}
+                    <tr>
+                        <td colspan="6" style="text-align:right; font-weight:700; background:#f8fafc;">Total Keseluruhan</td>
+                        <td style="font-weight:700; background:#f8fafc;">Rp ${escapeHtml(formatCurrency(summary.total))}</td>
+                    </tr>
                 </tbody>
             </table>
             <div class="signature">
