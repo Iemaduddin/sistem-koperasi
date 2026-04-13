@@ -37,6 +37,7 @@ type SidebarItem = {
     href?: string;
     routeName?: string;
     icon?: IconType;
+    roles?: string[];
     children?: SidebarItem[];
 };
 
@@ -47,6 +48,42 @@ type SidebarSection = {
 };
 
 export type { SidebarItem, SidebarSection };
+
+const canAccessItem = (item: SidebarItem, userRoles: string[]): boolean => {
+    if (!item.roles || item.roles.length === 0) {
+        return true;
+    }
+
+    return item.roles.some((role) => userRoles.includes(role));
+};
+
+const filterSidebarItemsByRole = (
+    items: SidebarItem[],
+    userRoles: string[],
+): SidebarItem[] => {
+    const filtered: SidebarItem[] = [];
+
+    for (const item of items) {
+        const children = item.children
+            ? filterSidebarItemsByRole(item.children, userRoles)
+            : undefined;
+
+        if (!canAccessItem(item, userRoles)) {
+            continue;
+        }
+
+        if (item.children && (!children || children.length === 0)) {
+            continue;
+        }
+
+        filtered.push({
+            ...item,
+            children,
+        });
+    }
+
+    return filtered;
+};
 
 const normalizePath = (path: string) =>
     path === '/' ? '/' : path.replace(/\/$/, '');
@@ -348,6 +385,7 @@ const menuSections: SidebarSection[] = [
                 label: 'Dashboard',
                 routeName: 'dashboard',
                 icon: LuHouse,
+                roles: ['Super Admin', 'Admin'],
             },
         ],
     },
@@ -359,6 +397,7 @@ const menuSections: SidebarSection[] = [
                 label: 'Users Management',
                 routeName: 'users.index',
                 icon: LuUsers,
+                roles: ['Super Admin'],
             },
         ],
     },
@@ -371,18 +410,21 @@ const menuSections: SidebarSection[] = [
                 label: 'Anggota',
                 icon: LuUserCog,
                 routeName: 'anggota.index',
+                roles: ['Super Admin'],
             },
             {
                 id: 'jenis-simpanan',
                 label: 'Jenis Simpanan',
                 icon: LuBanknote,
                 routeName: 'jenis-simpanan.index',
+                roles: ['Super Admin'],
             },
             {
                 id: 'rekening-koperasi',
                 label: 'Rekening Koperasi',
                 icon: TbBuildingBank,
                 routeName: 'rekening-koperasi.index',
+                roles: ['Super Admin'],
             },
         ],
     },
@@ -395,18 +437,21 @@ const menuSections: SidebarSection[] = [
                 label: 'Simpanan',
                 icon: TbCashBanknoteMoveBack,
                 routeName: 'simpanan.index',
+                roles: ['Super Admin', 'Admin'],
             },
             {
                 id: 'pinjaman',
                 label: 'Pinjaman',
                 icon: TbCashBanknoteMove,
                 routeName: 'pinjaman.index',
+                roles: ['Super Admin', 'Admin'],
             },
             {
                 id: 'deposito',
                 label: 'Deposito',
                 icon: TbCashRegister,
                 routeName: 'deposito.index',
+                roles: ['Super Admin', 'Admin'],
             },
             // {
             //     id: 'transaksi',
@@ -464,6 +509,7 @@ const menuSections: SidebarSection[] = [
                 label: 'Laporan',
                 href: '/laporan',
                 icon: LuChartColumnIncreasing,
+                roles: ['Super Admin', 'Admin'],
             },
         ],
     },
@@ -474,6 +520,7 @@ type SidebarProps = {
     currentPath: string;
     mobileOpen: boolean;
     collapsed: boolean;
+    userRoles: string[];
     onCloseMobile: () => void;
 };
 
@@ -482,6 +529,7 @@ export default function Sidebar({
     currentPath,
     mobileOpen,
     collapsed,
+    userRoles,
     onCloseMobile,
 }: SidebarProps) {
     const sidebarRef = useRef<HTMLElement | null>(null);
@@ -493,20 +541,31 @@ export default function Sidebar({
     };
     const resolvedSections = useMemo<SidebarSection[]>(() => {
         if (menuSections.length) {
-            return menuSections;
+            return menuSections
+                .map((section) => ({
+                    ...section,
+                    items: filterSidebarItemsByRole(section.items, userRoles),
+                }))
+                .filter((section) => section.items.length > 0);
         }
 
         if (items.length) {
+            const filteredItems = filterSidebarItemsByRole(items, userRoles);
+
+            if (filteredItems.length === 0) {
+                return [];
+            }
+
             return [
                 {
                     id: 'menu',
-                    items,
+                    items: filteredItems,
                 },
             ];
         }
 
         return [];
-    }, [items]);
+    }, [items, userRoles]);
 
     const pathname = useMemo(
         () => normalizePath(currentPath || '/'),
