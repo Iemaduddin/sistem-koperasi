@@ -9,6 +9,7 @@ use App\Models\RekeningSimpanan;
 use App\Models\RiwayatKeluarAnggota;
 use App\Models\Simpanan;
 use App\Models\TransaksiKasKoperasi;
+use App\Models\TransaksiSimpananBatch;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -199,9 +200,22 @@ class AnggotaService
     {
         DB::transaction(function () use ($anggota, $payload, $approvedBy): void {
             $tanggalKeluar = Carbon::parse((string) $payload['tanggal_keluar']);
+            $userId = (string) ($approvedBy ?? '');
+
+            if ($userId === '') {
+                throw new RuntimeException('User login tidak ditemukan untuk membuat batch transaksi simpanan.');
+            }
+
             $rekeningKoperasi = RekeningKoperasi::query()
                 ->lockForUpdate()
                 ->findOrFail((string) $payload['rekening_koperasi_id']);
+
+            $batch = $this->createBatchTransaksiSimpanan(
+                anggotaId: $anggota->id,
+                userId: $userId,
+                tanggalTransaksi: $tanggalKeluar,
+                total: 0,
+            );
 
             $anggota->update([
                 'status' => 'keluar',
@@ -217,15 +231,18 @@ class AnggotaService
                 'created_at' => now(),
             ]);
 
-            $this->tarikSimpananSaatKeluar($anggota, $rekeningKoperasi, $tanggalKeluar);
+            $totalTarik = $this->tarikSimpananSaatKeluar($anggota, $rekeningKoperasi, $batch->id, $tanggalKeluar);
+            $batch->total = round($totalTarik, 2);
+            $batch->save();
         });
     }
 
     private function tarikSimpananSaatKeluar(
         Anggota $anggota,
         RekeningKoperasi $rekeningKoperasi,
+        string $batchId,
         Carbon $tanggalKeluar,
-    ): void
+    ): float
     {
         $jenisSimpanan = JenisSimpanan::query()
             ->whereIn(DB::raw('UPPER(kode)'), ['POKOK', 'WAJIB', 'SUKARELA'])
@@ -235,6 +252,8 @@ class AnggotaService
         foreach ($jenisSimpanan as $jenis) {
             $jenisByKode[strtoupper((string) $jenis->kode)] = $jenis;
         }
+
+        $totalTarik = 0.0;
 
         foreach (['POKOK', 'WAJIB', 'SUKARELA'] as $kode) {
             if (!isset($jenisByKode[$kode])) {
@@ -264,16 +283,22 @@ class AnggotaService
             $this->createPenarikanSimpananDanKas(
                 rekeningKoperasi: $rekeningKoperasi,
                 rekeningSimpanan: $rekeningSimpanan,
+                batchId: $batchId,
                 jumlah: $jumlahTarik,
                 keterangan: "Penarikan otomatis simpanan {$kode} karena anggota keluar",
                 createdAt: $tanggalKeluar,
             );
+
+            $totalTarik += $jumlahTarik;
         }
+
+        return $totalTarik;
     }
 
     private function createPenarikanSimpananDanKas(
         RekeningKoperasi $rekeningKoperasi,
         RekeningSimpanan $rekeningSimpanan,
+        string $batchId,
         float $jumlah,
         string $keterangan,
         Carbon $createdAt,
@@ -288,6 +313,7 @@ class AnggotaService
 
         $transaksiSimpanan = Simpanan::query()->create([
             'rekening_simpanan_id' => $rekeningSimpanan->id,
+            'batch_id' => $batchId,
             'jenis_transaksi' => 'tarik',
             'jumlah' => $jumlah,
             'keterangan' => $keterangan,
@@ -306,5 +332,38 @@ class AnggotaService
             'keterangan' => $keterangan,
             'created_at' => $createdAt,
         ]);
+    }
+
+    private function createBatchTransaksiSimpanan(
+        string $anggotaId,
+        string $userId,
+        Carbon $tanggalTransaksi,
+        float $total,
+    ): TransaksiSimpananBatch {
+        return TransaksiSimpananBatch::query()->create([
+            'kode_transaksi' => $this->generateKodeBatchSimpanan($tanggalTransaksi),
+            'anggota_id' => $anggotaId,
+            'tanggal_transaksi' => $tanggalTransaksi,
+            'user_id' => $userId,
+            'total' => round($total, 2),
+        ]);
+    }
+
+    private function generateKodeBatchSimpanan(Carbon $tanggalTransaksi): string
+    {
+        $prefix = 'SIM-'.$tanggalTransaksi->format('Ymd').'-';
+
+        $lastKode = TransaksiSimpananBatch::query()
+            ->where('kode_transaksi', 'like', $prefix.'%')
+            ->lockForUpdate()
+            ->orderByDesc('kode_transaksi')
+            ->value('kode_transaksi');
+
+        $lastSequence = 0;
+        if (is_string($lastKode) && str_starts_with($lastKode, $prefix)) {
+            $lastSequence = (int) substr($lastKode, -6);
+        }
+
+        return $prefix.str_pad((string) ($lastSequence + 1), 6, '0', STR_PAD_LEFT);
     }
 }

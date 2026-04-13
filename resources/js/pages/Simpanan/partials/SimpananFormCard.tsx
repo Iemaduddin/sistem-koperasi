@@ -85,8 +85,8 @@ export default function SimpananFormCard({
                     </h3>
                     <p className="mt-1 text-xs text-slate-500">
                         Kolom disusun per baris: jenis simpanan, jumlah setoran,
-                        dan keterangan. Jika simpanan wajib penuh, sistem akan
-                        meminta konfirmasi pengalihan sisa ke simpanan sukarela.
+                        dan keterangan. Jika simpanan wajib penuh, setoran bisa
+                        dialihkan ke simpanan sukarela.
                     </p>
 
                     <div className="mt-3 hidden grid-cols-12 gap-3 px-1 text-xs font-semibold tracking-wide text-slate-500 uppercase lg:grid">
@@ -157,12 +157,8 @@ export default function SimpananFormCard({
                                 <p className="text-sm font-medium text-slate-800">
                                     Simpanan Wajib
                                 </p>
-                                <p
-                                    className={`text-xs ${isWajibLocked ? 'text-emerald-600' : 'text-rose-600'}`}
-                                >
-                                    {isWajibLocked
-                                        ? 'Sudah penuh'
-                                        : 'Wajib sampai batas maksimal'}
+                                <p className="text-xs text-slate-500">
+                                    {isWajibLocked ? 'Sudah penuh' : 'Opsional'}
                                 </p>
                             </div>
                             <div className="lg:col-span-4">
@@ -177,11 +173,11 @@ export default function SimpananFormCard({
                                         )
                                     }
                                     disabled={isWajibLocked}
-                                    required={!isWajibLocked}
+                                    required={false}
                                     placeholder={
                                         isWajibLocked
                                             ? 'Simpanan wajib sudah penuh'
-                                            : 'Wajib diisi'
+                                            : 'Opsional'
                                     }
                                 />
                             </div>

@@ -16,7 +16,7 @@ Route::middleware('guest')->group(function (): void {
 		->name('login.store');
 });
 
-Route::middleware('auth')->group(function (): void {
+Route::middleware(['auth', 'active.user'])->group(function (): void {
 	Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
 		->name('logout');
 

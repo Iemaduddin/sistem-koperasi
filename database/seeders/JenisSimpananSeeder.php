@@ -15,8 +15,8 @@ class JenisSimpananSeeder extends Seeder
     public function run(): void
     {
         $jenisSimpanan = [
-            ['nama' => 'Simpanan Pokok', 'kode' => 'POKOK', 'minimal_simpanan' => 100000, 'maksimal_simpanan' => 100000,'terkunci' =>true],
-            ['nama' => 'Simpanan Wajib', 'kode' => 'WAJIB', 'minimal_simpanan' => 25000, 'maksimal_simpanan' => 500000,'terkunci' =>true],
+            ['nama' => 'Simpanan Pokok', 'kode' => 'POKOK', 'jumlah_minimum' => 100000, 'jumlah_maksimum' => 100000,'terkunci' =>true],
+            ['nama' => 'Simpanan Wajib', 'kode' => 'WAJIB', 'jumlah_minimum' => 25000, 'jumlah_maksimum' => 500000,'terkunci' =>true],
             ['nama' => 'Simpanan Sukarela', 'kode' => 'SUKARELA', 'terkunci' =>false],
         ];
 

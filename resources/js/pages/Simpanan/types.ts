@@ -30,14 +30,40 @@ export type RekeningSimpananOption = {
     };
 };
 
+export type SimpananBatchTransaction = {
+    id: string;
+    rekening_simpanan_id: string;
+    jenis_transaksi: TipeTransaksiOption;
+    jumlah: number | string;
+    keterangan: string | null;
+    created_at: string;
+    rekening_simpanan?: RekeningSimpananOption;
+};
+
+export type SimpananBatch = {
+    id: string;
+    kode_transaksi: string;
+    tanggal_transaksi: string;
+    total: number | string;
+    anggota?: AnggotaOption;
+    user?: {
+        id: string;
+        name: string;
+        email: string;
+    };
+    transaksi_simpanan?: SimpananBatchTransaction[];
+};
+
 export type SimpananRow = {
     id: string;
+    batch_id?: string | null;
     rekening_simpanan_id: string;
     jenis_transaksi: TipeTransaksiOption;
     jumlah: number;
     keterangan: string | null;
     created_at: string;
     rekening_simpanan?: RekeningSimpananOption;
+    batch?: SimpananBatch | null;
 };
 
 export type SimpananPageProps = {
@@ -93,4 +119,29 @@ export const initialSimpananForm: SimpananForm = {
     simpanan_sukarela_jumlah: '',
     simpanan_sukarela_keterangan: '',
     created_at: toDatetimeLocalValue(new Date()),
+};
+
+export type AnggotaNominalRow = {
+    id: string;
+    anggota_key: string;
+    anggota_id: string | null;
+    no_anggota: string;
+    nama: string;
+    pokok: number;
+    wajib: number;
+    sukarela: number;
+    total: number;
+};
+
+export type InvoiceSummary = {
+    total: number;
+};
+
+export type BatchSummaryRow = {
+    batch: SimpananBatch;
+    kode_transaksi: string;
+    tanggal_transaksi: string;
+    total: number;
+    jumlah_detail: number;
+    details: SimpananRow[];
 };

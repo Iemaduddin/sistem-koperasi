@@ -42,6 +42,7 @@ class SimpananController extends Controller
     public function store(StoreSimpananRequest $request): RedirectResponse
     {
         $validated = $request->validated();
+        $validated['user_id'] = $request->user()?->id;
 
         try {
             $this->simpananService->create($validated);
@@ -63,6 +64,7 @@ class SimpananController extends Controller
     public function tarikSukarela(TarikSukarelaRequest $request): RedirectResponse
     {
         $validated = $request->validated();
+        $validated['user_id'] = $request->user()?->id;
 
         try {
             $this->simpananService->tarikSukarela($validated);
