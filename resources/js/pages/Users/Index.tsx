@@ -133,6 +133,7 @@ export default function UsersIndex() {
         updateForm.setData({
             name: user.name,
             email: user.email,
+            is_active: user.is_active ? 'true' : 'false',
             password: '',
             password_confirmation: '',
             roles: user.roles,
@@ -155,6 +156,7 @@ export default function UsersIndex() {
                 email: '',
                 roles: [],
                 is_super_admin: false,
+                is_active: true,
                 created_at: null,
             },
         );
