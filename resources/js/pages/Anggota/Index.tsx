@@ -5,6 +5,7 @@ import { LuTrash } from 'react-icons/lu';
 import { toast } from 'react-toastify';
 import ConfirmDialog from '@/components/confirm-dialog';
 import FloatingInput from '@/components/floating-input/input';
+import FloatingSelect from '@/components/floating-input/select';
 import FloatingTextarea from '@/components/floating-input/textarea';
 import Modal from '@/components/modal';
 import DashboardLayout from '@/layouts/Dashboard/DasboardLayout';
@@ -23,11 +24,21 @@ export default function AnggotaIndex() {
     const { props } = usePage<{ props: AnggotaPageProps }>();
     const pageProps = props as unknown as AnggotaPageProps;
     const anggota = pageProps.anggota ?? [];
+    const rekeningKoperasiData = pageProps.rekening_koperasi ?? [];
     const statusOptions = pageProps.statusOptions ?? [
         'aktif',
         'nonaktif',
         'keluar',
     ];
+
+    const rekeningKoperasiOptions = useMemo(
+        () =>
+            rekeningKoperasiData.map((rekening) => ({
+                value: rekening.id,
+                label: `${rekening.nama} (${rekening.jenis})${rekening.nomor_rekening ? ` - ${rekening.nomor_rekening}` : ''}`,
+            })),
+        [rekeningKoperasiData],
+    );
 
     const [editingAnggotaId, setEditingAnggotaId] = useState<string | null>(
         null,
@@ -39,6 +50,12 @@ export default function AnggotaIndex() {
     const [setKeluarForm, setSetKeluarForm] = useState({
         alasan_keluar: '',
         tanggal_keluar: new Date().toISOString().slice(0, 10),
+        rekening_koperasi_id: '',
+    });
+    const [setKeluarSimpanan, setSetKeluarSimpanan] = useState({
+        pokok: '0',
+        wajib: '0',
+        sukarela: '0',
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSetKeluarSubmitting, setIsSetKeluarSubmitting] = useState(false);
@@ -178,10 +195,47 @@ export default function AnggotaIndex() {
 
     const startSetKeluar = (item: AnggotaRow) => {
         setSetKeluarTarget(item);
-        setSetKeluarForm({
-            alasan_keluar: '',
-            tanggal_keluar: new Date().toISOString().slice(0, 10),
-        });
+
+        // Fetch preferred rekening dan saldo simpanan dari transaksi anggota
+        fetch(`/anggota/${item.id}/set-keluar-info`)
+            .then((res) => res.json())
+            .then((data) => {
+                const preferredId = data.preferred_rekening_koperasi_id;
+                const saldoSimpanan = data.saldo_simpanan;
+                // Gunakan preferred jika ada, jika tidak prioritas tunai, jika tidak ambil pertama
+                const defaultRekeningId =
+                    preferredId ||
+                    rekeningKoperasiData.find((r) => r.jenis === 'tunai')?.id ||
+                    rekeningKoperasiData[0]?.id ||
+                    '';
+                setSetKeluarForm({
+                    alasan_keluar: '',
+                    tanggal_keluar: new Date().toISOString().slice(0, 10),
+                    rekening_koperasi_id: defaultRekeningId,
+                });
+                setSetKeluarSimpanan({
+                    pokok: saldoSimpanan?.pokok || '0',
+                    wajib: saldoSimpanan?.wajib || '0',
+                    sukarela: saldoSimpanan?.sukarela || '0',
+                });
+            })
+            .catch(() => {
+                // Fallback jika fetch gagal
+                const defaultRekeningId =
+                    rekeningKoperasiData.find((r) => r.jenis === 'tunai')?.id ||
+                    rekeningKoperasiData[0]?.id ||
+                    '';
+                setSetKeluarForm({
+                    alasan_keluar: '',
+                    tanggal_keluar: new Date().toISOString().slice(0, 10),
+                    rekening_koperasi_id: defaultRekeningId,
+                });
+                setSetKeluarSimpanan({
+                    pokok: '0',
+                    wajib: '0',
+                    sukarela: '0',
+                });
+            });
     };
 
     const submitSetKeluar = () => {
@@ -196,6 +250,11 @@ export default function AnggotaIndex() {
 
         if (!setKeluarForm.tanggal_keluar) {
             toast.error('Tanggal keluar wajib diisi.');
+            return;
+        }
+
+        if (!setKeluarForm.rekening_koperasi_id) {
+            toast.error('Rekening koperasi wajib dipilih.');
             return;
         }
 
@@ -273,6 +332,12 @@ export default function AnggotaIndex() {
                             Anda akan mengubah status{' '}
                             <strong>{setKeluarTarget.nama}</strong> menjadi{' '}
                             <b>keluar</b>.
+                            <br />
+                            <span className="text-sm text-amber-700">
+                                Saat set keluar, sistem akan otomatis menarik
+                                simpanan pokok, simpanan wajib, dan simpanan
+                                sukarela anggota.
+                            </span>
                         </>
                     ) : (
                         ''
@@ -307,6 +372,72 @@ export default function AnggotaIndex() {
                 }
             >
                 <div className="space-y-4">
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                        <h4 className="font-semibold text-amber-900">
+                            Saldo Simpanan yang Akan Ditarik
+                        </h4>
+                        <div className="mt-3 grid grid-cols-3 gap-3">
+                            <div>
+                                <p className="text-xs text-amber-700">
+                                    Simpanan Pokok
+                                </p>
+                                <p className="text-lg font-bold text-amber-900">
+                                    Rp{' '}
+                                    {Number(
+                                        setKeluarSimpanan.pokok,
+                                    ).toLocaleString('id-ID')}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-xs text-amber-700">
+                                    Simpanan Wajib
+                                </p>
+                                <p className="text-lg font-bold text-amber-900">
+                                    Rp{' '}
+                                    {Number(
+                                        setKeluarSimpanan.wajib,
+                                    ).toLocaleString('id-ID')}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-xs text-amber-700">
+                                    Simpanan Sukarela
+                                </p>
+                                <p className="text-lg font-bold text-amber-900">
+                                    Rp{' '}
+                                    {Number(
+                                        setKeluarSimpanan.sukarela,
+                                    ).toLocaleString('id-ID')}
+                                </p>
+                            </div>
+                        </div>
+                        <p className="mt-2 text-xs text-amber-700">
+                            Total:{' '}
+                            <strong>
+                                Rp{' '}
+                                {(
+                                    Number(setKeluarSimpanan.pokok) +
+                                    Number(setKeluarSimpanan.wajib) +
+                                    Number(setKeluarSimpanan.sukarela)
+                                ).toLocaleString('id-ID')}
+                            </strong>
+                        </p>
+                    </div>
+
+                    <FloatingSelect
+                        label="Rekening Koperasi untuk Penarikan"
+                        value={setKeluarForm.rekening_koperasi_id}
+                        options={rekeningKoperasiOptions}
+                        onValueChange={(value) =>
+                            setSetKeluarForm((prev) => ({
+                                ...prev,
+                                rekening_koperasi_id: value,
+                            }))
+                        }
+                        searchable
+                        required
+                    />
+
                     <FloatingInput
                         id="tanggal_keluar"
                         type="date"

@@ -32,6 +32,7 @@ class SimpananService
                 ->orderBy('nama')
                 ->get(['id', 'nama', 'jenis', 'nomor_rekening', 'saldo']),
             'anggota' => Anggota::query()
+                ->where('status', 'aktif')
                 ->orderBy('nama')
                 ->get(['id', 'no_anggota', 'nama', 'alamat']),
             'rekening_simpanan' => RekeningSimpanan::query()
