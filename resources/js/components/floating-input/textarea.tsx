@@ -46,7 +46,7 @@ const FloatingTextarea = forwardRef<HTMLTextAreaElement, FloatingTextareaProps>(
                             'peer min-h-28 w-full rounded-lg border bg-white px-3 pt-6 pb-2 text-sm text-slate-800 transition outline-none',
                             'border-blue-200 focus:border-blue-500',
 
-                            'placeholder:text-transparent',
+                            'placeholder:text-transparent focus:placeholder:text-slate-400',
                             'disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500',
 
                             errorText && 'border-red-400 focus:border-red-500',
