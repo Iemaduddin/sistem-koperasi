@@ -97,6 +97,7 @@ class SimpananService
                     rekeningSimpanan: $pokokRekening,
                     batchId: $batch->id,
                     jumlah: $pokokAmount,
+                    userId: $userId,
                     keterangan: $data['simpanan_pokok_keterangan'] ?? null,
                     createdAt: $timestamp,
                 );
@@ -132,6 +133,7 @@ class SimpananService
                         rekeningSimpanan: $wajibRekening,
                         batchId: $batch->id,
                         jumlah: $wajibAccepted,
+                        userId: $userId,
                         keterangan: $data['simpanan_wajib_keterangan'] ?? null,
                         createdAt: $timestamp,
                     );
@@ -151,6 +153,7 @@ class SimpananService
                         rekeningSimpanan: $sukarelaRekening,
                         batchId: $batch->id,
                         jumlah: $sukarelaInput,
+                        userId: $userId,
                         keterangan: $data['simpanan_sukarela_keterangan'] ?? null,
                         createdAt: $timestamp,
                     );
@@ -162,6 +165,7 @@ class SimpananService
                         rekeningSimpanan: $sukarelaRekening,
                         batchId: $batch->id,
                         jumlah: $overflowToSukarela,
+                        userId: $userId,
                         keterangan: $this->buildPengalihanWajibKeterangan(
                             $data['simpanan_wajib_keterangan'] ?? null,
                         ),
@@ -297,6 +301,7 @@ class SimpananService
                 'jumlah' => $jumlah,
                 'sumber_tipe' => 'simpanan',
                 'sumber_id' => $transaksiSimpanan->id,
+                'user_id' => $userId,
                 'keterangan' => $keterangan,
                 'created_at' => $timestamp,
             ]);
@@ -514,6 +519,7 @@ class SimpananService
         RekeningSimpanan $rekeningSimpanan,
         string $batchId,
         float $jumlah,
+        string $userId,
         ?string $keterangan,
         Carbon $createdAt,
     ): Simpanan {
@@ -540,6 +546,7 @@ class SimpananService
             'jumlah' => $jumlah,
             'sumber_tipe' => 'simpanan',
             'sumber_id' => $transaksiSimpanan->id,
+            'user_id' => $userId,
             'keterangan' => $keteranganClean,
             'created_at' => $createdAt,
         ]);

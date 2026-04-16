@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { LuEye } from 'react-icons/lu';
 import Button from '@/components/button';
 import DataTable, { type DataTableColumn } from '@/components/data-table';
-import type { AnggotaNominalRow } from './SimpananTableCard.types';
+import type { AnggotaNominalRow } from '../types';
 import { buildAmountLabel } from '../utils';
 
 type Props = {

@@ -18,6 +18,7 @@ return new class extends Migration
             $table->decimal('jumlah', 15, 2);
             $table->string('sumber_tipe'); // simpanan, pinjaman, angsuran, deposito
             $table->uuid('sumber_id');
+            $table->foreignUuid('user_id')->constrained('users')->restrictOnDelete();
             $table->text('keterangan')->nullable();
             $table->timestamp('created_at');
         });

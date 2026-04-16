@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { LuEye, LuX } from 'react-icons/lu';
 import Button from '@/components/button';
 import DataTable, { type DataTableColumn } from '@/components/data-table';
@@ -24,6 +24,19 @@ export default function SimpananTableBatchSection({
     onClose,
     onPreviewInvoice,
 }: Props) {
+    const detailSectionRef = useRef<HTMLElement | null>(null);
+
+    useEffect(() => {
+        if (!selectedAnggota || !detailSectionRef.current) {
+            return;
+        }
+
+        detailSectionRef.current.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+        });
+    }, [selectedAnggota]);
+
     const columns = useMemo<DataTableColumn<BatchSummaryRow>[]>(
         () => [
             {
@@ -131,7 +144,10 @@ export default function SimpananTableBatchSection({
     }
 
     return (
-        <article className="rounded-xl border-2 border-purple-800 bg-white p-4">
+        <article
+            ref={detailSectionRef}
+            className="rounded-xl border-2 border-purple-800 bg-white p-4"
+        >
             <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                 <div>
                     <h2 className="text-lg font-semibold text-slate-900">

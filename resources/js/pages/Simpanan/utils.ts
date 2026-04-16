@@ -320,7 +320,7 @@ export async function buildInvoiceHtml(batch: SimpananBatch): Promise<string> {
                         <img id="invoice-qr" alt="QR / Barcode" src="${escapeHtml(qrCodeDataUrl)}" />
                         <img class="barcode-logo" alt="Logo" src="${escapeHtml(logoPngUrl)}" onerror="this.src='${escapeHtml(logoIcoUrl)}'" />
                     </div>
-                    <div class="barcode-text">Scan untuk membuka: ${escapeHtml(qrTargetUrl)}</div>
+                    <div class="barcode-text">Scan untuk melihat detail dan keaslian invoice</div>
                 </div>
             </div>
         </body>
