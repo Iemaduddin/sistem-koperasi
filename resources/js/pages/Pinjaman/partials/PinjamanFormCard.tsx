@@ -3,6 +3,12 @@ import FloatingSelect from '@/components/floating-input/select';
 import Button from '@/components/button';
 import type { PinjamanForm } from '../types';
 
+const BUNGA_OPTIONS = [
+    { value: '25', label: '25% per bulan' },
+    { value: '30', label: '30% per bulan' },
+    { value: '35', label: '35% per bulan' },
+];
+
 type SelectOption = { value: string; label: string };
 
 type Props = {
@@ -60,14 +66,11 @@ export default function PinjamanFormCard({
                         required
                     />
 
-                    <FloatingInput
-                        label="Bunga per Bulan (%)"
-                        type="number"
+                    <FloatingSelect
+                        label="Bunga per Bulan"
                         value={formData.bunga_persen}
-                        onChange={(e) => onChangeField('bunga_persen', e.target.value)}
-                        min={0}
-                        max={100}
-                        step={0.01}
+                        options={BUNGA_OPTIONS}
+                        onValueChange={(value) => onChangeField('bunga_persen', value)}
                         required
                     />
 

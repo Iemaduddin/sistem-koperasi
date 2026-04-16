@@ -82,7 +82,7 @@ export type PinjamanForm = {
 export const initialPinjamanForm: PinjamanForm = {
     anggota_id: '',
     jumlah_pinjaman: '',
-    bunga_persen: '1',
+    bunga_persen: '25',
     tenor_bulan: '12',
     tanggal_mulai: new Date().toISOString().substring(0, 10),
 };
