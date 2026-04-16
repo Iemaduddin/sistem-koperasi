@@ -84,7 +84,7 @@ export default function Login() {
                                             setData('email', event.target.value)
                                         }
                                         autoComplete="email"
-                                        placeholder="nama@email.com"
+                                        placeholder="Masukkan email"
                                         errorText={errors.email}
                                         required
                                     />

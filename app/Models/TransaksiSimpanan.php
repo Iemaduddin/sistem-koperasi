@@ -24,6 +24,7 @@ class TransaksiSimpanan extends Model
      */
     protected $fillable = [
         'rekening_simpanan_id',
+        'batch_id',
         'jenis_transaksi',
         'jumlah',
         'keterangan',
@@ -44,5 +45,10 @@ class TransaksiSimpanan extends Model
     public function rekeningSimpanan(): BelongsTo
     {
         return $this->belongsTo(RekeningSimpanan::class, 'rekening_simpanan_id');
+    }
+
+    public function batch(): BelongsTo
+    {
+        return $this->belongsTo(TransaksiSimpananBatch::class, 'batch_id');
     }
 }

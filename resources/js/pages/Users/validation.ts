@@ -13,6 +13,7 @@ const baseUserSchema = z.object({
         .min(1, 'Email harus diisi')
         .email('Format email tidak valid')
         .max(255, 'Email maksimal 255 karakter'),
+    is_active: z.enum(['true', 'false']),
     roles: z.array(z.string()).min(1, 'Role minimal 1'),
 });
 
@@ -71,6 +72,7 @@ export const buildCreatePayload = (data: UserForm): UserForm => ({
     name: data.name.trim(),
     email: data.email.trim(),
     roles: ['Admin'],
+    is_active: data.is_active,
 });
 
 export const buildUpdatePayload = (data: UserForm): UserForm => ({
@@ -79,6 +81,7 @@ export const buildUpdatePayload = (data: UserForm): UserForm => ({
     email: data.email.trim(),
     password: data.password ?? '',
     password_confirmation: data.password_confirmation ?? '',
+    is_active: data.is_active,
 });
 
 export const getFirstValidationError = (error: z.ZodError) =>

@@ -20,6 +20,7 @@ class UserManagementService
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'is_active' => $user->is_active,
                 'roles' => $user->roles->pluck('name')->values()->all(),
                 'is_super_admin' => $user->hasRole('Super Admin'),
                 'created_at' => $user->created_at?->toDateTimeString(),
@@ -37,7 +38,7 @@ class UserManagementService
     }
 
     /**
-     * @param array{name: string, email: string, password: string, roles: array<int, string>} $payload
+    * @param array{name: string, email: string, is_active: bool, password: string, roles: array<int, string>} $payload
      */
     public function createUser(array $payload): User
     {
@@ -53,7 +54,7 @@ class UserManagementService
     }
 
     /**
-     * @param array{name: string, email: string, password?: string, roles: array<int, string>} $payload
+    * @param array{name: string, email: string, is_active: bool, password?: string, roles: array<int, string>} $payload
      */
     public function updateUser(User $user, array $payload): User
     {

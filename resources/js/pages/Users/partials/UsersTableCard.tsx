@@ -19,6 +19,18 @@ export default function UsersTableCard({
     const columns = useMemo<DataTableColumn<UserRow>[]>(
         () => [
             {
+                id: 'is_active',
+                header: 'Status',
+                render: (user) => (
+                    <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${user.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}
+                    >
+                        {user.is_active ? 'Aktif' : 'Nonaktif'}
+                    </span>
+                ),
+                sortValue: (user) => (user.is_active ? 1 : 0),
+            },
+            {
                 id: 'name',
                 header: 'Nama',
                 accessor: 'name',

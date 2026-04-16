@@ -23,6 +23,7 @@ class AnggotaController extends Controller
         return Inertia::render('Anggota/Index', [
             'anggota' => $this->anggotaService->getAnggotaIndexData(),
             'statusOptions' => $this->anggotaService->getStatusOptions(),
+            'rekening_koperasi' => $this->anggotaService->getRekeningKoperasiOptions(),
         ]);
     }
 
@@ -75,5 +76,16 @@ class AnggotaController extends Controller
         return redirect()
             ->route('anggota.index')
             ->with('success', 'Status anggota berhasil diubah menjadi keluar.');
+    }
+
+    public function getSetKeluarInfo(Anggota $anggota)
+    {
+        $preferredId = $this->anggotaService->getPreferredRekeningKoperasiForAnggota($anggota);
+        $saldoSimpanan = $this->anggotaService->getSaldoSimpananAnggota($anggota);
+
+        return response()->json([
+            'preferred_rekening_koperasi_id' => $preferredId,
+            'saldo_simpanan' => $saldoSimpanan,
+        ]);
     }
 }

@@ -20,6 +20,7 @@ class StoreUserRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'is_active' => ['required', 'boolean'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'roles' => ['required', 'array', 'min:1'],
             'roles.*' => [
@@ -36,5 +37,12 @@ class StoreUserRequest extends FormRequest
         return [
             'roles.*.not_in' => 'Tidak dapat menugaskan role Super Admin.',
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'is_active' => filter_var($this->input('is_active', true), FILTER_VALIDATE_BOOLEAN),
+        ]);
     }
 }

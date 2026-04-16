@@ -1,9 +1,15 @@
 import type { FormEvent } from 'react';
 import Button from '@/components/button';
 import FloatingInput from '@/components/floating-input/input';
+import FloatingSelect from '@/components/floating-input/select';
 import type { UserForm, UserRow } from '../types';
 
-type InputField = 'name' | 'email' | 'password' | 'password_confirmation';
+type InputField =
+    | 'name'
+    | 'email'
+    | 'is_active'
+    | 'password'
+    | 'password_confirmation';
 
 type ErrorBag = Partial<Record<InputField, string>>;
 
@@ -67,6 +73,16 @@ export default function UserFormCard({
                         onChangeField('email', event.target.value)
                     }
                     errorText={errors.email}
+                />
+                <FloatingSelect
+                    label="Status Akun"
+                    value={formData.is_active}
+                    options={[
+                        { value: 'true', label: 'Aktif' },
+                        { value: 'false', label: 'Nonaktif' },
+                    ]}
+                    onValueChange={(value) => onChangeField('is_active', value)}
+                    searchable={false}
                 />
                 <FloatingInput
                     label={

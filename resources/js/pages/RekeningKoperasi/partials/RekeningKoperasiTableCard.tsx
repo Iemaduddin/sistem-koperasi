@@ -3,7 +3,7 @@ import Button from '@/components/button';
 import DataTable, { type DataTableColumn } from '@/components/data-table';
 import type { RekeningKoperasiRow } from '../types';
 import { LuPen } from 'react-icons/lu';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@/utils/general';
 
 type Props = {
     rekening_koperasi: RekeningKoperasiRow[];

@@ -32,9 +32,18 @@ export type AnggotaForm = {
     tanggal_bergabung: string;
 };
 
+export type RekeningKoperasiOption = {
+    id: string;
+    nama: string;
+    jenis: 'bank' | 'tunai';
+    nomor_rekening: string | null;
+    saldo: number | string | null;
+};
+
 export type AnggotaPageProps = {
     anggota: AnggotaRow[];
     statusOptions: AnggotaStatus[];
+    rekening_koperasi: RekeningKoperasiOption[];
     flash?: {
         success?: string;
         error?: string;

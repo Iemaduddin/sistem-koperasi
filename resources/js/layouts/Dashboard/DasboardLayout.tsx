@@ -15,8 +15,10 @@ type SharedPageProps = {
     url: string;
     auth?: {
         user?: {
+            id?: string;
             name?: string;
             email?: string;
+            roles?: string[];
         };
     };
     flash?: {
@@ -74,6 +76,7 @@ export default function DashboardLayout({
 
     const userName = props.auth?.user?.name ?? 'Administrator';
     const userEmail = props.auth?.user?.email ?? 'admin@koperasi.local';
+    const userRoles = props.auth?.user?.roles ?? [];
 
     const currentPath = url || '/dashboard';
 
@@ -84,6 +87,7 @@ export default function DashboardLayout({
                 currentPath={currentPath}
                 mobileOpen={mobileOpen}
                 collapsed={collapsed}
+                userRoles={userRoles}
                 onCloseMobile={() => setMobileOpen(false)}
             />
 

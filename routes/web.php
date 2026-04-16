@@ -16,7 +16,7 @@ Route::middleware('guest')->group(function (): void {
 		->name('login.store');
 });
 
-Route::middleware('auth')->group(function (): void {
+Route::middleware(['auth', 'active.user'])->group(function (): void {
 	Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
 		->name('logout');
 
@@ -34,6 +34,8 @@ Route::middleware('auth')->group(function (): void {
 			->parameters(['rekening-koperasi' => 'rekening_koperasi'])
 			->except(['show', 'create', 'edit', 'destroy']);
 		// set anggota koperasi keluar
+		Route::get('/anggota/{anggota}/set-keluar-info', [AnggotaController::class, 'getSetKeluarInfo'])
+			->name('anggota.set-keluar-info');
 		Route::post('/anggota/{anggota}/set-keluar', [AnggotaController::class, 'setKeluar'])
 			->name('anggota.set-keluar');
 		// anggota koperasi management

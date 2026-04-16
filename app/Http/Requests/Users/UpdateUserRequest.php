@@ -27,6 +27,7 @@ class UpdateUserRequest extends FormRequest
                 'max:255',
                 Rule::unique('users', 'email')->ignore($userId),
             ],
+            'is_active' => ['required', 'boolean'],
             'password' => [
                 'nullable',
                 'string',
@@ -54,5 +55,12 @@ class UpdateUserRequest extends FormRequest
         return [
             'roles.*.not_in' => 'Tidak dapat menugaskan role Super Admin.',
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'is_active' => filter_var($this->input('is_active', true), FILTER_VALIDATE_BOOLEAN),
+        ]);
     }
 }

@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useId, useRef, useState } from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/general';
 
 type TooltipTrigger = 'hover' | 'click';
 type TooltipSide = 'top' | 'right' | 'bottom' | 'left';

@@ -9,6 +9,7 @@ use App\Models\RekeningKoperasi;
 use App\Models\RekeningSimpanan;
 use App\Models\Simpanan;
 use App\Models\TransaksiKasKoperasi;
+use App\Models\TransaksiSimpananBatch;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -25,6 +26,10 @@ class SimpananService
             'simpanan' => Simpanan::with([
                 'rekeningSimpanan.anggota',
                 'rekeningSimpanan.jenisSimpanan',
+                'batch.anggota',
+                'batch.user',
+                'batch.transaksiSimpanan.rekeningSimpanan.anggota',
+                'batch.transaksiSimpanan.rekeningSimpanan.jenisSimpanan',
             ])
                 ->latest('created_at')
                 ->get(),
@@ -32,6 +37,7 @@ class SimpananService
                 ->orderBy('nama')
                 ->get(['id', 'nama', 'jenis', 'nomor_rekening', 'saldo']),
             'anggota' => Anggota::query()
+                ->where('status', 'aktif')
                 ->orderBy('nama')
                 ->get(['id', 'no_anggota', 'nama', 'alamat']),
             'rekening_simpanan' => RekeningSimpanan::query()
@@ -45,12 +51,24 @@ class SimpananService
     {
         return DB::transaction(function () use ($data): Simpanan {
             $timestamp = Carbon::parse((string) ($data['created_at'] ?? now()));
+            $userId = isset($data['user_id']) ? (string) $data['user_id'] : '';
+
+            if ($userId === '') {
+                throw new RuntimeException('User login tidak ditemukan untuk membuat batch transaksi simpanan.');
+            }
+
             $rekeningKoperasi = RekeningKoperasi::query()
                 ->lockForUpdate()
                 ->findOrFail($data['rekening_koperasi_id']);
 
             $jenisByKode = $this->getJenisSimpananByKode();
             $anggotaId = (string) $data['anggota_id'];
+            $batch = $this->createBatchTransaksiSimpanan(
+                anggotaId: $anggotaId,
+                userId: $userId,
+                tanggalTransaksi: $timestamp,
+                total: 0,
+            );
 
             $pokokAmount = $this->toNullableAmount($data['simpanan_pokok_jumlah'] ?? null);
             $wajibInput = $this->toNullableAmount($data['simpanan_wajib_jumlah'] ?? null) ?? 0.0;
@@ -77,6 +95,7 @@ class SimpananService
                 $createdTransactions[] = $this->createSimpananAndKas(
                     rekeningKoperasi: $rekeningKoperasi,
                     rekeningSimpanan: $pokokRekening,
+                    batchId: $batch->id,
                     jumlah: $pokokAmount,
                     keterangan: $data['simpanan_pokok_keterangan'] ?? null,
                     createdAt: $timestamp,
@@ -97,9 +116,6 @@ class SimpananService
                     throw new RuntimeException('Simpanan wajib sudah mencapai batas maksimal. Tidak dapat menerima setoran wajib lagi.');
                 }
             } else {
-                if ($wajibInput <= 0) {
-                    throw new RuntimeException('Simpanan wajib wajib diisi selama saldo wajib belum mencapai batas maksimal.');
-                }
 
                 $this->validateInputAmount('wajib', $wajibInput, $wajibJenis, false);
 
@@ -114,6 +130,7 @@ class SimpananService
                     $createdTransactions[] = $this->createSimpananAndKas(
                         rekeningKoperasi: $rekeningKoperasi,
                         rekeningSimpanan: $wajibRekening,
+                        batchId: $batch->id,
                         jumlah: $wajibAccepted,
                         keterangan: $data['simpanan_wajib_keterangan'] ?? null,
                         createdAt: $timestamp,
@@ -132,6 +149,7 @@ class SimpananService
                     $createdTransactions[] = $this->createSimpananAndKas(
                         rekeningKoperasi: $rekeningKoperasi,
                         rekeningSimpanan: $sukarelaRekening,
+                        batchId: $batch->id,
                         jumlah: $sukarelaInput,
                         keterangan: $data['simpanan_sukarela_keterangan'] ?? null,
                         createdAt: $timestamp,
@@ -142,6 +160,7 @@ class SimpananService
                     $createdTransactions[] = $this->createSimpananAndKas(
                         rekeningKoperasi: $rekeningKoperasi,
                         rekeningSimpanan: $sukarelaRekening,
+                        batchId: $batch->id,
                         jumlah: $overflowToSukarela,
                         keterangan: $this->buildPengalihanWajibKeterangan(
                             $data['simpanan_wajib_keterangan'] ?? null,
@@ -154,6 +173,14 @@ class SimpananService
             if (count($createdTransactions) === 0) {
                 throw new RuntimeException('Tidak ada transaksi simpanan yang dapat diproses.');
             }
+
+            $batch->total = round(
+                collect($createdTransactions)->sum(
+                    static fn (Simpanan $item): float => (float) $item->jumlah,
+                ),
+                2,
+            );
+            $batch->save();
 
             /** @var Simpanan $lastTransaction */
             $lastTransaction = end($createdTransactions);
@@ -205,10 +232,22 @@ class SimpananService
         return DB::transaction(function () use ($data): Simpanan {
             $timestamp = Carbon::parse((string) ($data['created_at'] ?? now()));
             $jumlah = $this->toAmount($data['jumlah']);
+            $userId = isset($data['user_id']) ? (string) $data['user_id'] : '';
+
+            if ($userId === '') {
+                throw new RuntimeException('User login tidak ditemukan untuk membuat batch transaksi simpanan.');
+            }
 
             if ($jumlah <= 0) {
                 throw new RuntimeException('Nominal tarik harus lebih dari 0.');
             }
+
+            $batch = $this->createBatchTransaksiSimpanan(
+                anggotaId: (string) $data['anggota_id'],
+                userId: $userId,
+                tanggalTransaksi: $timestamp,
+                total: $jumlah,
+            );
 
             $rekeningKoperasi = RekeningKoperasi::query()
                 ->lockForUpdate()
@@ -242,6 +281,7 @@ class SimpananService
 
             $transaksiSimpanan = Simpanan::query()->create([
                 'rekening_simpanan_id' => $rekeningSukarela->id,
+                'batch_id' => $batch->id,
                 'jenis_transaksi' => 'tarik',
                 'jumlah' => $jumlah,
                 'keterangan' => $keterangan,
@@ -472,6 +512,7 @@ class SimpananService
     private function createSimpananAndKas(
         RekeningKoperasi $rekeningKoperasi,
         RekeningSimpanan $rekeningSimpanan,
+        string $batchId,
         float $jumlah,
         ?string $keterangan,
         Carbon $createdAt,
@@ -483,6 +524,7 @@ class SimpananService
 
         $transaksiSimpanan = Simpanan::query()->create([
             'rekening_simpanan_id' => $rekeningSimpanan->id,
+            'batch_id' => $batchId,
             'jenis_transaksi' => 'setor',
             'jumlah' => $jumlah,
             'keterangan' => $keteranganClean,
@@ -503,5 +545,38 @@ class SimpananService
         ]);
 
         return $transaksiSimpanan;
+    }
+
+    private function createBatchTransaksiSimpanan(
+        string $anggotaId,
+        string $userId,
+        Carbon $tanggalTransaksi,
+        float $total,
+    ): TransaksiSimpananBatch {
+        return TransaksiSimpananBatch::query()->create([
+            'kode_transaksi' => $this->generateKodeBatchSimpanan($tanggalTransaksi),
+            'anggota_id' => $anggotaId,
+            'tanggal_transaksi' => $tanggalTransaksi,
+            'user_id' => $userId,
+            'total' => round($total, 2),
+        ]);
+    }
+
+    private function generateKodeBatchSimpanan(Carbon $tanggalTransaksi): string
+    {
+        $prefix = 'SIM-'.$tanggalTransaksi->format('Ymd').'-';
+
+        $lastKode = TransaksiSimpananBatch::query()
+            ->where('kode_transaksi', 'like', $prefix.'%')
+            ->lockForUpdate()
+            ->orderByDesc('kode_transaksi')
+            ->value('kode_transaksi');
+
+        $lastSequence = 0;
+        if (is_string($lastKode) && str_starts_with($lastKode, $prefix)) {
+            $lastSequence = (int) substr($lastKode, -6);
+        }
+
+        return $prefix.str_pad((string) ($lastSequence + 1), 6, '0', STR_PAD_LEFT);
     }
 }

@@ -184,7 +184,7 @@ export default function SimpananIndex() {
                   ? ` dari maksimal Rp ${selectedWajibStatus.maksimum.toLocaleString('id-ID')}`
                   : ''
           }). Setoran berikutnya diarahkan ke simpanan sukarela.`
-        : 'Simpanan wajib harus diisi selama saldo wajib belum mencapai batas maksimal.';
+        : '';
 
     const onChangeField = <K extends keyof SimpananForm>(
         field: K,
@@ -223,13 +223,6 @@ export default function SimpananIndex() {
 
     const submitSimpanan = (alihkanSisaWajibKeSukarela = false) => {
         const payload = buildPayload(formData, alihkanSisaWajibKeSukarela);
-
-        if (!isWajibLocked && (payload.simpanan_wajib_jumlah ?? 0) <= 0) {
-            toast.error(
-                'Simpanan wajib harus diisi selama saldo wajib belum penuh',
-            );
-            return;
-        }
 
         setIsSubmitting(true);
 

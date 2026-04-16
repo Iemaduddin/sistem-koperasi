@@ -1,11 +1,3 @@
-import type { ClassValue } from 'clsx';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-export function cn(...inputs: ClassValue[]) {
-    return twMerge(clsx(inputs));
-}
-
 export function formatCurrency(value: number | null | undefined): string {
     if (value === null || value === undefined || value === 0) {
         return '0';
@@ -66,4 +58,13 @@ export function formatCurrency(value: number | null | undefined): string {
     }
 
     return value.toLocaleString('id-ID');
+}
+export function toNumber(value: number | string | null | undefined): number {
+    if (value === null || value === undefined) {
+        return 0;
+    }
+
+    const parsed = Number(value);
+
+    return Number.isNaN(parsed) ? 0 : parsed;
 }

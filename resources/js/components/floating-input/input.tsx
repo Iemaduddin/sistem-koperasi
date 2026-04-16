@@ -127,7 +127,7 @@ const FloatingInput = forwardRef<HTMLInputElement, FloatingInputProps>(
                         className={cn(
                             'peer h-11 w-full rounded-lg border bg-white px-3 text-sm text-slate-800 transition outline-none',
                             'border-blue-200 focus:border-blue-500',
-                            'placeholder:text-transparent',
+                            'placeholder:text-transparent focus:placeholder:text-slate-400',
                             'disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500',
                             errorText && 'border-red-400 focus:border-red-500',
                             className,
