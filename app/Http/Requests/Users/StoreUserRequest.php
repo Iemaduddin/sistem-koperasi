@@ -27,7 +27,7 @@ class StoreUserRequest extends FormRequest
                 'required',
                 'string',
                 'exists:roles,name',
-                Rule::notIn(['Super Admin']),
+                Rule::notIn(['Master Admin', 'Super Admin']),
             ],
         ];
     }
@@ -35,7 +35,7 @@ class StoreUserRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'roles.*.not_in' => 'Tidak dapat menugaskan role Super Admin.',
+            'roles.*.not_in' => 'Tidak dapat menugaskan role Master Admin atau Super Admin.',
         ];
     }
 

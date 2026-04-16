@@ -37,6 +37,11 @@ class UserManagementController extends Controller
 
     public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
+        if ($user->hasRole('Master Admin') && ! $request->user()?->is($user)) {
+            return redirect()
+                ->route('users.index')
+                ->with('error', 'Master Admin tidak dapat diedit.');
+        }
         if ($user->hasRole('Super Admin') && ! $request->user()?->is($user)) {
             return redirect()
                 ->route('users.index')
@@ -52,6 +57,11 @@ class UserManagementController extends Controller
 
     public function destroy(Request $request, User $user): RedirectResponse
     {
+        if ($user->hasRole('Master Admin')) {
+            return redirect()
+                ->route('users.index')
+                ->with('error', 'Master Admin tidak dapat dihapus.');
+        }
         if ($user->hasRole('Super Admin')) {
             return redirect()
                 ->route('users.index')

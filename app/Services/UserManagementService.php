@@ -14,6 +14,7 @@ class UserManagementService
     {
          $users = User::query()
             ->with('roles')
+            ->where(fn ($query) => $query->whereHas('roles', fn ($q) => $q->whereNotIn('name', ['Master Admin']))->orWhereDoesntHave('roles'))
             ->orderBy('name')
             ->get()
             ->map(fn (User $user): array => [

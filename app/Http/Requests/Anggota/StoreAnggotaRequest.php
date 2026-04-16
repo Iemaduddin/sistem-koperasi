@@ -28,4 +28,11 @@ class StoreAnggotaRequest extends FormRequest
             'tanggal_keluar' => ['nullable', 'date', 'after_or_equal:tanggal_bergabung'],
         ];
     }
+        public function messages(): array
+    {
+        return [
+            'nik.unique' => 'NIK sudah digunakan.',
+        ];
+    }
+
 }
