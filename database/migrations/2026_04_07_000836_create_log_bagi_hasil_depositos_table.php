@@ -16,6 +16,10 @@ return new class extends Migration
             $table->foreignUuid('simpanan_deposito_id')->constrained('simpanan_deposito')->cascadeOnDelete();
             $table->decimal('nominal_bagi_hasil', 15, 2);
             $table->date('tanggal_perhitungan');
+            $table->enum('status_pengambilan', ['belum', 'sudah'])->default('belum');
+            $table->dateTime('tanggal_pengambilan')->nullable();
+            $table->timestamps();
+
         });
     }
 

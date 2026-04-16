@@ -29,6 +29,7 @@ class TransaksiKasKoperasi extends Model
         'jumlah',
         'sumber_tipe',
         'sumber_id',
+        'user_id',
         'keterangan',
         'created_at',
     ];

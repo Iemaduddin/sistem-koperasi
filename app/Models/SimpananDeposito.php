@@ -23,6 +23,7 @@ class SimpananDeposito extends Model
      */
     protected $fillable = [
         'anggota_id',
+        'rekening_koperasi_id',
         'saldo',
         'persen_bagi_hasil',
         'nominal_bagi_hasil',
@@ -50,6 +51,11 @@ class SimpananDeposito extends Model
     public function anggota(): BelongsTo
     {
         return $this->belongsTo(Anggota::class, 'anggota_id');
+    }
+
+    public function rekeningKoperasi(): BelongsTo
+    {
+        return $this->belongsTo(RekeningKoperasi::class, 'rekening_koperasi_id');
     }
 
     public function logBagiHasil(): HasMany

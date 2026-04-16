@@ -21,6 +21,8 @@ class LogBagiHasilDeposito extends Model
         'simpanan_deposito_id',
         'nominal_bagi_hasil',
         'tanggal_perhitungan',
+        'status_pengambilan',
+        'tanggal_pengambilan',
     ];
 
     /**
@@ -31,6 +33,7 @@ class LogBagiHasilDeposito extends Model
         return [
             'nominal_bagi_hasil' => 'decimal:2',
             'tanggal_perhitungan' => 'date',
+            'tanggal_pengambilan' => 'datetime',
         ];
     }
 

@@ -5,6 +5,7 @@ use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\AnggotaController;
 use App\Http\Controllers\JenisSimpananController;
 use App\Http\Controllers\RekeningKoperasiController;
+use App\Http\Controllers\SimpananDepositoController;
 use App\Http\Controllers\SimpananController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,13 +23,15 @@ Route::middleware(['auth', 'active.user'])->group(function (): void {
 
 	Route::inertia('/dashboard', 'Dashboard/Dashboard')->name('dashboard');
 
-	Route::middleware(['role:Super Admin'])->group(function (): void {
-		// users management
-		Route::resource('/users', UserManagementController::class)->except(['show', 'create', 'edit']);
+	Route::middleware(['role:Master Admin'])->group(function (): void {
 		// jenis simpanan
 		Route::resource('/jenis-simpanan', JenisSimpananController::class)
 			->parameters(['jenis-simpanan' => 'jenis_simpanan'])
 			->except(['show', 'create', 'edit']);
+	});
+	Route::middleware(['role:Master Admin|Super Admin'])->group(function (): void {
+		// users management
+		Route::resource('/users', UserManagementController::class)->except(['show', 'create', 'edit']);
 		// rekening koperasi
 		Route::resource('/rekening-koperasi', RekeningKoperasiController::class)
 			->parameters(['rekening-koperasi' => 'rekening_koperasi'])
@@ -47,6 +50,18 @@ Route::middleware(['auth', 'active.user'])->group(function (): void {
 			->name('simpanan.tarik-sukarela');
 		Route::resource('/simpanan', SimpananController::class)
 			->parameters(['simpanan' => 'simpanan'])
+			->except(['show', 'create', 'edit', 'update', 'destroy']);
+		// Deposito management
+		Route::post(
+			'/deposito/log-bagi-hasil/{logBagiHasilDeposito}/tarik',
+			[SimpananDepositoController::class, 'tarikBagiHasil'],
+		)->name('deposito.log-bagi-hasil.tarik');
+		Route::post(
+			'/deposito/{simpanan_deposito}/tarik-bagi-hasil-kumulatif',
+			[SimpananDepositoController::class, 'tarikBagiHasilKumulatif'],
+		)->name('deposito.tarik-bagi-hasil-kumulatif');
+		Route::resource('/deposito', SimpananDepositoController::class)
+			->parameters(['deposito' => 'simpanan_deposito'])
 			->except(['show', 'create', 'edit', 'update', 'destroy']);
 	});
 });

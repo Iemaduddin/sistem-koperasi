@@ -16,7 +16,6 @@ return new class extends Migration
             $table->foreignUuid('anggota_id')->constrained('anggota')->cascadeOnDelete();
             $table->decimal('saldo', 15, 2);
             $table->decimal('persen_bagi_hasil', 5, 2);
-            $table->decimal('nominal_bagi_hasil', 15, 2)->default(0);
             $table->tinyInteger('tenor_bulan');
             $table->date('tanggal_mulai');
             $table->date('tanggal_selesai');
