@@ -8,9 +8,19 @@ use App\Http\Controllers\RekeningKoperasiController;
 use App\Http\Controllers\SimpananDepositoController;
 use App\Http\Controllers\SimpananController;
 use App\Http\Controllers\PinjamanController;
+use App\Http\Controllers\GuestPortalController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/login')->name('home');
+Route::get('/portal-anggota', [GuestPortalController::class, 'index'])
+	->name('guest-portal.index');
+Route::post('/portal-anggota/verifikasi', [GuestPortalController::class, 'verify'])
+	->name('guest-portal.verify');
+Route::get('/portal-anggota/riwayat', [GuestPortalController::class, 'history'])
+	->name('guest-portal.history');
+Route::post('/portal-anggota/reset', [GuestPortalController::class, 'reset'])
+	->name('guest-portal.reset');
+
 Route::middleware('guest')->group(function (): void {
 	Route::get('/login', [AuthenticatedSessionController::class, 'create'])
 		->name('login');

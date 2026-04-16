@@ -11,14 +11,36 @@ type LoginForm = {
 };
 
 export default function Login() {
-    const { data, setData, post, processing, errors } = useForm<LoginForm>({
-        email: '',
-        password: '',
-        remember: false,
-    });
+    const { data, setData, post, processing, errors, setError, clearErrors } =
+        useForm<LoginForm>({
+            email: '',
+            password: '',
+            remember: false,
+        });
+    const formError = (errors as Record<string, string | undefined>).auth;
+    const canSubmit =
+        data.email.trim().length > 0 && data.password.trim().length > 0;
 
     const submit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+
+        clearErrors();
+
+        let hasError = false;
+        if (data.email.trim() === '') {
+            setError('email', 'Email wajib diisi.');
+            hasError = true;
+        }
+
+        if (data.password.trim() === '') {
+            setError('password', 'Password wajib diisi.');
+            hasError = true;
+        }
+
+        if (hasError) {
+            return;
+        }
+
         post('/login');
     };
 
@@ -75,6 +97,16 @@ export default function Login() {
                                     className="mt-8 space-y-5"
                                     noValidate
                                 >
+                                    {formError && (
+                                        <div
+                                            className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+                                            role="alert"
+                                            aria-live="polite"
+                                        >
+                                            {formError}
+                                        </div>
+                                    )}
+
                                     <FloatingInput
                                         id="email"
                                         type="email"
@@ -125,7 +157,7 @@ export default function Login() {
 
                                     <Button
                                         type="submit"
-                                        disabled={processing}
+                                        disabled={processing || !canSubmit}
                                         loading={processing}
                                         loadingText="Sedang masuk..."
                                         fullWidth
