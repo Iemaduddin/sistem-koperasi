@@ -2,64 +2,88 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Pinjaman\BayarAngsuranRequest;
+use App\Http\Requests\Pinjaman\StorePinjamanRequest;
 use App\Models\Pinjaman;
-use Illuminate\Http\Request;
+use App\Services\PinjamanService;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\RedirectResponse;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class PinjamanController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function __construct(private readonly PinjamanService $pinjamanService)
     {
-        //
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Daftar semua pinjaman.
      */
-    public function create()
+    public function index(): Response
     {
-        //
+        return Inertia::render('Pinjaman/Index', $this->pinjamanService->getIndexData());
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Simpan pinjaman baru.
      */
-    public function store(Request $request)
+    public function store(StorePinjamanRequest $request): RedirectResponse
     {
-        //
+        try {
+            $this->pinjamanService->create($request->validated());
+        } catch (QueryException|\RuntimeException $exception) {
+            return redirect()
+                ->route('pinjaman.index')
+                ->with('error', $exception->getMessage());
+        }
+
+        return redirect()
+            ->route('pinjaman.index')
+            ->with('success', 'Pinjaman berhasil ditambahkan dan jadwal angsuran telah dibuat.');
     }
 
     /**
-     * Display the specified resource.
+     * Detail pinjaman + jadwal angsuran.
      */
-    public function show(Pinjaman $pinjaman)
+    public function show(Pinjaman $pinjaman): Response
     {
-        //
+        return Inertia::render('Pinjaman/Show', $this->pinjamanService->getDetailData($pinjaman));
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Bayar angsuran.
      */
-    public function edit(Pinjaman $pinjaman)
+    public function bayarAngsuran(BayarAngsuranRequest $request, Pinjaman $pinjaman): RedirectResponse
     {
-        //
+        try {
+            $this->pinjamanService->bayarAngsuran($pinjaman, $request->validated());
+        } catch (QueryException|\RuntimeException $exception) {
+            return redirect()
+                ->route('pinjaman.show', $pinjaman)
+                ->with('error', $exception->getMessage());
+        }
+
+        return redirect()
+            ->route('pinjaman.show', $pinjaman)
+            ->with('success', 'Pembayaran angsuran berhasil dicatat.');
     }
 
     /**
-     * Update the specified resource in storage.
+     * Hapus pinjaman (hanya jika belum ada pembayaran).
      */
-    public function update(Request $request, Pinjaman $pinjaman)
+    public function destroy(Pinjaman $pinjaman): RedirectResponse
     {
-        //
-    }
+        try {
+            $this->pinjamanService->delete($pinjaman);
+        } catch (QueryException|\RuntimeException $exception) {
+            return redirect()
+                ->route('pinjaman.index')
+                ->with('error', $exception->getMessage());
+        }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Pinjaman $pinjaman)
-    {
-        //
+        return redirect()
+            ->route('pinjaman.index')
+            ->with('success', 'Pinjaman berhasil dihapus.');
     }
 }
