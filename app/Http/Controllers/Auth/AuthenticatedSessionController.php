@@ -27,6 +27,13 @@ class AuthenticatedSessionController extends Controller
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
             'remember' => ['nullable', 'boolean'],
+        ], [
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'password.required' => 'Password wajib diisi.',
+        ], [
+            'email' => 'email',
+            'password' => 'password',
         ]);
 
         if (! Auth::attempt([
@@ -38,12 +45,12 @@ class AuthenticatedSessionController extends Controller
 
             if ($inactiveUser !== null && ! $inactiveUser->is_active) {
                 throw ValidationException::withMessages([
-                    'email' => 'Akun Anda nonaktif. Hubungi administrator.',
+                    'auth' => 'Akun Anda nonaktif. Hubungi administrator.',
                 ]);
             }
 
             throw ValidationException::withMessages([
-                'email' => 'Email atau password tidak valid.',
+                'auth' => 'Email atau password tidak valid.',
             ]);
         }
 
