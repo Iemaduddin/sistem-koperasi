@@ -6,6 +6,7 @@ use App\Http\Controllers\AnggotaController;
 use App\Http\Controllers\JenisSimpananController;
 use App\Http\Controllers\RekeningKoperasiController;
 use App\Http\Controllers\SimpananController;
+use App\Http\Controllers\PinjamanController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/login')->name('home');
@@ -48,5 +49,11 @@ Route::middleware(['auth', 'active.user'])->group(function (): void {
 		Route::resource('/simpanan', SimpananController::class)
 			->parameters(['simpanan' => 'simpanan'])
 			->except(['show', 'create', 'edit', 'update', 'destroy']);
+		// Pinjaman management
+		Route::post('/pinjaman/{pinjaman}/bayar', [PinjamanController::class, 'bayarAngsuran'])
+			->name('pinjaman.bayar');
+		Route::resource('/pinjaman', PinjamanController::class)
+			->parameters(['pinjaman' => 'pinjaman'])
+			->except(['create', 'edit', 'update']);
 	});
 });
