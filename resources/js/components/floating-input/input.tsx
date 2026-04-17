@@ -7,6 +7,7 @@ import {
     type ChangeEvent,
     type InputHTMLAttributes,
 } from 'react';
+import { LuEye, LuEyeOff } from 'react-icons/lu';
 
 type FloatingInputType =
     | InputHTMLAttributes<HTMLInputElement>['type']
@@ -72,7 +73,9 @@ const FloatingInput = forwardRef<HTMLInputElement, FloatingInputProps>(
         const generatedId = useId();
         const resolvedId = id ?? generatedId;
         const isCurrency = type === 'currency' || type === 'rupiah';
+        const isPasswordType = type === 'password';
         const isControlled = value !== undefined;
+        const [showPassword, setShowPassword] = useState(false);
 
         const [internalValue, setInternalValue] = useState(() => {
             if (defaultValue === undefined || defaultValue === null) return '';
@@ -85,7 +88,11 @@ const FloatingInput = forwardRef<HTMLInputElement, FloatingInputProps>(
             : sourceValue;
 
         const inputType: InputHTMLAttributes<HTMLInputElement>['type'] =
-            isCurrency ? 'text' : type;
+            isCurrency
+                ? 'text'
+                : isPasswordType && showPassword
+                  ? 'text'
+                  : type;
 
         const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
             if (!isCurrency) {
@@ -129,11 +136,32 @@ const FloatingInput = forwardRef<HTMLInputElement, FloatingInputProps>(
                             'border-blue-200 focus:border-blue-500',
                             'placeholder:text-transparent focus:placeholder:text-slate-400',
                             'disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500',
+                            isPasswordType && 'pr-10',
                             errorText && 'border-red-400 focus:border-red-500',
                             className,
                         )}
                         {...props}
                     />
+                    {isPasswordType && (
+                        <button
+                            type="button"
+                            tabIndex={-1}
+                            disabled={disabled}
+                            onClick={() => setShowPassword((prev) => !prev)}
+                            className="absolute top-1/2 right-3 -translate-y-1/2 text-slate-500 transition hover:text-slate-700 disabled:cursor-not-allowed disabled:text-slate-400"
+                            aria-label={
+                                showPassword
+                                    ? 'Sembunyikan password'
+                                    : 'Tampilkan password'
+                            }
+                        >
+                            {showPassword ? (
+                                <LuEyeOff className="h-4 w-4" />
+                            ) : (
+                                <LuEye className="h-4 w-4" />
+                            )}
+                        </button>
+                    )}
                     <label
                         htmlFor={resolvedId}
                         className={cn(

@@ -55,7 +55,7 @@ export default function UserFormCard({
             </h3>
             <form
                 onSubmit={onSubmit}
-                className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-4"
+                className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-5"
             >
                 <FloatingInput
                     label="Nama"
@@ -64,6 +64,7 @@ export default function UserFormCard({
                         onChangeField('name', event.target.value)
                     }
                     errorText={errors.name}
+                    required
                 />
                 <FloatingInput
                     label="Email"
@@ -73,6 +74,7 @@ export default function UserFormCard({
                         onChangeField('email', event.target.value)
                     }
                     errorText={errors.email}
+                    required
                 />
                 <FloatingSelect
                     label="Status Akun"
@@ -83,6 +85,7 @@ export default function UserFormCard({
                     ]}
                     onValueChange={(value) => onChangeField('is_active', value)}
                     searchable={false}
+                    required
                 />
                 <FloatingInput
                     label={
@@ -94,6 +97,7 @@ export default function UserFormCard({
                         onChangeField('password', event.target.value)
                     }
                     errorText={errors.password}
+                    required
                 />
                 <FloatingInput
                     label="Konfirmasi Password"
@@ -106,6 +110,7 @@ export default function UserFormCard({
                         )
                     }
                     errorText={errors.password_confirmation}
+                    required
                 />
 
                 <div className="flex gap-2 md:col-span-2 lg:col-span-4">

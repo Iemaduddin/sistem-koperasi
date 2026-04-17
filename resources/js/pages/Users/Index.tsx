@@ -1,7 +1,7 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import type { FormEvent, ReactElement } from 'react';
 import { useMemo, useState } from 'react';
-import { LuTrash } from 'react-icons/lu';
+import { LuLock } from 'react-icons/lu';
 import { toast } from 'react-toastify';
 import DashboardLayout from '@/layouts/Dashboard/DasboardLayout';
 import ConfirmDialog from '@/components/confirm-dialog';
@@ -32,7 +32,7 @@ export default function UsersIndex() {
     const users = pageProps.users ?? [];
 
     const [editingUserId, setEditingUserId] = useState<number | null>(null);
-    const [deleteTarget, setDeleteTarget] = useState<UserRow | null>(null);
+    const [blockTarget, setBlockTarget] = useState<UserRow | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const createForm = useForm<UserForm>(initialUserForm);
@@ -148,8 +148,13 @@ export default function UsersIndex() {
         return authUserId === user.id;
     };
 
-    const removeUser = (id: number, name: string) => {
-        setDeleteTarget(
+    const blockUser = (id: number, name: string, isActive: boolean) => {
+        if (isActive && id === authUserId) {
+            toast.error('Anda tidak dapat memblokir diri sendiri.');
+            return;
+        }
+
+        setBlockTarget(
             users.find((user) => user.id === id) ?? {
                 id,
                 name,
@@ -162,21 +167,29 @@ export default function UsersIndex() {
         );
     };
 
-    const confirmDelete = () => {
-        if (!deleteTarget) {
+    const confirmBlock = () => {
+        if (!blockTarget) {
             return;
         }
 
-        router.delete(`/users/${deleteTarget.id}`, {
-            preserveScroll: true,
-            onFinish: () => {
-                setDeleteTarget(null);
+        const endpoint = blockTarget.is_active
+            ? `/users/${blockTarget.id}/block`
+            : `/users/${blockTarget.id}/unblock`;
+
+        router.put(
+            endpoint,
+            {},
+            {
+                preserveScroll: true,
+                onFinish: () => {
+                    setBlockTarget(null);
+                },
             },
-        });
+        );
     };
 
-    const cancelDelete = () => {
-        setDeleteTarget(null);
+    const cancelBlock = () => {
+        setBlockTarget(null);
     };
 
     return (
@@ -215,24 +228,30 @@ export default function UsersIndex() {
                     users={users}
                     canEditUser={canEditUser}
                     onStartEdit={startEdit}
-                    onRemoveUser={removeUser}
+                    onBlockUser={blockUser}
                 />
             </section>
 
             <ConfirmDialog
-                open={deleteTarget !== null}
-                title="Hapus User"
+                open={blockTarget !== null}
+                title={
+                    blockTarget?.is_active
+                        ? 'Blokir User'
+                        : 'Aktifkan kembali User'
+                }
                 description={
-                    deleteTarget
-                        ? `Apakah Anda yakin ingin menghapus user ${deleteTarget.name}? Tindakan ini tidak dapat dibatalkan.`
+                    blockTarget
+                        ? blockTarget.is_active
+                            ? `Apakah Anda yakin ingin memblokir user ${blockTarget.name}? User ini tidak akan dapat login dan mengakses sistem.`
+                            : `Apakah Anda yakin ingin membuka blokir user ${blockTarget.name}? User ini akan dapat login dan mengakses sistem kembali.`
                         : ''
                 }
-                tone="danger"
-                icon={<LuTrash className="h-7 w-7" />}
-                confirmText="Hapus"
+                tone={blockTarget?.is_active ? 'danger' : 'success'}
+                icon={<LuLock className="h-7 w-7" />}
+                confirmText={blockTarget?.is_active ? 'Blokir' : 'Aktifkan'}
                 isLoading={false}
-                onConfirm={confirmDelete}
-                onCancel={cancelDelete}
+                onConfirm={confirmBlock}
+                onCancel={cancelBlock}
             />
         </>
     );

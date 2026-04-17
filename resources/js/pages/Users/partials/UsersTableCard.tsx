@@ -6,14 +6,14 @@ import type { UserRow } from '../types';
 type Props = {
     users: UserRow[];
     onStartEdit: (user: UserRow) => void;
-    onRemoveUser: (id: number, name: string) => void;
+    onBlockUser: (id: number, name: string, isActive: boolean) => void;
     canEditUser: (user: UserRow) => boolean;
 };
 
 export default function UsersTableCard({
     users,
     onStartEdit,
-    onRemoveUser,
+    onBlockUser,
     canEditUser,
 }: Props) {
     const columns = useMemo<DataTableColumn<UserRow>[]>(
@@ -88,12 +88,18 @@ export default function UsersTableCard({
                                 </Button>
                                 <Button
                                     size="sm"
-                                    variant="danger"
+                                    variant={
+                                        user.is_active ? 'danger' : 'success'
+                                    }
                                     onClick={() =>
-                                        onRemoveUser(user.id, user.name)
+                                        onBlockUser(
+                                            user.id,
+                                            user.name,
+                                            user.is_active,
+                                        )
                                     }
                                 >
-                                    Hapus
+                                    {user.is_active ? 'Blokir' : 'Aktifkan'}
                                 </Button>
                             </>
                         )}
@@ -101,7 +107,7 @@ export default function UsersTableCard({
                 ),
             },
         ],
-        [canEditUser, onRemoveUser, onStartEdit],
+        [canEditUser, onBlockUser, onStartEdit],
     );
 
     return (

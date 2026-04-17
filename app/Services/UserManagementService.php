@@ -81,4 +81,14 @@ class UserManagementService
             $user->delete();
         });
     }
+
+    public function blockUser(User $user): void
+    {
+        $user->update(['is_active' => false]);
+    }
+
+    public function unblockUser(User $user): void
+    {
+        $user->update(['is_active' => true]);
+    }
 }

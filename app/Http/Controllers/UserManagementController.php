@@ -80,4 +80,40 @@ class UserManagementController extends Controller
             ->route('users.index')
             ->with('success', 'User berhasil dihapus.');
     }
+
+    public function block(Request $request, User $user): RedirectResponse
+    {
+        if ($request->user()?->is($user)) {
+            return redirect()
+                ->route('users.index')
+                ->with('error', 'Anda tidak dapat memblokir akun sendiri.');
+        }
+
+        if ($user->hasRole('Master Admin') || $user->hasRole('Super Admin')) {
+            return redirect()
+                ->route('users.index')
+                ->with('error', 'Master Admin dan Super Admin tidak dapat diblokir.');
+        }
+
+        $this->userManagementService->blockUser($user);
+
+        return redirect()
+            ->route('users.index')
+            ->with('success', 'User berhasil diblokir.');
+    }
+
+    public function unblock(User $user): RedirectResponse
+    {
+        if ($user->hasRole('Master Admin') || $user->hasRole('Super Admin')) {
+            return redirect()
+                ->route('users.index')
+                ->with('error', 'Master Admin dan Super Admin tidak dapat diubah status blokirnya.');
+        }
+
+        $this->userManagementService->unblockUser($user);
+
+        return redirect()
+            ->route('users.index')
+            ->with('success', 'User berhasil dibuka blokirnya.');
+    }
 }
