@@ -23,6 +23,7 @@ export type AnggotaRow = {
 };
 
 export type AnggotaForm = {
+    no_anggota: string;
     nik: string;
     nama: string;
     alamat: string;
@@ -51,6 +52,7 @@ export type AnggotaPageProps = {
 };
 
 export const initialAnggotaForm: AnggotaForm = {
+    no_anggota: '',
     nik: '',
     nama: '',
     alamat: '',

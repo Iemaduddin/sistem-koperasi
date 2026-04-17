@@ -1,6 +1,6 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import type { FormEvent, ReactElement } from 'react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { LuTrash } from 'react-icons/lu';
 import { toast } from 'react-toastify';
 import ConfirmDialog from '@/components/confirm-dialog';
@@ -19,6 +19,46 @@ import {
 } from './validation';
 import AnggotaFormCard from './partials/AnggotaFormCard';
 import AnggotaTableCard from './partials/AnggotaTableCard';
+
+function getNoAnggotaPrefix(tanggalBergabung: string): string {
+    const date = new Date(tanggalBergabung);
+
+    if (Number.isNaN(date.getTime())) {
+        return '';
+    }
+
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = String(date.getFullYear()).slice(-2);
+
+    return `${month}${year}`;
+}
+
+function buildSuggestedNoAnggota(
+    tanggalBergabung: string,
+    anggota: AnggotaRow[],
+): string {
+    const prefix = getNoAnggotaPrefix(tanggalBergabung);
+
+    if (prefix === '') {
+        return '';
+    }
+
+    const maxSequence = anggota.reduce((max, item) => {
+        if (!item.no_anggota.startsWith(prefix)) {
+            return max;
+        }
+
+        const sequence = Number.parseInt(item.no_anggota.slice(4), 10);
+
+        if (Number.isNaN(sequence)) {
+            return max;
+        }
+
+        return Math.max(max, sequence);
+    }, 0);
+
+    return `${prefix}${String(maxSequence + 1).padStart(2, '0')}`;
+}
 
 export default function AnggotaIndex() {
     const { props } = usePage<{ props: AnggotaPageProps }>();
@@ -62,11 +102,40 @@ export default function AnggotaIndex() {
 
     const createForm = useForm<AnggotaForm>(initialAnggotaForm);
     const updateForm = useForm<AnggotaForm>(initialAnggotaForm);
+    const lastSuggestedNoAnggotaRef = useRef('');
 
     const editingAnggota = useMemo(
         () => anggota.find((item) => item.id === editingAnggotaId) ?? null,
         [anggota, editingAnggotaId],
     );
+
+    const suggestedNoAnggota = useMemo(
+        () =>
+            buildSuggestedNoAnggota(createForm.data.tanggal_bergabung, anggota),
+        [createForm.data.tanggal_bergabung, anggota],
+    );
+
+    useEffect(() => {
+        if (editingAnggotaId !== null || suggestedNoAnggota === '') {
+            return;
+        }
+
+        const currentNoAnggota = createForm.data.no_anggota.trim();
+        const shouldApplySuggestion =
+            currentNoAnggota === '' ||
+            currentNoAnggota === lastSuggestedNoAnggotaRef.current;
+
+        if (shouldApplySuggestion && currentNoAnggota !== suggestedNoAnggota) {
+            createForm.setData('no_anggota', suggestedNoAnggota);
+        }
+
+        lastSuggestedNoAnggotaRef.current = suggestedNoAnggota;
+    }, [
+        createForm,
+        createForm.data.no_anggota,
+        editingAnggotaId,
+        suggestedNoAnggota,
+    ]);
 
     const submitCreate = () => {
         const payload = buildPayload(createForm.data);
@@ -153,6 +222,7 @@ export default function AnggotaIndex() {
     const startEdit = (item: AnggotaRow) => {
         setEditingAnggotaId(item.id);
         updateForm.setData({
+            no_anggota: item.no_anggota,
             nik: item.nik,
             nama: item.nama,
             alamat: item.alamat,

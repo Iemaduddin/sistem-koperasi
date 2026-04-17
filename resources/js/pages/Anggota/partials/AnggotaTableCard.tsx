@@ -63,6 +63,17 @@ export default function AnggotaTableCard({
                 accessor: 'nama',
                 sortable: true,
                 searchable: true,
+                render: (row) => (
+                    <div>
+                        <span className="font-medium text-slate-900">
+                            {row.nama}
+                        </span>
+                        <br />
+                        <span className="text-xs text-slate-500">
+                            {row.alamat}
+                        </span>
+                    </div>
+                ),
             },
             {
                 id: 'no_hp',

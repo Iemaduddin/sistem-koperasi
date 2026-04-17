@@ -12,6 +12,12 @@ const optionalTrimmedString = z.preprocess(
 
 const anggotaSchema = z
     .object({
+        no_anggota: z
+            .string()
+            .trim()
+            .min(6, 'No. Anggota minimal 6 karakter')
+            .max(255, 'No. Anggota maksimal 255 karakter')
+            .regex(/^[0-9]+$/, 'No. Anggota hanya boleh berisi angka'),
         nik: z
             .string()
             .trim()
@@ -80,6 +86,7 @@ export const updateAnggotaSchema = anggotaSchema;
 
 export const buildPayload = (data: AnggotaForm): AnggotaForm => ({
     ...data,
+    no_anggota: data.no_anggota.trim(),
     nik: data.nik.trim(),
     nama: data.nama.trim(),
     alamat: data.alamat.trim(),

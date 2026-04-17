@@ -146,19 +146,25 @@ class AnggotaService
     public function createAnggota(array $payload): Anggota
     {
         return DB::transaction(function () use ($payload): Anggota {
-            $joinDate = isset($payload['tanggal_bergabung'])
-                ? Carbon::parse((string) $payload['tanggal_bergabung'])
-                : now();
+            $providedNoAnggota = trim((string) ($payload['no_anggota'] ?? ''));
 
-            $prefix = $joinDate->format('my');
-            $nextSequence = $this->getNextNoAnggotaSequence($prefix);
+            if ($providedNoAnggota === '') {
+                $joinDate = isset($payload['tanggal_bergabung'])
+                    ? Carbon::parse((string) $payload['tanggal_bergabung'])
+                    : now();
 
-            $payload['no_anggota'] = $prefix.str_pad(
-                (string) $nextSequence,
-                2,
-                '0',
-                STR_PAD_LEFT,
-            );
+                $prefix = $joinDate->format('my');
+                $nextSequence = $this->getNextNoAnggotaSequence($prefix);
+
+                $payload['no_anggota'] = $prefix.str_pad(
+                    (string) $nextSequence,
+                    2,
+                    '0',
+                    STR_PAD_LEFT,
+                );
+            } else {
+                $payload['no_anggota'] = $providedNoAnggota;
+            }
 
             /** @var Anggota $anggota */
             $anggota = Anggota::query()->create($payload);

@@ -6,6 +6,7 @@ import FloatingTextarea from '@/components/floating-input/textarea';
 import type { AnggotaForm, AnggotaRow, AnggotaStatus } from '../types';
 
 type InputField =
+    | 'no_anggota'
     | 'nik'
     | 'nama'
     | 'alamat'
@@ -70,101 +71,105 @@ export default function AnggotaFormCard({
             </h3>
 
             <form onSubmit={onSubmit} className="mt-4">
-                <div className="grid h-full grid-cols-1 gap-3 md:grid-cols-2">
-                    <div className="grid h-full grid-cols-1 items-center gap-4 md:grid-cols-2">
-                        <FloatingInput
-                            label="NIK"
-                            value={formData.nik}
-                            type="number"
-                            min={0}
-                            onChange={(event) =>
-                                onChangeField('nik', event.target.value)
-                            }
-                            errorText={errors.nik}
-                            required
-                        />
-                        <FloatingInput
-                            label="Nama"
-                            value={formData.nama}
-                            onChange={(event) =>
-                                onChangeField('nama', event.target.value)
-                            }
-                            errorText={errors.nama}
-                            required
-                        />
-                        <FloatingInput
-                            label="No. HP"
-                            value={formData.no_hp}
-                            type="text"
-                            inputMode="numeric"
-                            pattern="[0-9]*"
-                            maxLength={15}
-                            onChange={(event) =>
-                                onChangeField(
-                                    'no_hp',
-                                    digitsOnly(event.target.value),
-                                )
-                            }
-                            errorText={errors.no_hp}
-                            required
-                        />
-                        <FloatingInput
-                            label="No. HP Cadangan"
-                            type="text"
-                            inputMode="numeric"
-                            pattern="[0-9]*"
-                            maxLength={15}
-                            value={formData.no_hp_cadangan}
-                            onChange={(event) =>
-                                onChangeField(
-                                    'no_hp_cadangan',
-                                    digitsOnly(event.target.value),
-                                )
-                            }
-                            errorText={errors.no_hp_cadangan}
-                        />
+                <div className="grid h-full grid-cols-1 items-center gap-4 md:grid-cols-2">
+                    <FloatingInput
+                        label="No. Anggota"
+                        value={formData.no_anggota}
+                        onChange={(event) =>
+                            onChangeField('no_anggota', event.target.value)
+                        }
+                        errorText={errors.no_anggota}
+                        required
+                    />
+                    <FloatingInput
+                        label="NIK"
+                        value={formData.nik}
+                        type="number"
+                        min={0}
+                        onChange={(event) =>
+                            onChangeField('nik', event.target.value)
+                        }
+                        errorText={errors.nik}
+                        required
+                    />
+                    <FloatingInput
+                        label="Nama"
+                        value={formData.nama}
+                        onChange={(event) =>
+                            onChangeField('nama', event.target.value)
+                        }
+                        errorText={errors.nama}
+                        required
+                    />
 
-                        <FloatingSelect
-                            label="Status"
-                            value={formData.status}
-                            options={statusOptions.map((status) => ({
-                                value: status,
-                                label: statusLabelMap[status],
-                            }))}
-                            onValueChange={(value) =>
-                                onChangeField('status', value)
-                            }
-                            errorText={errors.status}
-                            searchable={false}
-                            required
-                        />
-                        <FloatingInput
-                            type="date"
-                            label="Tanggal Bergabung"
-                            value={formData.tanggal_bergabung}
-                            onChange={(event) =>
-                                onChangeField(
-                                    'tanggal_bergabung',
-                                    event.target.value,
-                                )
-                            }
-                            required
-                            errorText={errors.tanggal_bergabung}
-                        />
-                    </div>
+                    <FloatingInput
+                        label="No. HP"
+                        value={formData.no_hp}
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={15}
+                        onChange={(event) =>
+                            onChangeField(
+                                'no_hp',
+                                digitsOnly(event.target.value),
+                            )
+                        }
+                        errorText={errors.no_hp}
+                        required
+                    />
+                    <FloatingInput
+                        label="No. HP Cadangan"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={15}
+                        value={formData.no_hp_cadangan}
+                        onChange={(event) =>
+                            onChangeField(
+                                'no_hp_cadangan',
+                                digitsOnly(event.target.value),
+                            )
+                        }
+                        errorText={errors.no_hp_cadangan}
+                    />
 
-                    <div className="h-full">
-                        <FloatingTextarea
-                            label="Alamat"
-                            value={formData.alamat}
-                            onChange={(event) =>
-                                onChangeField('alamat', event.target.value)
-                            }
-                            errorText={errors.alamat}
-                            rows={7}
-                            required
-                        />
-                    </div>
+                    <FloatingSelect
+                        label="Status"
+                        value={formData.status}
+                        options={statusOptions.map((status) => ({
+                            value: status,
+                            label: statusLabelMap[status],
+                        }))}
+                        onValueChange={(value) =>
+                            onChangeField('status', value)
+                        }
+                        errorText={errors.status}
+                        searchable={false}
+                        required
+                    />
+                    <FloatingInput
+                        type="date"
+                        label="Tanggal Bergabung"
+                        value={formData.tanggal_bergabung}
+                        onChange={(event) =>
+                            onChangeField(
+                                'tanggal_bergabung',
+                                event.target.value,
+                            )
+                        }
+                        required
+                        errorText={errors.tanggal_bergabung}
+                    />
+                    <FloatingInput
+                        label="Alamat"
+                        value={formData.alamat}
+                        onChange={(event) =>
+                            onChangeField('alamat', event.target.value)
+                        }
+                        errorText={errors.alamat}
+                        required
+                    />
                 </div>
 
                 <div className="mt-4 flex gap-2 md:col-span-2 lg:col-span-4">
