@@ -183,14 +183,11 @@ class PinjamanService
         Carbon $tanggalMulai,
         int $tenorBulan,
     ): void {
-        $angsuranData = [];
-
         for ($i = 1; $i <= $tenorBulan; $i++) {
             $jatuhTempo     = $tanggalMulai->copy()->addMonths($i);
             $totalTagihan   = round($pokokPerBulan + $bungaPerBulan, 2);
 
-            $angsuranData[] = [
-                'id'                => (string) \Illuminate\Support\Str::uuid(),
+            AngsuranPinjaman::query()->create([
                 'pinjaman_id'       => $pinjaman->id,
                 'angsuran_ke'       => $i,
                 'tanggal_jatuh_tempo' => $jatuhTempo->toDateString(),
@@ -202,10 +199,8 @@ class PinjamanService
                 'status'            => 'belum_bayar',
                 'created_at'        => now(),
                 'updated_at'        => now(),
-            ];
+            ]);
         }
-
-        AngsuranPinjaman::query()->insert($angsuranData);
     }
 
     private function updateStatusPinjamanJikaLunas(Pinjaman $pinjaman): void

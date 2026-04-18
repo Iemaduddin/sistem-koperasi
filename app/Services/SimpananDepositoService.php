@@ -75,19 +75,16 @@ class SimpananDepositoService
                 'created_at' => $timestamp,
             ]);
 
-            $logs = [];
             for ($bulan = 1; $bulan <= $tenorBulan; $bulan++) {
-                $logs[] = [
+                LogBagiHasilDeposito::query()->create([
                     'simpanan_deposito_id' => $deposito->id,
                     'nominal_bagi_hasil' => $nominalBagiHasilBulanan,
                     'tanggal_perhitungan' => $tanggalMulai->copy()->addMonthsNoOverflow($bulan),
                     'status_pengambilan' => 'belum',
                     'created_at' => $timestamp,
                     'updated_at' => $timestamp,
-                ];
+                ]);
             }
-
-            LogBagiHasilDeposito::query()->insert($logs);
 
             $rekeningKoperasi->saldo = round((float) $rekeningKoperasi->saldo + $saldo, 2);
             $rekeningKoperasi->save();

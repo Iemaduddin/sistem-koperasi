@@ -8,6 +8,7 @@ use App\Http\Controllers\RekeningKoperasiController;
 use App\Http\Controllers\SimpananDepositoController;
 use App\Http\Controllers\SimpananController;
 use App\Http\Controllers\PinjamanController;
+use App\Http\Controllers\AuditController;
 use App\Http\Controllers\GuestPortalController;
 use Illuminate\Support\Facades\Route;
 
@@ -34,6 +35,9 @@ Route::middleware('guest')->group(function (): void {
 Route::middleware(['auth', 'active.user'])->group(function (): void {
 	Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
 		->name('logout');
+
+	Route::get('/audit', [AuditController::class, 'index'])
+		->name('audit.index');
 
 	Route::inertia('/dashboard', 'Dashboard/Dashboard')->name('dashboard');
 

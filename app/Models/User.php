@@ -9,12 +9,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use OwenIt\Auditing\Auditable;
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable
+class User extends Authenticatable implements AuditableContract
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, HasUuids, Notifiable, HasRoles;
+    use HasFactory, HasUuids, Notifiable, HasRoles, Auditable;
 
     protected $keyType = 'string';
 
@@ -38,6 +40,14 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    /**
+     * @var list<string>
+     */
+    protected array $auditExclude = [
         'password',
         'remember_token',
     ];

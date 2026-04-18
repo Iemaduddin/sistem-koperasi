@@ -113,6 +113,7 @@ const isItemActive = (item: SidebarItem, pathname: string): boolean => {
 const routeNameToUrl: Record<string, () => string> = {
     dashboard: () => dashboard.url(),
     'users.index': () => usersIndex.url(),
+    'audit.index': () => '/audit',
     'anggota.index': () => '/anggota',
     'jenis-simpanan.index': () => '/jenis-simpanan',
     'rekening-koperasi.index': () => '/rekening-koperasi',
@@ -504,6 +505,12 @@ const menuSections: SidebarSection[] = [
         id: 'laporan',
         title: 'Analitik',
         items: [
+            {
+                id: 'audit',
+                label: 'Riwayat Audit',
+                routeName: 'audit.index',
+                icon: LuChartColumnIncreasing,
+            },
             {
                 id: 'laporan',
                 label: 'Laporan',

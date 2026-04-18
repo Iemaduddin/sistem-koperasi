@@ -55,7 +55,7 @@ export default function Modal({
                 role="dialog"
                 aria-modal="true"
                 className={cn(
-                    'relative z-10 w-full rounded-2xl bg-white p-6 shadow-xl',
+                    'relative z-10 flex max-h-[85vh] w-full flex-col overflow-hidden rounded-2xl bg-white p-6 shadow-xl',
                     maxWidthClassName,
                 )}
             >
@@ -69,7 +69,7 @@ export default function Modal({
                     <p className="mt-1 text-sm text-slate-600">{description}</p>
                 ) : null}
 
-                <div className="mt-4">{children}</div>
+                <div className="mt-4 overflow-y-auto">{children}</div>
 
                 {footer ? (
                     <div className="mt-5 flex justify-end gap-2">{footer}</div>
