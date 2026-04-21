@@ -13,6 +13,8 @@ import {
     formatTanggal,
     getLabelStatusAngsuran,
     getLabelStatusPinjaman,
+    hitungEstimasiDenda,
+    hitungHariTerlambat,
     hitungProgressPersen,
     isTerlambat,
 } from './utils';
@@ -35,27 +37,12 @@ export default function PinjamanShow() {
 
     const openBayarModal = (angsuran: AngsuranPinjaman) => {
         const sisaTagihan = Number(angsuran.total_tagihan) - Number(angsuran.jumlah_dibayar);
-        
-        let otomatisDenda = 0;
-        if (isTerlambat(angsuran)) {
-            const jatuhTempo = new Date(angsuran.tanggal_jatuh_tempo);
-            const sekarang = new Date();
-            jatuhTempo.setHours(0,0,0,0);
-            const today = new Date(sekarang);
-            today.setHours(0,0,0,0);
-            
-            const diffTime = today.getTime() - jatuhTempo.getTime();
-            if (diffTime > 0) {
-                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-                const totalPinjaman = Number(pinjaman.jumlah_pinjaman ?? 0);
-                otomatisDenda = Math.floor(totalPinjaman * 0.001 * diffDays);
-            }
-        }
+        const estimasiDenda = hitungEstimasiDenda(angsuran, pinjaman.jumlah_pinjaman);
 
         setBayarForm({
             angsuran_id: angsuran.id,
             jumlah_bayar: String(Math.max(0, sisaTagihan)),
-            denda_dibayar: String(otomatisDenda),
+            denda_dibayar: String(estimasiDenda),
             tanggal_bayar: new Date().toISOString().substring(0, 10),
         });
         setSelectedAngsuran(angsuran);
@@ -204,6 +191,8 @@ export default function PinjamanShow() {
                                 {angsuranList.map((angsuran) => {
                                     const terlambat = isTerlambat(angsuran);
                                     const isLunas = angsuran.status === 'lunas';
+                                    const hariTerlambat = terlambat && !isLunas ? hitungHariTerlambat(angsuran) : 0;
+                                    const estimasiDenda = terlambat && !isLunas ? hitungEstimasiDenda(angsuran, pinjaman.jumlah_pinjaman) : 0;
                                     const statusLabel = getLabelStatusAngsuran(angsuran.status);
                                     const badgeClass = isLunas
                                         ? 'bg-green-100 text-green-700'
@@ -222,10 +211,14 @@ export default function PinjamanShow() {
                                                 {angsuran.angsuran_ke}
                                             </td>
                                             <td className="px-4 py-3 text-neutral-600">
-                                                {formatTanggal(angsuran.tanggal_jatuh_tempo)}
-                                                {terlambat && !isLunas && (
-                                                    <span className="ml-1 text-xs text-red-500">(terlambat)</span>
-                                                )}
+                                                <div className="flex flex-col gap-0.5">
+                                                    <span>{formatTanggal(angsuran.tanggal_jatuh_tempo)}</span>
+                                                    {terlambat && !isLunas && (
+                                                        <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-600 w-fit">
+                                                            ⚠ Terlambat {hariTerlambat} hari
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </td>
                                             <td className="px-4 py-3 text-right text-neutral-700">
                                                 {formatRupiah(angsuran.pokok)}
@@ -233,8 +226,21 @@ export default function PinjamanShow() {
                                             <td className="px-4 py-3 text-right text-neutral-700">
                                                 {formatRupiah(angsuran.bunga)}
                                             </td>
-                                            <td className="px-4 py-3 text-right text-neutral-700">
-                                                {formatRupiah(angsuran.denda)}
+                                            <td className="px-4 py-3 text-right">
+                                                {terlambat && !isLunas ? (
+                                                    <div className="flex flex-col items-end gap-0.5">
+                                                        <span className="font-semibold text-red-600">
+                                                            {formatRupiah(estimasiDenda)}
+                                                        </span>
+                                                        {Number(angsuran.denda) === 0 && (
+                                                            <span className="text-xs text-red-400">estimasi</span>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-neutral-700">
+                                                        {formatRupiah(angsuran.denda)}
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="px-4 py-3 text-right font-medium text-neutral-800">
                                                 {formatRupiah(angsuran.total_tagihan)}
@@ -285,13 +291,12 @@ export default function PinjamanShow() {
                 </div>
             </section>
 
-            {/* ── Modal Bayar Angsuran ─────────────────────────────────────── */}
             <Modal
                 open={selectedAngsuran !== null}
                 title={`Bayar Angsuran ke-${selectedAngsuran?.angsuran_ke ?? ''}`}
                 description={
                     selectedAngsuran
-                        ? `Sisa tagihan: ${formatRupiah(Number(selectedAngsuran.total_tagihan) - Number(selectedAngsuran.jumlah_dibayar))}`
+                        ? `Sisa tagihan: ${formatRupiah(Number(selectedAngsuran.total_tagihan) - Number(selectedAngsuran.jumlah_dibayar))}${isTerlambat(selectedAngsuran) ? ` · Terlambat ${hitungHariTerlambat(selectedAngsuran)} hari` : ''}`
                         : undefined
                 }
                 onClose={closeBayarModal}
@@ -318,8 +323,17 @@ export default function PinjamanShow() {
                 }
             >
                 <div className="grid grid-cols-1 gap-4">
+                    {selectedAngsuran && isTerlambat(selectedAngsuran) && (
+                        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                            <p className="font-semibold">⚠ Angsuran Terlambat {hitungHariTerlambat(selectedAngsuran)} Hari</p>
+                            <p className="mt-0.5 text-red-600">
+                                Denda keterlambatan: <span className="font-semibold">{formatRupiah(hitungEstimasiDenda(selectedAngsuran, pinjaman.jumlah_pinjaman))}</span>
+                                {Number(selectedAngsuran.denda) === 0 && ' (estimasi, dihitung final oleh sistem)'}
+                            </p>
+                        </div>
+                    )}
                     <FloatingInput
-                        label="Jumlah Bayar"
+                        label="Jumlah Bayar (Pokok + Bunga)"
                         type="rupiah"
                         value={bayarForm.jumlah_bayar}
                         onCurrencyValueChange={(value) =>
@@ -331,7 +345,7 @@ export default function PinjamanShow() {
                         required
                     />
                     <FloatingInput
-                        label="Denda Dibayar (Opsional)"
+                        label="Denda Dibayar (dapat diubah)"
                         type="rupiah"
                         value={bayarForm.denda_dibayar}
                         onCurrencyValueChange={(value) =>

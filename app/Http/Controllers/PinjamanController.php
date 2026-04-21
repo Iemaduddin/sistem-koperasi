@@ -59,7 +59,9 @@ class PinjamanController extends Controller
     public function bayarAngsuran(BayarAngsuranRequest $request, Pinjaman $pinjaman): RedirectResponse
     {
         try {
-            $this->pinjamanService->bayarAngsuran($pinjaman, $request->validated());
+            $validated = $request->validated();
+            $validated['user_id'] = $request->user()?->id ?? '';
+            $this->pinjamanService->bayarAngsuran($pinjaman, $validated);
         } catch (QueryException|\RuntimeException $exception) {
             return redirect()
                 ->route('pinjaman.show', $pinjaman)

@@ -44,7 +44,32 @@ export function hitungSisaHutang(pinjaman: PinjamanRow): number {
 export function isTerlambat(angsuran: AngsuranPinjaman): boolean {
     if (angsuran.status === 'lunas') return false;
     const jatuhTempo = new Date(angsuran.tanggal_jatuh_tempo);
-    return jatuhTempo < new Date();
+    jatuhTempo.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today > jatuhTempo;
+}
+
+// ─── Hitung berapa hari keterlambatan ────────────────────────────────────────
+export function hitungHariTerlambat(angsuran: AngsuranPinjaman): number {
+    if (!isTerlambat(angsuran)) return 0;
+    const jatuhTempo = new Date(angsuran.tanggal_jatuh_tempo);
+    jatuhTempo.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return Math.floor((today.getTime() - jatuhTempo.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+// ─── Estimasi denda dari sisi frontend (0,1%/hari dari jumlah pokok PINJAMAN) ────
+// Konsisten dengan konstanta backend: DENDA_PERSEN_PER_HARI = 0.001
+// jumlahPinjaman = pinjaman.jumlah_pinjaman (bukan pokok per angsuran)
+export function hitungEstimasiDenda(angsuran: AngsuranPinjaman, jumlahPinjaman: number | string): number {
+    const dendaDB = Number(angsuran.denda ?? 0);
+    // Jika backend sudah pernah menghitung (denda > 0), pakai nilai DB
+    if (dendaDB > 0) return dendaDB;
+    const hari = hitungHariTerlambat(angsuran);
+    if (hari <= 0) return 0;
+    return Math.floor(Number(jumlahPinjaman ?? 0) * 0.001 * hari);
 }
 
 // ─── Hitung progress pembayaran (persen) ─────────────────────────────────────
