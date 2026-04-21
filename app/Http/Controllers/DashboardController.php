@@ -26,12 +26,23 @@ class DashboardController extends Controller
             'keluar' => Anggota::where('status', 'keluar')->count(),
         ];
 
-        // Total Simpanan
+        // Total Aset (Simpanan Anggota + Saldo Rekening Koperasi)
         $totalSimpananAll = (float) RekeningSimpanan::sum('saldo');
+        $totalRekeningKoperasiAll = (float) \App\Models\RekeningKoperasi::sum('saldo');
+        $totalAsetAll = $totalSimpananAll + $totalRekeningKoperasiAll;
+
         $totalSimpananBulanIni = (float) TransaksiSimpanan::where('jenis_transaksi', 'setor')
             ->whereYear('created_at', $now->year)
             ->whereMonth('created_at', $now->month)
             ->sum('jumlah');
+            
+        $totalKasMasukBulanIni = (float) \App\Models\TransaksiKasKoperasi::where('jenis', 'masuk')
+            ->whereYear('created_at', $now->year)
+            ->whereMonth('created_at', $now->month)
+            ->sum('jumlah');
+            
+        // Gunakan total kas masuk sebagai representasi aset masuk bulan ini jika lebih relevan
+        $totalAsetBulanIni = $totalKasMasukBulanIni; 
 
         // Pinjaman Aktif (Total anggota yang pinjam)
         $pinjamanAktifCount = Pinjaman::where('status', 'aktif')
@@ -111,8 +122,8 @@ class DashboardController extends Controller
             'stats' => [
                 'anggota' => $anggotaCounts,
                 'aset' => [ // Renamed from simpanan
-                    'all' => $totalSimpananAll,
-                    'bulan_ini' => $totalSimpananBulanIni,
+                    'all' => $totalAsetAll,
+                    'bulan_ini' => $totalAsetBulanIni,
                 ],
                 'pinjaman_aktif' => $pinjamanAktifCount,
                 'tagihan_jatuh_tempo' => [

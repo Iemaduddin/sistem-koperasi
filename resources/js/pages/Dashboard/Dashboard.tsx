@@ -97,7 +97,7 @@ export default function Dashboard({ stats, charts }: { stats: Stats, charts: Cha
                         {formatCurrency(stats.aset[asetFilter])}
                     </p>
                     <p className="mt-1 text-xs text-slate-500">
-                        {asetFilter === 'all' ? 'Saldo kumulatif' : 'Total simpanan masuk'}
+                        {asetFilter === 'all' ? 'Saldo kumulatif (Simpanan + Kas)' : 'Total dana masuk (Semua sumber)'}
                     </p>
                 </div>
 
