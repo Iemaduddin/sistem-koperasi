@@ -2,6 +2,9 @@ import { Head } from '@inertiajs/react';
 import { useState, type ReactElement } from 'react';
 import DashboardLayout from '@/layouts/Dashboard/DasboardLayout';
 
+import LoanChart from '@/Components/Dashboard/LoanChart';
+import CashChart from '@/Components/Dashboard/CashChart';
+
 interface Stats {
     anggota: {
         total: number;
@@ -21,7 +24,22 @@ interface Stats {
     saldo_keluar: number;
 }
 
-export default function Dashboard({ stats }: { stats: Stats }) {
+interface ChartData {
+    loans: {
+        month: string;
+        total: number;
+    }[];
+    cashflow: {
+        id: string;
+        color: string;
+        data: {
+            x: string;
+            y: number;
+        }[];
+    }[];
+}
+
+export default function Dashboard({ stats, charts }: { stats: Stats, charts: ChartData }) {
     const [anggotaFilter, setAnggotaFilter] = useState<keyof Stats['anggota']>('aktif');
     const [asetFilter, setAsetFilter] = useState<keyof Stats['aset']>('all');
     const [tagihanFilter, setTagihanFilter] = useState<keyof Stats['tagihan_jatuh_tempo']>('all');
@@ -120,6 +138,26 @@ export default function Dashboard({ stats }: { stats: Stats }) {
                     <p className="mt-1 text-xs text-slate-500">
                         {tagihanFilter === 'all' ? 'Total tagihan menunggak' : 'Jatuh tempo bulan ini'}
                     </p>
+                </div>
+            </section>
+
+            <section className="mt-6 grid gap-6 lg:grid-cols-2">
+                {/* Cash Flow Chart */}
+                <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div className="mb-4">
+                        <h3 className="text-lg font-semibold text-slate-900">Grafik Kas Bulanan</h3>
+                        <p className="text-sm text-slate-500">Perbandingan Kas Masuk vs Kas Keluar</p>
+                    </div>
+                    <CashChart data={charts.cashflow} />
+                </div>
+
+                {/* Loan Chart */}
+                <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div className="mb-4">
+                        <h3 className="text-lg font-semibold text-slate-900">Grafik Pinjaman</h3>
+                        <p className="text-sm text-slate-500">Total Pencairan Pinjaman per Bulan</p>
+                    </div>
+                    <LoanChart data={charts.loans} />
                 </div>
             </section>
 
