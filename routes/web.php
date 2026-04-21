@@ -39,12 +39,16 @@ Route::middleware(['auth', 'active.user'])->group(function (): void {
 	Route::get('/audit', [AuditController::class, 'index'])
 		->name('audit.index');
 
-	Route::inertia('/dashboard', 'Dashboard/Dashboard')->name('dashboard');
+	Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
 
 	Route::middleware(['role:Master Admin'])->group(function (): void {
 		// jenis simpanan
 		Route::resource('/jenis-simpanan', JenisSimpananController::class)
 			->parameters(['jenis-simpanan' => 'jenis_simpanan'])
+			->except(['show', 'create', 'edit']);
+
+		// roles management
+		Route::resource('/roles', \App\Http\Controllers\RoleController::class)
 			->except(['show', 'create', 'edit']);
 	});
 	Route::middleware(['role:Master Admin|Super Admin'])->group(function (): void {
@@ -90,6 +94,8 @@ Route::middleware(['auth', 'active.user'])->group(function (): void {
 		// Pinjaman management
 		Route::post('/pinjaman/{pinjaman}/bayar', [PinjamanController::class, 'bayarAngsuran'])
 			->name('pinjaman.bayar');
+		Route::post('/pinjaman/{pinjaman}/pelunasan', [PinjamanController::class, 'pelunasan'])
+			->name('pinjaman.pelunasan');
 		Route::resource('/pinjaman', PinjamanController::class)
 			->parameters(['pinjaman' => 'pinjaman'])
 			->except(['create', 'edit', 'update']);

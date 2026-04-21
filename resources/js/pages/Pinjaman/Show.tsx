@@ -17,6 +17,8 @@ import {
     formatTanggal,
     getLabelStatusAngsuran,
     getLabelStatusPinjaman,
+    hitungEstimasiDenda,
+    hitungHariTerlambat,
     hitungProgressPersen,
     isTerlambat,
 } from './utils';
@@ -27,6 +29,10 @@ export default function PinjamanShow() {
     const pinjaman = pageProps.pinjaman;
     const angsuranList = pinjaman.angsuran ?? [];
 
+    const lunasCount = angsuranList.filter((a) => a.status === 'lunas').length;
+    const canPelunasanAwal =
+        pinjaman.status !== 'lunas' && lunasCount >= angsuranList.length * 0.5;
+
     const [bayarForm, setBayarForm] = useState<BayarAngsuranForm>(
         initialBayarAngsuranForm(),
     );
@@ -34,13 +40,21 @@ export default function PinjamanShow() {
         useState<AngsuranPinjaman | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const [pelunasanConfirmOpen, setPelunasanConfirmOpen] = useState(false);
+    const [isPelunasanSubmitting, setIsPelunasanSubmitting] = useState(false);
+
     const openBayarModal = (angsuran: AngsuranPinjaman) => {
         const sisaTagihan =
             Number(angsuran.total_tagihan) - Number(angsuran.jumlah_dibayar);
+        const estimasiDenda = hitungEstimasiDenda(
+            angsuran,
+            pinjaman.jumlah_pinjaman,
+        );
+
         setBayarForm({
             angsuran_id: angsuran.id,
             jumlah_bayar: String(Math.max(0, sisaTagihan)),
-            denda_dibayar: '0',
+            denda_dibayar: String(estimasiDenda),
             tanggal_bayar: new Date().toISOString().substring(0, 10),
         });
         setSelectedAngsuran(angsuran);
@@ -64,8 +78,11 @@ export default function PinjamanShow() {
 
         router.post(`/pinjaman/${pinjaman.id}/bayar`, bayarForm, {
             preserveScroll: true,
-            onSuccess: () => {
-                closeBayarModal();
+            onSuccess: (page) => {
+                const flash = (page.props as any).flash;
+                if (!flash?.error) {
+                    closeBayarModal();
+                }
             },
             onError: (errors) => {
                 const firstError = Object.values(errors)[0];
@@ -79,6 +96,29 @@ export default function PinjamanShow() {
                 setIsSubmitting(false);
             },
         });
+    };
+
+    const handlePelunasan = () => {
+        setIsPelunasanSubmitting(true);
+        router.post(
+            `/pinjaman/${pinjaman.id}/pelunasan`,
+            { tanggal_pelunasan: new Date().toISOString().substring(0, 10) },
+            {
+                preserveScroll: true,
+                onSuccess: (page) => {
+                    const flash = (page.props as any).flash;
+                    if (!flash?.error) {
+                        setPelunasanConfirmOpen(false);
+                    }
+                },
+                onError: () => {
+                    toast.error('Gagal memproses pelunasan pinjaman.');
+                },
+                onFinish: () => {
+                    setIsPelunasanSubmitting(false);
+                },
+            },
+        );
     };
 
     const progressPersen = hitungProgressPersen(pinjaman);
@@ -150,6 +190,33 @@ export default function PinjamanShow() {
                     </div>
                 </div>
 
+                {/* ── Aksi Tambahan ─────────────────────────────────────────── */}
+                {canPelunasanAwal && (
+                    <div className="rounded-xl border border-green-200 bg-green-50 p-6 shadow-sm">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h3 className="font-semibold text-green-800">
+                                    Pelunasan Lebih Awal
+                                </h3>
+                                <p className="mt-1 text-sm text-green-700">
+                                    Angsuran sudah berjalan {lunasCount} dari{' '}
+                                    {angsuranList.length} bulan (≥ 50%). Anda
+                                    dapat melunasi seluruh sisa pinjaman
+                                    sekaligus dengan diskon bunga untuk{' '}
+                                    {Math.floor(angsuranList.length * 0.2)}{' '}
+                                    bulan angsuran terakhir.
+                                </p>
+                            </div>
+                            <Button
+                                variant="primary"
+                                onClick={() => setPelunasanConfirmOpen(true)}
+                            >
+                                Pelunasi Semua
+                            </Button>
+                        </div>
+                    </div>
+                )}
+
                 {/* ── Jadwal angsuran ───────────────────────────────────────── */}
                 <div className="rounded-xl border border-neutral-200 bg-white shadow-sm">
                     <div className="border-b border-neutral-100 px-6 py-4">
@@ -192,6 +259,17 @@ export default function PinjamanShow() {
                                 {angsuranList.map((angsuran) => {
                                     const terlambat = isTerlambat(angsuran);
                                     const isLunas = angsuran.status === 'lunas';
+                                    const hariTerlambat =
+                                        terlambat && !isLunas
+                                            ? hitungHariTerlambat(angsuran)
+                                            : 0;
+                                    const estimasiDenda =
+                                        terlambat && !isLunas
+                                            ? hitungEstimasiDenda(
+                                                  angsuran,
+                                                  pinjaman.jumlah_pinjaman,
+                                              )
+                                            : 0;
                                     const statusLabel = getLabelStatusAngsuran(
                                         angsuran.status,
                                     );
@@ -216,14 +294,19 @@ export default function PinjamanShow() {
                                                 {angsuran.angsuran_ke}
                                             </td>
                                             <td className="px-4 py-3 text-neutral-600">
-                                                {formatTanggal(
-                                                    angsuran.tanggal_jatuh_tempo,
-                                                )}
-                                                {terlambat && !isLunas && (
-                                                    <span className="ml-1 text-xs text-red-500">
-                                                        (terlambat)
+                                                <div className="flex flex-col gap-0.5">
+                                                    <span>
+                                                        {formatTanggal(
+                                                            angsuran.tanggal_jatuh_tempo,
+                                                        )}
                                                     </span>
-                                                )}
+                                                    {terlambat && !isLunas && (
+                                                        <span className="inline-flex w-fit items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-600">
+                                                            ⚠ Terlambat{' '}
+                                                            {hariTerlambat} hari
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </td>
                                             <td className="px-4 py-3 text-right text-neutral-700">
                                                 {formatRupiah(angsuran.pokok)}
@@ -231,8 +314,29 @@ export default function PinjamanShow() {
                                             <td className="px-4 py-3 text-right text-neutral-700">
                                                 {formatRupiah(angsuran.bunga)}
                                             </td>
-                                            <td className="px-4 py-3 text-right text-neutral-700">
-                                                {formatRupiah(angsuran.denda)}
+                                            <td className="px-4 py-3 text-right">
+                                                {terlambat && !isLunas ? (
+                                                    <div className="flex flex-col items-end gap-0.5">
+                                                        <span className="font-semibold text-red-600">
+                                                            {formatRupiah(
+                                                                estimasiDenda,
+                                                            )}
+                                                        </span>
+                                                        {Number(
+                                                            angsuran.denda,
+                                                        ) === 0 && (
+                                                            <span className="text-xs text-red-400">
+                                                                estimasi
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-neutral-700">
+                                                        {formatRupiah(
+                                                            angsuran.denda,
+                                                        )}
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="px-4 py-3 text-right font-medium text-neutral-800">
                                                 {formatRupiah(
@@ -293,13 +397,12 @@ export default function PinjamanShow() {
                 </div>
             </section>
 
-            {/* ── Modal Bayar Angsuran ─────────────────────────────────────── */}
             <Modal
                 open={selectedAngsuran !== null}
                 title={`Bayar Angsuran ke-${selectedAngsuran?.angsuran_ke ?? ''}`}
                 description={
                     selectedAngsuran
-                        ? `Sisa tagihan: ${formatRupiah(Number(selectedAngsuran.total_tagihan) - Number(selectedAngsuran.jumlah_dibayar))}`
+                        ? `Sisa tagihan: ${formatRupiah(Number(selectedAngsuran.total_tagihan) - Number(selectedAngsuran.jumlah_dibayar))}${isTerlambat(selectedAngsuran) ? ` · Terlambat ${hitungHariTerlambat(selectedAngsuran)} hari` : ''}`
                         : undefined
                 }
                 onClose={closeBayarModal}
@@ -326,8 +429,29 @@ export default function PinjamanShow() {
                 }
             >
                 <div className="grid grid-cols-1 gap-4">
+                    {selectedAngsuran && isTerlambat(selectedAngsuran) && (
+                        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                            <p className="font-semibold">
+                                ⚠ Angsuran Terlambat{' '}
+                                {hitungHariTerlambat(selectedAngsuran)} Hari
+                            </p>
+                            <p className="mt-0.5 text-red-600">
+                                Denda keterlambatan:{' '}
+                                <span className="font-semibold">
+                                    {formatRupiah(
+                                        hitungEstimasiDenda(
+                                            selectedAngsuran,
+                                            pinjaman.jumlah_pinjaman,
+                                        ),
+                                    )}
+                                </span>
+                                {Number(selectedAngsuran.denda) === 0 &&
+                                    ' (estimasi, dihitung final oleh sistem)'}
+                            </p>
+                        </div>
+                    )}
                     <FloatingInput
-                        label="Jumlah Bayar"
+                        label="Jumlah Bayar (Pokok + Bunga)"
                         type="rupiah"
                         value={bayarForm.jumlah_bayar}
                         onCurrencyValueChange={(value) =>
@@ -341,7 +465,7 @@ export default function PinjamanShow() {
                         required
                     />
                     <FloatingInput
-                        label="Denda Dibayar (Opsional)"
+                        label="Denda Dibayar (dapat diubah)"
                         type="rupiah"
                         value={bayarForm.denda_dibayar}
                         onCurrencyValueChange={(value) =>
@@ -367,6 +491,36 @@ export default function PinjamanShow() {
                     />
                 </div>
             </Modal>
+
+            {/* ── Modal Konfirmasi Pelunasan ─────────────────────────────────────── */}
+            <Modal
+                children={undefined}
+                open={pelunasanConfirmOpen}
+                title="Konfirmasi Pelunasan Pinjaman"
+                description="Anda akan melunasi seluruh sisa angsuran pinjaman ini. Sesuai ketentuan, beban bunga untuk persentase sisa bulan terakhir akan dibebaskan. Lanjutkan?"
+                onClose={() => setPelunasanConfirmOpen(false)}
+                footer={
+                    <>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setPelunasanConfirmOpen(false)}
+                            disabled={isPelunasanSubmitting}
+                        >
+                            Batal
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="primary"
+                            loading={isPelunasanSubmitting}
+                            disabled={isPelunasanSubmitting}
+                            onClick={handlePelunasan}
+                        >
+                            Ya, Pelunasi Semua
+                        </Button>
+                    </>
+                }
+            />
         </>
     );
 }

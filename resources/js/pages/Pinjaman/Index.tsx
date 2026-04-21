@@ -14,6 +14,7 @@ export default function PinjamanIndex() {
     const pageProps = props as unknown as PinjamanPageProps;
     const rows = pageProps.pinjaman ?? [];
     const anggotaData = pageProps.anggota ?? [];
+    const rekeningKoperasiData = pageProps.rekening_koperasi ?? [];
 
     const [formData, setFormData] = useState(initialPinjamanForm);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -105,6 +106,10 @@ export default function PinjamanIndex() {
                     anggotaOptions={anggotaData.map((a) => ({
                         value: a.id,
                         label: `${a.no_anggota} - ${a.nama} - ${a.alamat}`,
+                    }))}
+                    rekeningOptions={rekeningKoperasiData.map((r) => ({
+                        value: r.id,
+                        label: `${r.nama} - ${r.nomor_rekening || r.jenis}`,
                     }))}
                     isSubmitting={isSubmitting}
                     onChangeField={onChangeField}
