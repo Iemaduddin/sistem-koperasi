@@ -15,6 +15,7 @@ export default function PinjamanIndex() {
     const pageProps = props as unknown as PinjamanPageProps;
     const rows = pageProps.pinjaman ?? [];
     const anggotaData = pageProps.anggota ?? [];
+    const rekeningKoperasiData = pageProps.rekening_koperasi ?? [];
 
     const [formData, setFormData] = useState(initialPinjamanForm);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,6 +40,10 @@ export default function PinjamanIndex() {
             toast.error('Anggota wajib dipilih.');
             return;
         }
+        if (!formData.rekening_koperasi_id) {
+            toast.error('Rekening Koperasi wajib dipilih.');
+            return;
+        }
         if (!formData.jumlah_pinjaman || Number(formData.jumlah_pinjaman) <= 0) {
             toast.error('Jumlah pinjaman harus lebih dari 0.');
             return;
@@ -52,9 +57,12 @@ export default function PinjamanIndex() {
 
         router.post('/pinjaman', formData, {
             preserveScroll: true,
-            onSuccess: () => {
-                resetForm();
-                toast.success('Pinjaman berhasil ditambahkan.');
+            onSuccess: (page) => {
+                // Jangan reset form dan jangan anggap sukses jika backend ngirim balikan error (contoh: saldo tidak cukup)
+                const flash = (page.props as any).flash;
+                if (!flash?.error) {
+                    resetForm();
+                }
             },
             onError: (errors) => {
                 const firstError = Object.values(errors)[0];
@@ -73,9 +81,11 @@ export default function PinjamanIndex() {
 
         router.delete(`/pinjaman/${deleteTarget.id}`, {
             preserveScroll: true,
-            onSuccess: () => {
-                setDeleteTarget(null);
-                toast.success('Pinjaman berhasil dihapus.');
+            onSuccess: (page) => {
+                const flash = (page.props as any).flash;
+                if (!flash?.error) {
+                    setDeleteTarget(null);
+                }
             },
             onError: (errors) => {
                 const firstError = Object.values(errors)[0];
@@ -97,6 +107,10 @@ export default function PinjamanIndex() {
                     anggotaOptions={anggotaData.map((a) => ({
                         value: a.id,
                         label: `${a.no_anggota} - ${a.nama} - ${a.alamat}`,
+                    }))}
+                    rekeningOptions={rekeningKoperasiData.map((r) => ({
+                        value: r.id,
+                        label: `${r.nama} - ${r.nomor_rekening || r.jenis}`,
                     }))}
                     isSubmitting={isSubmitting}
                     onChangeField={onChangeField}

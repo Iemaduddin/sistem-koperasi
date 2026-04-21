@@ -88,6 +88,8 @@ Route::middleware(['auth', 'active.user'])->group(function (): void {
 		// Pinjaman management
 		Route::post('/pinjaman/{pinjaman}/bayar', [PinjamanController::class, 'bayarAngsuran'])
 			->name('pinjaman.bayar');
+		Route::post('/pinjaman/{pinjaman}/pelunasan', [PinjamanController::class, 'pelunasan'])
+			->name('pinjaman.pelunasan');
 		Route::resource('/pinjaman', PinjamanController::class)
 			->parameters(['pinjaman' => 'pinjaman'])
 			->except(['create', 'edit', 'update']);
