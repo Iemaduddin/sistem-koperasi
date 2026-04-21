@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import { toast } from 'react-toastify';
 import DashboardLayout from '@/layouts/Dashboard/DasboardLayout';
-import Button from '@/components/button';
 import ConfirmDialog from '@/components/confirm-dialog';
 import type { PinjamanPageProps, PinjamanRow } from './types';
 import { initialPinjamanForm } from './types';
@@ -39,7 +38,10 @@ export default function PinjamanIndex() {
             toast.error('Anggota wajib dipilih.');
             return;
         }
-        if (!formData.jumlah_pinjaman || Number(formData.jumlah_pinjaman) <= 0) {
+        if (
+            !formData.jumlah_pinjaman ||
+            Number(formData.jumlah_pinjaman) <= 0
+        ) {
             toast.error('Jumlah pinjaman harus lebih dari 0.');
             return;
         }
@@ -54,11 +56,14 @@ export default function PinjamanIndex() {
             preserveScroll: true,
             onSuccess: () => {
                 resetForm();
-                toast.success('Pinjaman berhasil ditambahkan.');
             },
             onError: (errors) => {
                 const firstError = Object.values(errors)[0];
-                toast.error(firstError ? String(firstError) : 'Terjadi kesalahan saat menambahkan pinjaman.');
+                toast.error(
+                    firstError
+                        ? String(firstError)
+                        : 'Terjadi kesalahan saat menambahkan pinjaman.',
+                );
             },
             onFinish: () => {
                 setIsSubmitting(false);
@@ -75,11 +80,14 @@ export default function PinjamanIndex() {
             preserveScroll: true,
             onSuccess: () => {
                 setDeleteTarget(null);
-                toast.success('Pinjaman berhasil dihapus.');
             },
             onError: (errors) => {
                 const firstError = Object.values(errors)[0];
-                toast.error(firstError ? String(firstError) : 'Gagal menghapus pinjaman.');
+                toast.error(
+                    firstError
+                        ? String(firstError)
+                        : 'Gagal menghapus pinjaman.',
+                );
             },
             onFinish: () => {
                 setIsDeleting(false);

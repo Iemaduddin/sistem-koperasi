@@ -18,6 +18,7 @@ import {
     LuCircleDot,
     LuLogOut,
     LuUserCog,
+    LuHistory,
 } from 'react-icons/lu';
 import {
     TbCashBanknoteMoveBack,
@@ -502,8 +503,8 @@ const menuSections: SidebarSection[] = [
         ],
     },
     {
-        id: 'laporan',
-        title: 'Analitik',
+        id: 'riwayat',
+        title: 'Riwayat',
         items: [
             {
                 id: 'audit',
@@ -512,10 +513,10 @@ const menuSections: SidebarSection[] = [
                 icon: LuChartColumnIncreasing,
             },
             {
-                id: 'laporan',
-                label: 'Laporan',
-                href: '/laporan',
-                icon: LuChartColumnIncreasing,
+                id: 'riwayat-transaksi',
+                label: 'Riwayat Transaksi',
+                routeName: 'riwayat-transaksi.index',
+                icon: LuHistory,
                 roles: ['Master Admin', 'Super Admin', 'Admin'],
             },
         ],

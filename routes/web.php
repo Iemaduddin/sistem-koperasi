@@ -58,6 +58,8 @@ Route::middleware(['auth', 'active.user'])->group(function (): void {
 		Route::resource('/rekening-koperasi', RekeningKoperasiController::class)
 			->parameters(['rekening-koperasi' => 'rekening_koperasi'])
 			->except(['show', 'create', 'edit', 'destroy']);
+	});
+	Route::middleware(['role:Master Admin|Super Admin|Admin'])->group(function (): void {
 		// set anggota koperasi keluar
 		Route::get('/anggota/{anggota}/set-keluar-info', [AnggotaController::class, 'getSetKeluarInfo'])
 			->name('anggota.set-keluar-info');
@@ -91,5 +93,9 @@ Route::middleware(['auth', 'active.user'])->group(function (): void {
 		Route::resource('/pinjaman', PinjamanController::class)
 			->parameters(['pinjaman' => 'pinjaman'])
 			->except(['create', 'edit', 'update']);
+		
+		Route::get('/riwayat-transaksi', function () {
+			return inertia('RiwayatTransaksi/Index');
+		})->name('riwayat-transaksi.index');
 	});
 });

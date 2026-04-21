@@ -6,7 +6,11 @@ import DashboardLayout from '@/layouts/Dashboard/DasboardLayout';
 import Button from '@/components/button';
 import Modal from '@/components/modal';
 import FloatingInput from '@/components/floating-input/input';
-import type { AngsuranPinjaman, BayarAngsuranForm, PinjamanShowProps } from './types';
+import type {
+    AngsuranPinjaman,
+    BayarAngsuranForm,
+    PinjamanShowProps,
+} from './types';
 import { initialBayarAngsuranForm } from './types';
 import {
     formatRupiah,
@@ -23,12 +27,16 @@ export default function PinjamanShow() {
     const pinjaman = pageProps.pinjaman;
     const angsuranList = pinjaman.angsuran ?? [];
 
-    const [bayarForm, setBayarForm] = useState<BayarAngsuranForm>(initialBayarAngsuranForm());
-    const [selectedAngsuran, setSelectedAngsuran] = useState<AngsuranPinjaman | null>(null);
+    const [bayarForm, setBayarForm] = useState<BayarAngsuranForm>(
+        initialBayarAngsuranForm(),
+    );
+    const [selectedAngsuran, setSelectedAngsuran] =
+        useState<AngsuranPinjaman | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const openBayarModal = (angsuran: AngsuranPinjaman) => {
-        const sisaTagihan = Number(angsuran.total_tagihan) - Number(angsuran.jumlah_dibayar);
+        const sisaTagihan =
+            Number(angsuran.total_tagihan) - Number(angsuran.jumlah_dibayar);
         setBayarForm({
             angsuran_id: angsuran.id,
             jumlah_bayar: String(Math.max(0, sisaTagihan)),
@@ -58,11 +66,14 @@ export default function PinjamanShow() {
             preserveScroll: true,
             onSuccess: () => {
                 closeBayarModal();
-                toast.success('Pembayaran angsuran berhasil dicatat.');
             },
             onError: (errors) => {
                 const firstError = Object.values(errors)[0];
-                toast.error(firstError ? String(firstError) : 'Gagal memproses pembayaran.');
+                toast.error(
+                    firstError
+                        ? String(firstError)
+                        : 'Gagal memproses pembayaran.',
+                );
             },
             onFinish: () => {
                 setIsSubmitting(false);
@@ -79,7 +90,9 @@ export default function PinjamanShow() {
 
     return (
         <>
-            <Head title={`Detail Pinjaman – ${pinjaman.anggota?.nama ?? '-'}`} />
+            <Head
+                title={`Detail Pinjaman – ${pinjaman.anggota?.nama ?? '-'}`}
+            />
 
             <section className="space-y-6">
                 {/* ── Info pinjaman ─────────────────────────────────────────── */}
@@ -88,18 +101,38 @@ export default function PinjamanShow() {
                         <h2 className="text-lg font-semibold text-neutral-800">
                             Detail Pinjaman
                         </h2>
-                        <span className={`rounded-full px-3 py-1 text-sm font-medium ${statusBadgeClass}`}>
+                        <span
+                            className={`rounded-full px-3 py-1 text-sm font-medium ${statusBadgeClass}`}
+                        >
                             {getLabelStatusPinjaman(pinjaman.status)}
                         </span>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                        <InfoItem label="Anggota" value={`${pinjaman.anggota?.no_anggota ?? '-'} – ${pinjaman.anggota?.nama ?? '-'}`} />
-                        <InfoItem label="Jumlah Pinjaman" value={formatRupiah(pinjaman.jumlah_pinjaman)} />
-                        <InfoItem label="Bunga / Bulan" value={`${pinjaman.bunga_persen}%`} />
-                        <InfoItem label="Tenor" value={`${pinjaman.tenor_bulan} bulan`} />
-                        <InfoItem label="Angsuran / Bulan" value={formatRupiah(pinjaman.jumlah_angsuran)} />
-                        <InfoItem label="Tanggal Mulai" value={formatTanggal(pinjaman.tanggal_mulai)} />
+                        <InfoItem
+                            label="Anggota"
+                            value={`${pinjaman.anggota?.no_anggota ?? '-'} – ${pinjaman.anggota?.nama ?? '-'}`}
+                        />
+                        <InfoItem
+                            label="Jumlah Pinjaman"
+                            value={formatRupiah(pinjaman.jumlah_pinjaman)}
+                        />
+                        <InfoItem
+                            label="Bunga / Bulan"
+                            value={`${pinjaman.bunga_persen}%`}
+                        />
+                        <InfoItem
+                            label="Tenor"
+                            value={`${pinjaman.tenor_bulan} bulan`}
+                        />
+                        <InfoItem
+                            label="Angsuran / Bulan"
+                            value={formatRupiah(pinjaman.jumlah_angsuran)}
+                        />
+                        <InfoItem
+                            label="Tanggal Mulai"
+                            value={formatTanggal(pinjaman.tanggal_mulai)}
+                        />
                     </div>
 
                     {/* Progress bar */}
@@ -126,24 +159,42 @@ export default function PinjamanShow() {
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
-                            <thead className="bg-neutral-50 text-xs font-medium uppercase tracking-wider text-neutral-500">
+                            <thead className="bg-neutral-50 text-xs font-medium tracking-wider text-neutral-500 uppercase">
                                 <tr>
                                     <th className="px-4 py-3 text-left">Ke</th>
-                                    <th className="px-4 py-3 text-left">Jatuh Tempo</th>
-                                    <th className="px-4 py-3 text-right">Pokok</th>
-                                    <th className="px-4 py-3 text-right">Bunga</th>
-                                    <th className="px-4 py-3 text-right">Denda</th>
-                                    <th className="px-4 py-3 text-right">Total Tagihan</th>
-                                    <th className="px-4 py-3 text-right">Dibayar</th>
-                                    <th className="px-4 py-3 text-center">Status</th>
-                                    <th className="px-4 py-3 text-center">Aksi</th>
+                                    <th className="px-4 py-3 text-left">
+                                        Jatuh Tempo
+                                    </th>
+                                    <th className="px-4 py-3 text-right">
+                                        Pokok
+                                    </th>
+                                    <th className="px-4 py-3 text-right">
+                                        Bunga
+                                    </th>
+                                    <th className="px-4 py-3 text-right">
+                                        Denda
+                                    </th>
+                                    <th className="px-4 py-3 text-right">
+                                        Total Tagihan
+                                    </th>
+                                    <th className="px-4 py-3 text-right">
+                                        Dibayar
+                                    </th>
+                                    <th className="px-4 py-3 text-center">
+                                        Status
+                                    </th>
+                                    <th className="px-4 py-3 text-center">
+                                        Aksi
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-neutral-100">
                                 {angsuranList.map((angsuran) => {
                                     const terlambat = isTerlambat(angsuran);
                                     const isLunas = angsuran.status === 'lunas';
-                                    const statusLabel = getLabelStatusAngsuran(angsuran.status);
+                                    const statusLabel = getLabelStatusAngsuran(
+                                        angsuran.status,
+                                    );
                                     const badgeClass = isLunas
                                         ? 'bg-green-100 text-green-700'
                                         : terlambat
@@ -155,15 +206,23 @@ export default function PinjamanShow() {
                                     return (
                                         <tr
                                             key={angsuran.id}
-                                            className={terlambat && !isLunas ? 'bg-red-50' : ''}
+                                            className={
+                                                terlambat && !isLunas
+                                                    ? 'bg-red-50'
+                                                    : ''
+                                            }
                                         >
                                             <td className="px-4 py-3 font-medium text-neutral-700">
                                                 {angsuran.angsuran_ke}
                                             </td>
                                             <td className="px-4 py-3 text-neutral-600">
-                                                {formatTanggal(angsuran.tanggal_jatuh_tempo)}
+                                                {formatTanggal(
+                                                    angsuran.tanggal_jatuh_tempo,
+                                                )}
                                                 {terlambat && !isLunas && (
-                                                    <span className="ml-1 text-xs text-red-500">(terlambat)</span>
+                                                    <span className="ml-1 text-xs text-red-500">
+                                                        (terlambat)
+                                                    </span>
                                                 )}
                                             </td>
                                             <td className="px-4 py-3 text-right text-neutral-700">
@@ -176,13 +235,19 @@ export default function PinjamanShow() {
                                                 {formatRupiah(angsuran.denda)}
                                             </td>
                                             <td className="px-4 py-3 text-right font-medium text-neutral-800">
-                                                {formatRupiah(angsuran.total_tagihan)}
+                                                {formatRupiah(
+                                                    angsuran.total_tagihan,
+                                                )}
                                             </td>
                                             <td className="px-4 py-3 text-right text-neutral-700">
-                                                {formatRupiah(angsuran.jumlah_dibayar)}
+                                                {formatRupiah(
+                                                    angsuran.jumlah_dibayar,
+                                                )}
                                             </td>
                                             <td className="px-4 py-3 text-center">
-                                                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${badgeClass}`}>
+                                                <span
+                                                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${badgeClass}`}
+                                                >
                                                     {statusLabel}
                                                 </span>
                                             </td>
@@ -192,7 +257,11 @@ export default function PinjamanShow() {
                                                         type="button"
                                                         variant="primary"
                                                         size="sm"
-                                                        onClick={() => openBayarModal(angsuran)}
+                                                        onClick={() =>
+                                                            openBayarModal(
+                                                                angsuran,
+                                                            )
+                                                        }
                                                     >
                                                         Bayar
                                                     </Button>
@@ -264,7 +333,9 @@ export default function PinjamanShow() {
                         onCurrencyValueChange={(value) =>
                             setBayarForm((prev) => ({
                                 ...prev,
-                                jumlah_bayar: String(Math.max(0, Math.floor(value.numeric ?? 0))),
+                                jumlah_bayar: String(
+                                    Math.max(0, Math.floor(value.numeric ?? 0)),
+                                ),
                             }))
                         }
                         required
@@ -276,7 +347,9 @@ export default function PinjamanShow() {
                         onCurrencyValueChange={(value) =>
                             setBayarForm((prev) => ({
                                 ...prev,
-                                denda_dibayar: String(Math.max(0, Math.floor(value.numeric ?? 0))),
+                                denda_dibayar: String(
+                                    Math.max(0, Math.floor(value.numeric ?? 0)),
+                                ),
                             }))
                         }
                     />
@@ -285,7 +358,10 @@ export default function PinjamanShow() {
                         type="date"
                         value={bayarForm.tanggal_bayar}
                         onChange={(e) =>
-                            setBayarForm((prev) => ({ ...prev, tanggal_bayar: e.target.value }))
+                            setBayarForm((prev) => ({
+                                ...prev,
+                                tanggal_bayar: e.target.value,
+                            }))
                         }
                         required
                     />
