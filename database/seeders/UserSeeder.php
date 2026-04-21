@@ -49,7 +49,7 @@ class UserSeeder extends Seeder
             'email' => 'masteradmin@azzahwa.com',
         ], [
             'name' => 'Master Admin',
-            'password' => Hash::make('password'),
+            'password' => Hash::make('rinacantik'),
         ]);
         $masterAdmin->assignRole($masterAdminRole['name']);
 
