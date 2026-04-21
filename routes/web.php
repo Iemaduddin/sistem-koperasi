@@ -39,7 +39,7 @@ Route::middleware(['auth', 'active.user'])->group(function (): void {
 	Route::get('/audit', [AuditController::class, 'index'])
 		->name('audit.index');
 
-	Route::inertia('/dashboard', 'Dashboard/Dashboard')->name('dashboard');
+	Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
 
 	Route::middleware(['role:Master Admin'])->group(function (): void {
 		// jenis simpanan

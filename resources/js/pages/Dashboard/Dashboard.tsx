@@ -1,49 +1,143 @@
 import { Head } from '@inertiajs/react';
-import type { ReactElement } from 'react';
+import { useState, type ReactElement } from 'react';
 import DashboardLayout from '@/layouts/Dashboard/DasboardLayout';
 
-export default function Dashboard() {
+interface Stats {
+    anggota: {
+        total: number;
+        aktif: number;
+        nonaktif: number;
+        keluar: number;
+    };
+    aset: {
+        all: number;
+        bulan_ini: number;
+    };
+    pinjaman_aktif: number;
+    tagihan_jatuh_tempo: {
+        all: number;
+        bulan_ini: number;
+    };
+    saldo_keluar: number;
+}
+
+export default function Dashboard({ stats }: { stats: Stats }) {
+    const [anggotaFilter, setAnggotaFilter] = useState<keyof Stats['anggota']>('aktif');
+    const [asetFilter, setAsetFilter] = useState<keyof Stats['aset']>('all');
+    const [tagihanFilter, setTagihanFilter] = useState<keyof Stats['tagihan_jatuh_tempo']>('all');
+
+    const formatCurrency = (value: number) => {
+        return new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 0,
+        }).format(value);
+    };
+
     return (
         <>
             <Head title="Dashboard" />
 
-            <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <div className="rounded-xl border border-slate-200 bg-white p-4">
-                    <p className="text-sm text-slate-500">Total Anggota</p>
-                    <p className="mt-2 text-2xl font-semibold text-slate-900">
-                        128
+            <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                {/* Total Anggota */}
+                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-slate-500">Total Anggota</p>
+                        <select 
+                            value={anggotaFilter}
+                            onChange={(e) => setAnggotaFilter(e.target.value as any)}
+                            className="bg-transparent text-xs border-none focus:ring-0 text-slate-500 cursor-pointer p-0"
+                        >
+                            <option value="total">Semua</option>
+                            <option value="aktif">Aktif</option>
+                            <option value="nonaktif">Non-aktif</option>
+                            <option value="keluar">Keluar</option>
+                        </select>
+                    </div>
+                    <p className="mt-2 text-3xl font-bold text-slate-900">
+                        {stats.anggota[anggotaFilter]}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500 capitalize">
+                        Status: {anggotaFilter === 'total' ? 'Semua' : anggotaFilter}
                     </p>
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-white p-4">
-                    <p className="text-sm text-slate-500">Simpanan Bulan Ini</p>
-                    <p className="mt-2 text-2xl font-semibold text-slate-900">
-                        Rp 24.500.000
+
+                {/* Aset (Simpanan) */}
+                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-slate-500">Aset</p>
+                        <select 
+                            value={asetFilter}
+                            onChange={(e) => setAsetFilter(e.target.value as any)}
+                            className="bg-transparent text-xs border-none focus:ring-0 text-slate-500 cursor-pointer p-0"
+                        >
+                            <option value="all">Semua</option>
+                            <option value="bulan_ini">Bulan Ini</option>
+                        </select>
+                    </div>
+                    <p className="mt-2 text-2xl font-bold text-slate-900 truncate">
+                        {formatCurrency(stats.aset[asetFilter])}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                        {asetFilter === 'all' ? 'Saldo kumulatif' : 'Total simpanan masuk'}
                     </p>
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-white p-4">
-                    <p className="text-sm text-slate-500">Pinjaman Aktif</p>
-                    <p className="mt-2 text-2xl font-semibold text-slate-900">
-                        37
+
+                {/* Saldo Keluar */}
+                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <p className="text-sm font-medium text-slate-500">Saldo Keluar</p>
+                    <p className="mt-2 text-2xl font-bold text-blue-600 truncate">
+                        {formatCurrency(stats.saldo_keluar)}
                     </p>
+                    <p className="mt-1 text-xs text-slate-500">Total piutang (Pokok+Bunga+Denda)</p>
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-white p-4">
-                    <p className="text-sm text-slate-500">
-                        Tagihan Jatuh Tempo
+
+                {/* Pinjaman Aktif */}
+                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <p className="text-sm font-medium text-slate-500">Pinjaman Aktif</p>
+                    <p className="mt-2 text-3xl font-bold text-slate-900">
+                        {stats.pinjaman_aktif}
                     </p>
-                    <p className="mt-2 text-2xl font-semibold text-slate-900">
-                        12
+                    <p className="mt-1 text-xs text-slate-500">Total anggota meminjam</p>
+                </div>
+
+                {/* Tagihan Jatuh Tempo */}
+                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-slate-500">Tagihan Jatuh Tempo</p>
+                        <select 
+                            value={tagihanFilter}
+                            onChange={(e) => setTagihanFilter(e.target.value as any)}
+                            className="bg-transparent text-xs border-none focus:ring-0 text-slate-500 cursor-pointer p-0"
+                        >
+                            <option value="all">Semua</option>
+                            <option value="bulan_ini">Bulan Ini</option>
+                        </select>
+                    </div>
+                    <p className="mt-2 text-3xl font-bold text-red-600">
+                        {stats.tagihan_jatuh_tempo[tagihanFilter]}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                        {tagihanFilter === 'all' ? 'Total tagihan menunggak' : 'Jatuh tempo bulan ini'}
                     </p>
                 </div>
             </section>
 
-            <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5">
+            <section className="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
                 <h2 className="text-lg font-semibold text-slate-900">
                     Aktivitas Terbaru
                 </h2>
-                <p className="mt-2 text-sm text-slate-600">
-                    Area ini siap diisi dengan daftar transaksi, notifikasi,
-                    atau ringkasan operasional harian koperasi.
-                </p>
+                <div className="mt-4 flex flex-col items-center justify-center py-10 text-center">
+                    <div className="mb-4 rounded-full bg-slate-50 p-4">
+                        <svg className="h-8 w-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <p className="text-sm font-medium text-slate-900">Belum Ada Aktivitas Terbaru</p>
+                    <p className="mt-1 text-xs text-slate-500 max-w-xs">
+                        Area ini akan menampilkan riwayat transaksi, notifikasi, dan ringkasan operasional harian koperasi secara real-time.
+                    </p>
+                </div>
             </section>
         </>
     );
