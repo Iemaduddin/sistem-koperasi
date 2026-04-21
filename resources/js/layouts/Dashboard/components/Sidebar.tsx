@@ -124,6 +124,7 @@ const routeNameToUrl: Record<string, () => string> = {
     'simpanan.index': () => '/simpanan',
     'pinjaman.index': () => '/pinjaman',
     'deposito.index': () => '/deposito',
+    'riwayat-transaksi.index': () => '/riwayat-transaksi',
 };
 
 const resolveItemHref = (item: SidebarItem): string | undefined => {

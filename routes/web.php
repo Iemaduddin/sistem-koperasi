@@ -10,6 +10,7 @@ use App\Http\Controllers\SimpananController;
 use App\Http\Controllers\PinjamanController;
 use App\Http\Controllers\AuditController;
 use App\Http\Controllers\GuestPortalController;
+use App\Http\Controllers\RiwayatTransaksiController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/login')->name('home');
@@ -100,8 +101,9 @@ Route::middleware(['auth', 'active.user'])->group(function (): void {
 			->parameters(['pinjaman' => 'pinjaman'])
 			->except(['create', 'edit', 'update']);
 		
-		Route::get('/riwayat-transaksi', function () {
-			return inertia('RiwayatTransaksi/Index');
-		})->name('riwayat-transaksi.index');
+		Route::get('/riwayat-transaksi', [RiwayatTransaksiController::class, 'index'])
+			->name('riwayat-transaksi.index');
+		Route::post('/riwayat-transaksi/import', [RiwayatTransaksiController::class, 'import'])
+			->name('riwayat-transaksi.import');
 	});
 });
