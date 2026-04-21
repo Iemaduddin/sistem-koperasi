@@ -46,6 +46,10 @@ Route::middleware(['auth', 'active.user'])->group(function (): void {
 		Route::resource('/jenis-simpanan', JenisSimpananController::class)
 			->parameters(['jenis-simpanan' => 'jenis_simpanan'])
 			->except(['show', 'create', 'edit']);
+
+		// roles management
+		Route::resource('/roles', \App\Http\Controllers\RoleController::class)
+			->except(['show', 'create', 'edit']);
 	});
 	Route::middleware(['role:Master Admin|Super Admin'])->group(function (): void {
 		// users management
