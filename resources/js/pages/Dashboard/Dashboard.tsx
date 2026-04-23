@@ -4,6 +4,7 @@ import DashboardLayout from '@/layouts/Dashboard/DasboardLayout';
 
 import LoanChart from '@/Components/Dashboard/LoanChart';
 import CashChart from '@/Components/Dashboard/CashChart';
+import FilterDropdown from '@/Components/Dashboard/FilterDropdown';
 
 interface Stats {
     anggota: {
@@ -52,6 +53,23 @@ export default function Dashboard({ stats, charts }: { stats: Stats, charts: Cha
         }).format(value);
     };
 
+    const anggotaOptions = [
+        { value: 'total', label: 'Semua' },
+        { value: 'aktif', label: 'Aktif' },
+        { value: 'nonaktif', label: 'Non-aktif' },
+        { value: 'keluar', label: 'Keluar' },
+    ];
+
+    const asetOptions = [
+        { value: 'all', label: 'Semua' },
+        { value: 'bulan_ini', label: 'Bulan Ini' },
+    ];
+
+    const tagihanOptions = [
+        { value: 'all', label: 'Semua' },
+        { value: 'bulan_ini', label: 'Bulan Ini' },
+    ];
+
     return (
         <>
             <Head title="Dashboard" />
@@ -61,16 +79,11 @@ export default function Dashboard({ stats, charts }: { stats: Stats, charts: Cha
                 <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                     <div className="flex items-center justify-between">
                         <p className="text-sm font-medium text-slate-500">Total Anggota</p>
-                        <select 
+                        <FilterDropdown 
                             value={anggotaFilter}
-                            onChange={(e) => setAnggotaFilter(e.target.value as any)}
-                            className="bg-transparent text-xs border-none focus:ring-0 text-slate-500 cursor-pointer p-0"
-                        >
-                            <option value="total">Semua</option>
-                            <option value="aktif">Aktif</option>
-                            <option value="nonaktif">Non-aktif</option>
-                            <option value="keluar">Keluar</option>
-                        </select>
+                            onChange={(val) => setAnggotaFilter(val as any)}
+                            options={anggotaOptions}
+                        />
                     </div>
                     <p className="mt-2 text-3xl font-bold text-slate-900">
                         {stats.anggota[anggotaFilter]}
@@ -84,14 +97,11 @@ export default function Dashboard({ stats, charts }: { stats: Stats, charts: Cha
                 <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                     <div className="flex items-center justify-between">
                         <p className="text-sm font-medium text-slate-500">Aset</p>
-                        <select 
+                        <FilterDropdown 
                             value={asetFilter}
-                            onChange={(e) => setAsetFilter(e.target.value as any)}
-                            className="bg-transparent text-xs border-none focus:ring-0 text-slate-500 cursor-pointer p-0"
-                        >
-                            <option value="all">Semua</option>
-                            <option value="bulan_ini">Bulan Ini</option>
-                        </select>
+                            onChange={(val) => setAsetFilter(val as any)}
+                            options={asetOptions}
+                        />
                     </div>
                     <p className="mt-2 text-2xl font-bold text-slate-900 truncate">
                         {formatCurrency(stats.aset[asetFilter])}
@@ -123,14 +133,11 @@ export default function Dashboard({ stats, charts }: { stats: Stats, charts: Cha
                 <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                     <div className="flex items-center justify-between">
                         <p className="text-sm font-medium text-slate-500">Tagihan Jatuh Tempo</p>
-                        <select 
+                        <FilterDropdown 
                             value={tagihanFilter}
-                            onChange={(e) => setTagihanFilter(e.target.value as any)}
-                            className="bg-transparent text-xs border-none focus:ring-0 text-slate-500 cursor-pointer p-0"
-                        >
-                            <option value="all">Semua</option>
-                            <option value="bulan_ini">Bulan Ini</option>
-                        </select>
+                            onChange={(val) => setTagihanFilter(val as any)}
+                            options={tagihanOptions}
+                        />
                     </div>
                     <p className="mt-2 text-3xl font-bold text-red-600">
                         {stats.tagihan_jatuh_tempo[tagihanFilter]}
@@ -140,6 +147,7 @@ export default function Dashboard({ stats, charts }: { stats: Stats, charts: Cha
                     </p>
                 </div>
             </section>
+
 
             <section className="mt-6 grid gap-6 lg:grid-cols-2">
                 {/* Cash Flow Chart */}
