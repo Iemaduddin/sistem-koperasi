@@ -20,6 +20,7 @@ import {
     LuUserCog,
     LuHistory,
     LuShieldCheck,
+    LuGitCompareArrows,
 } from 'react-icons/lu';
 import {
     TbCashBanknoteMoveBack,
@@ -125,6 +126,7 @@ const routeNameToUrl: Record<string, () => string> = {
     'pinjaman.index': () => '/pinjaman',
     'deposito.index': () => '/deposito',
     'riwayat-transaksi.index': () => '/riwayat-transaksi',
+    'rekapan-anggota.index': () => '/rekapan-anggota',
 };
 
 const resolveItemHref = (item: SidebarItem): string | undefined => {
@@ -528,6 +530,13 @@ const menuSections: SidebarSection[] = [
                 label: 'Riwayat Transaksi',
                 routeName: 'riwayat-transaksi.index',
                 icon: LuHistory,
+                roles: ['Master Admin', 'Super Admin', 'Admin'],
+            },
+            {
+                id: 'rekapan-anggota',
+                label: 'Rekapan Anggota',
+                routeName: 'rekapan-anggota.index',
+                icon: LuGitCompareArrows,
                 roles: ['Master Admin', 'Super Admin', 'Admin'],
             },
         ],

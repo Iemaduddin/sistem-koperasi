@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\RekapanAnggota;
 
 use App\Models\Anggota;
 use App\Models\AngsuranPinjaman;
@@ -19,7 +19,7 @@ use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use RuntimeException;
 
-class RiwayatTransaksiImportService
+class ImportRekapanAnggotaService
 {
     private const START_ROW = 4;
     private const MAX_TABLE_ROWS = 300;

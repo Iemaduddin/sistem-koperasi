@@ -24,14 +24,6 @@ const statusLabelMap: Record<AnggotaRow['status'], string> = {
     keluar: 'Keluar',
 };
 
-function formatNoAnggota(value: string): string {
-    if (value.length <= 4) {
-        return value;
-    }
-
-    return `${value.slice(0, 2)}-${value.slice(2, 4)}-${value.slice(4)}`;
-}
-
 export default function AnggotaTableCard({
     anggota,
     onSetKeluar,
@@ -46,9 +38,6 @@ export default function AnggotaTableCard({
                 accessor: 'no_anggota',
                 sortable: true,
                 searchable: true,
-                searchValue: (row) =>
-                    `${row.no_anggota} ${formatNoAnggota(row.no_anggota)}`,
-                render: (row) => formatNoAnggota(row.no_anggota),
             },
             {
                 id: 'nik',

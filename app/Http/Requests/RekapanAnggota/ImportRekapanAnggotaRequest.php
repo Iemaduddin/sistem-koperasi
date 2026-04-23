@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Requests\RiwayatTransaksi;
+namespace App\Http\Requests\RekapanAnggota;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class ImportRiwayatTransaksiRequest extends FormRequest
+class ImportRekapanAnggotaRequest extends FormRequest
 {
     public function authorize(): bool
     {

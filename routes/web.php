@@ -11,6 +11,7 @@ use App\Http\Controllers\PinjamanController;
 use App\Http\Controllers\AuditController;
 use App\Http\Controllers\GuestPortalController;
 use App\Http\Controllers\RiwayatTransaksiController;
+use App\Http\Controllers\RekapanAnggotaController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/login')->name('home');
@@ -100,10 +101,17 @@ Route::middleware(['auth', 'active.user'])->group(function (): void {
 		Route::resource('/pinjaman', PinjamanController::class)
 			->parameters(['pinjaman' => 'pinjaman'])
 			->except(['create', 'edit', 'update']);
-		
+		// Riwayat Transaksi
 		Route::get('/riwayat-transaksi', [RiwayatTransaksiController::class, 'index'])
 			->name('riwayat-transaksi.index');
-		Route::post('/riwayat-transaksi/import', [RiwayatTransaksiController::class, 'import'])
-			->name('riwayat-transaksi.import');
+		// Rekapan Anggota
+		Route::group(['prefix' => 'rekapan-anggota'], function (): void {
+			Route::get('/', [RekapanAnggotaController::class, 'index'])
+				->name('rekapan-anggota.index');
+			Route::get('/export', [RekapanAnggotaController::class, 'export'])
+				->name('rekapan-anggota.export');
+			Route::post('/import', [RekapanAnggotaController::class, 'import'])
+				->name('rekapan-anggota.import');
+		});
 	});
 });
