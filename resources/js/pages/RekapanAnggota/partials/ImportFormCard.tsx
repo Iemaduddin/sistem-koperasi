@@ -5,18 +5,24 @@ type Props = {
     isSubmitting: boolean;
     importMode: 'dry-run' | 'persist';
     inputRef: RefObject<HTMLInputElement | null>;
+    rekeningKoperasi: Array<{ id: string; nama: string; nomor_rekening: string }>;
+    selectedRekeningId: string;
     onImport: () => void;
     onFileChange: (file: File | null) => void;
     onModeChange: (mode: 'dry-run' | 'persist') => void;
+    onRekeningChange: (id: string) => void;
 };
 
 export default function ImportFormCard({
     isSubmitting,
     importMode,
     inputRef,
+    rekeningKoperasi,
+    selectedRekeningId,
     onImport,
     onFileChange,
     onModeChange,
+    onRekeningChange,
 }: Props) {
     return (
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -38,6 +44,20 @@ export default function ImportFormCard({
                         onFileChange(event.target.files?.[0] ?? null);
                     }}
                 />
+
+                <select
+                    value={selectedRekeningId}
+                    onChange={(event) => onRekeningChange(event.target.value)}
+                    disabled={importMode === 'dry-run'}
+                    className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 disabled:bg-slate-50 disabled:text-slate-400"
+                >
+                    <option value="">-- Pilih Rekening --</option>
+                    {rekeningKoperasi.map((rek) => (
+                        <option key={rek.id} value={rek.id}>
+                            {rek.nama} ({rek.nomor_rekening})
+                        </option>
+                    ))}
+                </select>
 
                 <select
                     value={importMode}

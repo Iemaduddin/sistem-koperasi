@@ -201,6 +201,7 @@ class RekapanAnggotaController extends Controller
             'anggota_list' => $anggotaList,
             'anggota_detail_rows' => $anggotaDetailRows,
             'month_columns' => $monthColumns,
+            'rekening_koperasi' => \App\Models\RekeningKoperasi::orderBy('nama')->get(['id', 'nama', 'jenis', 'nomor_rekening', 'saldo']),
             'import_summary' => session('rekapan_anggota_import_summary'),
         ]);
     }
@@ -213,6 +214,7 @@ class RekapanAnggotaController extends Controller
                 file: $request->file('file'),
                 userId: $request->user()?->id,
                 persist: $mode !== 'dry-run',
+                rekeningKoperasiId: (string) $request->input('rekening_koperasi_id'),
             );
         } catch (\Throwable $exception) {
             return redirect()

@@ -97,5 +97,12 @@ export type PageProps = {
         key: string;
         label: string;
     }>;
+    rekening_koperasi?: Array<{
+        id: string;
+        nama: string;
+        jenis: string;
+        nomor_rekening: string;
+        saldo: number | string;
+    }>;
     import_summary?: ImportSummary;
 };

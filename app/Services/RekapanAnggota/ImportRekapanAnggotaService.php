@@ -31,6 +31,7 @@ class ImportRekapanAnggotaService
         UploadedFile $file,
         ?string $userId = null,
         bool $persist = true,
+        ?string $rekeningKoperasiId = null,
     ): array
     {
         $sheetRows = Excel::toArray(new class {
@@ -97,6 +98,7 @@ class ImportRekapanAnggotaService
             $persistSummary = $this->persistParsedRows(
                 rows: $persistRows,
                 userId: $this->resolveImportUserId($userId),
+                rekeningKoperasiId: $rekeningKoperasiId,
             );
         }
 
@@ -298,7 +300,7 @@ class ImportRekapanAnggotaService
      * @param  array<int, array<string, mixed>>  $rows
      * @return array<string, int>
      */
-    private function persistParsedRows(array $rows, string $userId): array
+    private function persistParsedRows(array $rows, string $userId, ?string $rekeningKoperasiId): array
     {
         if (count($rows) === 0) {
             return [
@@ -324,7 +326,11 @@ class ImportRekapanAnggotaService
             }
         }
 
-        return DB::transaction(function () use ($rows, $userId, $jenisByKode): array {
+        $rekeningKoperasi = $rekeningKoperasiId 
+            ? \App\Models\RekeningKoperasi::query()->find($rekeningKoperasiId)
+            : null;
+
+        return DB::transaction(function () use ($rows, $userId, $jenisByKode, $rekeningKoperasi): array {
             $summary = [
                 'anggota_created' => 0,
                 'anggota_updated' => 0,
@@ -360,6 +366,7 @@ class ImportRekapanAnggotaService
                     keterangan: 'Import saldo awal simpanan',
                     importKey: (string) ($row['import_key'] ?? 'initial'),
                     summary: $summary,
+                    rekeningKoperasi: $rekeningKoperasi,
                 );
 
                 $pinjaman = $this->upsertPinjaman($anggota, $row);
@@ -369,6 +376,24 @@ class ImportRekapanAnggotaService
 
                 if ($pinjaman->wasRecentlyCreated) {
                     $summary['pinjaman_created']++;
+                    
+                    // Record Cash Out for Loan Disbursement
+                    if ($rekeningKoperasi) {
+                        $jumlahPinjaman = (float) $pinjaman->jumlah_pinjaman;
+                        $rekeningKoperasi->saldo = round((float) $rekeningKoperasi->saldo - $jumlahPinjaman, 2);
+                        $rekeningKoperasi->save();
+
+                        $this->recordCashFlow(
+                            rekening: $rekeningKoperasi,
+                            jenis: 'keluar',
+                            jumlah: $jumlahPinjaman,
+                            sumberTipe: 'pinjaman',
+                            sumberId: $pinjaman->id,
+                            userId: $userId,
+                            keterangan: 'Import pencairan pinjaman',
+                            createdAt: $tanggalMasuk
+                        );
+                    }
                 }
 
                 $angsuranByKe = $this->syncAngsuranPinjaman($pinjaman, $row, $summary);
@@ -401,6 +426,23 @@ class ImportRekapanAnggotaService
                         if ($transaksiPinjaman->wasRecentlyCreated) {
                             $summary['transaksi_pinjaman_created']++;
                             $this->refreshAngsuranStatusFromTransaksi($angsuran);
+
+                            // Record Cash In for Installment Payment
+                            if ($rekeningKoperasi && $jumlahBayar > 0) {
+                                $rekeningKoperasi->saldo = round((float) $rekeningKoperasi->saldo + $jumlahBayar, 2);
+                                $rekeningKoperasi->save();
+
+                                $this->recordCashFlow(
+                                    rekening: $rekeningKoperasi,
+                                    jenis: 'masuk',
+                                    jumlah: $jumlahBayar,
+                                    sumberTipe: 'angsuran_pinjaman',
+                                    sumberId: $transaksiPinjaman->id,
+                                    userId: $userId,
+                                    keterangan: "Import angsuran ke-{$angsuran->angsuran_ke} pinjaman",
+                                    createdAt: $tanggalBayar
+                                );
+                            }
                         }
                     }
 
@@ -415,6 +457,7 @@ class ImportRekapanAnggotaService
                         keterangan: 'Import simpanan bulanan',
                         importKey: (string) ($entry['entry_key'] ?? md5(json_encode($entry))),
                         summary: $summary,
+                        rekeningKoperasi: $rekeningKoperasi,
                     );
                 }
 
@@ -609,6 +652,7 @@ class ImportRekapanAnggotaService
         string $keterangan,
         string $importKey,
         array &$summary,
+        ?\App\Models\RekeningKoperasi $rekeningKoperasi = null,
     ): void {
         $pokok = round($pokok, 2);
         $wajib = round($wajib, 2);
@@ -622,17 +666,17 @@ class ImportRekapanAnggotaService
 
         if ($pokok > 0) {
             $rekening = $this->getOrCreateRekeningSimpanan($anggota, $jenisByKode['POKOK'], $summary);
-            $this->createSimpananTransaksi($rekening, $batch, $pokok, $keterangan, $importKey . '|POKOK', $tanggal, $summary);
+            $this->createSimpananTransaksi($rekening, $batch, $pokok, $keterangan, $importKey . '|POKOK', $tanggal, $summary, $rekeningKoperasi, $userId);
         }
 
         if ($wajib > 0) {
             $rekening = $this->getOrCreateRekeningSimpanan($anggota, $jenisByKode['WAJIB'], $summary);
-            $this->createSimpananTransaksi($rekening, $batch, $wajib, $keterangan, $importKey . '|WAJIB', $tanggal, $summary);
+            $this->createSimpananTransaksi($rekening, $batch, $wajib, $keterangan, $importKey . '|WAJIB', $tanggal, $summary, $rekeningKoperasi, $userId);
         }
 
         if ($sukarela > 0) {
             $rekening = $this->getOrCreateRekeningSimpanan($anggota, $jenisByKode['SUKARELA'], $summary);
-            $this->createSimpananTransaksi($rekening, $batch, $sukarela, $keterangan, $importKey . '|SUKARELA', $tanggal, $summary);
+            $this->createSimpananTransaksi($rekening, $batch, $sukarela, $keterangan, $importKey . '|SUKARELA', $tanggal, $summary, $rekeningKoperasi, $userId);
         }
 
         $batchTotal = (float) Simpanan::query()->where('batch_id', $batch->id)->sum('jumlah');
@@ -704,6 +748,8 @@ class ImportRekapanAnggotaService
         string $importKey,
         Carbon $tanggal,
         array &$summary,
+        ?\App\Models\RekeningKoperasi $rekeningKoperasi = null,
+        ?string $userId = null,
     ): void {
         $keteranganWithKey = $keterangan . ' [IMP:' . $importKey . ']';
 
@@ -723,7 +769,46 @@ class ImportRekapanAnggotaService
             $summary['transaksi_simpanan_created']++;
             $rekening->saldo = round((float) $rekening->saldo + $jumlah, 2);
             $rekening->save();
+
+            // Record Cash In for Savings
+            if ($rekeningKoperasi) {
+                $rekeningKoperasi->saldo = round((float) $rekeningKoperasi->saldo + $jumlah, 2);
+                $rekeningKoperasi->save();
+
+                $this->recordCashFlow(
+                    rekening: $rekeningKoperasi,
+                    jenis: 'masuk',
+                    jumlah: $jumlah,
+                    sumberTipe: 'simpanan',
+                    sumberId: $trx->id,
+                    userId: $userId ?? '',
+                    keterangan: "Import setoran simpanan [{$rekening->jenisSimpanan->nama}]",
+                    createdAt: $tanggal
+                );
+            }
         }
+    }
+
+    private function recordCashFlow(
+        \App\Models\RekeningKoperasi $rekening,
+        string $jenis,
+        float $jumlah,
+        string $sumberTipe,
+        string $sumberId,
+        string $userId,
+        string $keterangan,
+        Carbon $createdAt
+    ): void {
+        \App\Models\TransaksiKasKoperasi::query()->create([
+            'rekening_koperasi_id' => $rekening->id,
+            'jenis' => $jenis,
+            'jumlah' => $jumlah,
+            'sumber_tipe' => $sumberTipe,
+            'sumber_id' => $sumberId,
+            'user_id' => $userId,
+            'keterangan' => $keterangan,
+            'created_at' => $createdAt->toDateTimeString(),
+        ]);
     }
 
     private function toAmount(mixed $value): float

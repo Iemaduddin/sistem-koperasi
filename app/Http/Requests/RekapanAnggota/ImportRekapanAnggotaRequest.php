@@ -19,6 +19,7 @@ class ImportRekapanAnggotaRequest extends FormRequest
         return [
             'file' => ['required', 'file', 'mimes:xlsx,xls', 'max:10240'],
             'mode' => ['nullable', 'in:dry-run,persist'],
+            'rekening_koperasi_id' => ['required_if:mode,persist', 'nullable', 'exists:rekening_koperasi,id'],
         ];
     }
 
@@ -33,6 +34,8 @@ class ImportRekapanAnggotaRequest extends FormRequest
             'file.mimes' => 'Format file harus xlsx atau xls.',
             'file.max' => 'Ukuran file maksimal 10MB.',
             'mode.in' => 'Mode import tidak valid.',
+            'rekening_koperasi_id.required_if' => 'Rekening Koperasi wajib dipilih untuk menyimpan data.',
+            'rekening_koperasi_id.exists' => 'Rekening Koperasi tidak valid.',
         ];
     }
 }
