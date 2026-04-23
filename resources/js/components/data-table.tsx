@@ -9,6 +9,9 @@ import {
     LuChevronUp,
 } from 'react-icons/lu';
 import Button from './button';
+import FloatingSelect from './floating-input/select';
+import { size } from 'zod';
+import FloatingInput from './floating-input/input';
 
 type SortDirection = 'asc' | 'desc';
 
@@ -234,14 +237,14 @@ export default function DataTable<TData>({
             <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div className="flex flex-1 items-center gap-2">
                     {searchable && (
-                        <input
+                        <FloatingInput
+                            label={searchPlaceholder}
                             type="text"
                             value={query}
                             onChange={(event) => {
                                 setQuery(event.target.value);
                                 setPage(1);
                             }}
-                            placeholder={searchPlaceholder}
                             className="h-10 w-full rounded-lg border border-blue-200 bg-blue-50 px-3 text-sm text-slate-700 transition outline-none placeholder:text-slate-400 focus:border-blue-400"
                         />
                     )}
@@ -257,20 +260,22 @@ export default function DataTable<TData>({
                             Clear Selected ({selectedIds.size})
                         </Button>
                     )}
-                    <select
-                        value={pageSize}
+                    <FloatingSelect
+                        value={pageSize.toString()}
                         onChange={(event) => {
                             setPageSize(Number(event.target.value));
                             setPage(1);
                         }}
+                        options={[
+                            ...pageSizeOptions.map((size) => ({
+                                value: size.toString(),
+                                label: `${size}/page`,
+                            })),
+                        ]}
+                        label="Page Size"
+                        searchable={false}
                         className="h-9 rounded-lg border border-blue-200 bg-blue-50 px-2 text-sm text-slate-700 outline-none focus:border-blue-400"
-                    >
-                        {pageSizeOptions.map((size) => (
-                            <option key={size} value={size}>
-                                {size}/page
-                            </option>
-                        ))}
-                    </select>
+                    />
                 </div>
             </div>
 

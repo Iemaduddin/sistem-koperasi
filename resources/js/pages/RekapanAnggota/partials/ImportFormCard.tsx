@@ -1,11 +1,16 @@
 import Button from '@/components/button';
+import FloatingSelect from '@/components/floating-input/select';
 import { RefObject } from 'react';
 
 type Props = {
     isSubmitting: boolean;
     importMode: 'dry-run' | 'persist';
     inputRef: RefObject<HTMLInputElement | null>;
-    rekeningKoperasi: Array<{ id: string; nama: string; nomor_rekening: string }>;
+    rekeningKoperasi: Array<{
+        id: string;
+        nama: string;
+        nomor_rekening: string;
+    }>;
     selectedRekeningId: string;
     onImport: () => void;
     onFileChange: (file: File | null) => void;
@@ -45,32 +50,36 @@ export default function ImportFormCard({
                     }}
                 />
 
-                <select
+                <FloatingSelect
                     value={selectedRekeningId}
                     onChange={(event) => onRekeningChange(event.target.value)}
                     disabled={importMode === 'dry-run'}
                     className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 disabled:bg-slate-50 disabled:text-slate-400"
-                >
-                    <option value="">-- Pilih Rekening --</option>
-                    {rekeningKoperasi.map((rek) => (
-                        <option key={rek.id} value={rek.id}>
-                            {rek.nama} ({rek.nomor_rekening})
-                        </option>
-                    ))}
-                </select>
+                    label="Pilih Rekening"
+                    searchable={false}
+                    options={[
+                        ...rekeningKoperasi.map((rek) => ({
+                            value: rek.id,
+                            label: `${rek.nama} (${rek.nomor_rekening})`,
+                        })),
+                    ]}
+                />
 
-                <select
+                <FloatingSelect
+                    label="Mode Import"
                     value={importMode}
                     onChange={(event) =>
                         onModeChange(
                             event.target.value as 'dry-run' | 'persist',
                         )
                     }
+                    options={[
+                        { value: 'persist', label: 'Persist (simpan ke DB)' },
+                        { value: 'dry-run', label: 'Dry-run (preview saja)' },
+                    ]}
+                    searchable={false}
                     className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
-                >
-                    <option value="persist">Persist (simpan ke DB)</option>
-                    <option value="dry-run">Dry-run (preview saja)</option>
-                </select>
+                />
 
                 <Button
                     variant="primary"

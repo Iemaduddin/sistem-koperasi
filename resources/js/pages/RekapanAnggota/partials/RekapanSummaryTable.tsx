@@ -30,6 +30,12 @@ export default function RekapanSummaryTable({
                 searchable: true,
             },
             {
+                id: 'tanggal_masuk',
+                header: 'Tanggal Masuk',
+                accessor: 'tanggal_masuk',
+                sortable: true,
+            },
+            {
                 id: 'simpanan_pokok',
                 header: 'Tabungan Pokok',
                 sortable: true,
@@ -114,7 +120,7 @@ export default function RekapanSummaryTable({
                 getRowId={(row) => row.id}
                 selectable={false}
                 initialPageSize={20}
-                searchPlaceholder="Cari nomor/nama anggota..."
+                searchPlaceholder="Cari Nomor/Nama Anggota"
                 emptyMessage="Belum ada data rekapan anggota."
             />
         </div>

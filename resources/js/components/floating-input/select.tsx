@@ -16,9 +16,10 @@ export type FloatingSelectOption = {
     disabled?: boolean;
 };
 
+type Size = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'full';
 export type FloatingSelectProps = Omit<
     SelectHTMLAttributes<HTMLSelectElement>,
-    'children' | 'value' | 'defaultValue'
+    'children' | 'value' | 'defaultValue' | 'size'
 > & {
     label: string;
     options: FloatingSelectOption[];
@@ -30,6 +31,7 @@ export type FloatingSelectProps = Omit<
     containerClassName?: string;
     searchable?: boolean;
     emptySearchText?: string;
+    size?: Size;
     onValueChange?: (value: string, option?: FloatingSelectOption) => void;
     onChange?: (event: ChangeEvent<HTMLSelectElement>) => void;
 };
@@ -37,6 +39,14 @@ export type FloatingSelectProps = Omit<
 function cn(...classes: Array<string | false | null | undefined>) {
     return classes.filter(Boolean).join(' ');
 }
+const sizeClasses: Record<Size, string> = {
+    xs: 'h-8',
+    sm: 'h-10',
+    md: 'h-12',
+    lg: 'h-14',
+    xl: 'h-16',
+    full: 'w-full',
+};
 
 export default function FloatingSelect({
     id,
@@ -56,6 +66,7 @@ export default function FloatingSelect({
     onValueChange,
     onChange,
     className,
+    size = 'md',
     ...props
 }: FloatingSelectProps) {
     const generatedId = useId();
@@ -64,6 +75,7 @@ export default function FloatingSelect({
     const [internalValue, setInternalValue] = useState(defaultValue);
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState('');
+    const [activeValue, setActiveValue] = useState<string | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const hiddenSelectRef = useRef<HTMLSelectElement>(null);
 
@@ -80,10 +92,24 @@ export default function FloatingSelect({
         );
     }, [options, search, searchable]);
 
+    const enabledFilteredOptions = useMemo(
+        () => filteredOptions.filter((option) => !option.disabled),
+        [filteredOptions],
+    );
+
     useEffect(() => {
         if (!isOpen) {
             setSearch('');
+            setActiveValue(null);
+            return;
         }
+
+        const nextActive = enabledFilteredOptions.find(
+            (option) => option.value === selectedValue,
+        );
+        setActiveValue(
+            nextActive?.value ?? enabledFilteredOptions[0]?.value ?? null,
+        );
     }, [isOpen]);
 
     useEffect(() => {
@@ -121,8 +147,79 @@ export default function FloatingSelect({
         setIsOpen(false);
     };
 
+    const moveActiveOption = (direction: 1 | -1) => {
+        if (enabledFilteredOptions.length === 0) return;
+
+        const currentIndex = enabledFilteredOptions.findIndex(
+            (option) => option.value === activeValue,
+        );
+
+        if (currentIndex === -1) {
+            const fallbackIndex =
+                direction === 1 ? 0 : enabledFilteredOptions.length - 1;
+            setActiveValue(enabledFilteredOptions[fallbackIndex].value);
+            return;
+        }
+
+        const nextIndex =
+            (currentIndex + direction + enabledFilteredOptions.length) %
+            enabledFilteredOptions.length;
+        setActiveValue(enabledFilteredOptions[nextIndex].value);
+    };
+
+    const handleTriggerKeyDown = (
+        event: React.KeyboardEvent<HTMLButtonElement>,
+    ) => {
+        if (disabled) return;
+
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            if (!isOpen) {
+                setIsOpen(true);
+                return;
+            }
+            moveActiveOption(event.key === 'ArrowDown' ? 1 : -1);
+        }
+
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            if (!isOpen) {
+                setIsOpen(true);
+                return;
+            }
+            if (activeValue) {
+                updateValue(activeValue);
+            }
+        }
+
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            setIsOpen(false);
+        }
+    };
+
+    const handleSearchKeyDown = (
+        event: React.KeyboardEvent<HTMLInputElement>,
+    ) => {
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            moveActiveOption(event.key === 'ArrowDown' ? 1 : -1);
+        }
+
+        if (event.key === 'Enter' && activeValue) {
+            event.preventDefault();
+            updateValue(activeValue);
+        }
+
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            setIsOpen(false);
+        }
+    };
+
     const shouldFloat = isOpen || Boolean(selectedValue);
     const triggerId = `${resolvedId}-trigger`;
+    const listboxId = `${resolvedId}-listbox`;
 
     return (
         <div className={cn('w-full', containerClassName)} ref={containerRef}>
@@ -157,31 +254,62 @@ export default function FloatingSelect({
                     data-select-trigger-for={name}
                     type="button"
                     onClick={() => !disabled && setIsOpen((prev) => !prev)}
+                    onKeyDown={handleTriggerKeyDown}
                     disabled={disabled}
                     className={cn(
-                        'h-11 w-full rounded-lg border bg-white px-3 text-left text-sm transition outline-none',
-                        'border-blue-200 text-slate-800 focus:border-blue-500',
+                        'group ' +
+                            sizeClasses[size] +
+                            ' w-full rounded-xl border bg-linear-to-b from-white to-slate-50 px-3 text-left text-sm transition-all outline-none',
+                        'border-blue-200/90 text-slate-800 shadow-[0_1px_0_rgba(15,23,42,0.03)] focus:border-blue-500 focus:ring-2 focus:ring-blue-200/70',
+                        isOpen && 'border-blue-500 ring-2 ring-blue-200/70',
 
-                        'disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500',
+                        'disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 disabled:shadow-none',
 
-                        errorText && 'border-red-400 focus:border-red-500',
+                        errorText &&
+                            'border-red-400 focus:border-red-500 focus:ring-red-200/70',
 
                         className,
                     )}
                     aria-expanded={isOpen}
                     aria-haspopup="listbox"
+                    aria-controls={listboxId}
                 >
-                    <span className={cn(!selectedOption && 'text-slate-400')}>
-                        {selectedOption?.label ?? placeholder}
+                    <span className="flex items-center justify-between gap-3">
+                        <span
+                            className={cn(
+                                'truncate transition-colors',
+                                !selectedOption && 'text-slate-400',
+                            )}
+                        >
+                            {selectedOption?.label ?? placeholder}
+                        </span>
+                        <svg
+                            className={cn(
+                                'h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200',
+                                isOpen && 'rotate-180 text-blue-500',
+                            )}
+                            viewBox="0 0 20 20"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                            aria-hidden="true"
+                        >
+                            <path
+                                d="M5 7.5L10 12.5L15 7.5"
+                                stroke="currentColor"
+                                strokeWidth="1.8"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            />
+                        </svg>
                     </span>
                 </button>
                 <label
                     htmlFor={resolvedId}
                     className={cn(
-                        'pointer-events-none absolute left-3 bg-white px-1 text-sm text-slate-500 transition-all',
+                        'pointer-events-none absolute left-3 bg-white/95 px-1 text-sm text-slate-500 transition-all',
 
                         shouldFloat
-                            ? 'top-0 -translate-y-1/2 text-xs'
+                            ? 'top-0 -translate-y-1/2 text-xs font-medium'
                             : 'top-1/2 -translate-y-1/2 text-sm',
                         isOpen && 'text-blue-600',
                         errorText && isOpen && 'text-red-500',
@@ -192,7 +320,7 @@ export default function FloatingSelect({
                 </label>
 
                 {isOpen && (
-                    <div className="absolute z-20 mt-1 w-full rounded-lg border border-blue-200 bg-white p-2 shadow-sm">
+                    <div className="animate-in fade-in-0 zoom-in-95 absolute z-20 mt-2 w-full overflow-hidden rounded-xl border border-blue-200/90 bg-white p-2 shadow-[0_16px_40px_-18px_rgba(30,64,175,0.45)] ring-1 ring-blue-100/60 duration-150">
                         {searchable && (
                             <input
                                 type="text"
@@ -201,13 +329,19 @@ export default function FloatingSelect({
                                     setSearch(event.currentTarget.value)
                                 }
                                 placeholder="Cari opsi..."
-                                className="mb-2 h-9 w-full rounded-md border border-blue-200 px-2 text-sm text-slate-700 outline-none focus:border-blue-500"
+                                onKeyDown={handleSearchKeyDown}
+                                className="mb-2 h-9 w-full rounded-lg border border-blue-200 bg-blue-50/40 px-2.5 text-sm text-slate-700 transition outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200/70"
                                 autoFocus
                             />
                         )}
-                        <div className="max-h-48 overflow-auto">
+                        <div
+                            id={listboxId}
+                            role="listbox"
+                            aria-labelledby={triggerId}
+                            className="max-h-56 space-y-1 overflow-auto pr-1"
+                        >
                             {filteredOptions.length === 0 ? (
-                                <p className="px-2 py-1 text-sm text-slate-500">
+                                <p className="rounded-lg bg-slate-50 px-2 py-2 text-sm text-slate-500">
                                     {emptySearchText}
                                 </p>
                             ) : (
@@ -215,19 +349,34 @@ export default function FloatingSelect({
                                     <button
                                         type="button"
                                         key={option.value}
+                                        role="option"
+                                        aria-selected={
+                                            selectedValue === option.value
+                                        }
                                         onClick={() =>
                                             !option.disabled &&
                                             updateValue(option.value)
                                         }
+                                        onMouseEnter={() =>
+                                            !option.disabled &&
+                                            setActiveValue(option.value)
+                                        }
                                         disabled={option.disabled}
                                         className={cn(
-                                            'w-full rounded-md px-2 py-1.5 text-left text-sm transition',
+                                            'flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm transition-colors',
                                             'hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50',
+                                            activeValue === option.value &&
+                                                'bg-blue-50 ring-1 ring-blue-100',
                                             selectedValue === option.value &&
-                                                'bg-blue-100 text-blue-700',
+                                                'bg-blue-100/80 font-medium text-blue-700',
                                         )}
                                     >
-                                        {option.label}
+                                        <span className="truncate">
+                                            {option.label}
+                                        </span>
+                                        {selectedValue === option.value && (
+                                            <div className="ml-auto h-1.5 w-1.5 rounded-full bg-blue-600" />
+                                        )}
                                     </button>
                                 ))
                             )}

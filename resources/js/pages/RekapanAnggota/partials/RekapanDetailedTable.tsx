@@ -157,7 +157,7 @@ export default function RekapanDetailedTable({
                 getRowId={(row) => row.id}
                 selectable={false}
                 initialPageSize={20}
-                searchPlaceholder="Cari nomor/nama anggota..."
+                searchPlaceholder="Cari Nomor/Nama Anggota"
                 emptyMessage="Belum ada data rekapan detail per bulan."
             />
         </div>
