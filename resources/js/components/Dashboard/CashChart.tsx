@@ -38,8 +38,8 @@ export default function CashChart({ data }: { data: CashFlowData[] }) {
                 axisBottom={{
                     tickSize: 5,
                     tickPadding: 5,
-                    tickRotation: 0,
-                    legend: 'Bulan',
+                    tickRotation: data[0]?.data?.length > 12 ? -45 : 0,
+                    legend: '',
                     legendOffset: 36,
                     legendPosition: 'middle'
                 }}
@@ -90,12 +90,12 @@ export default function CashChart({ data }: { data: CashFlowData[] }) {
                     }
                 ]}
                 tooltip={({ point }) => (
-                    <div className="rounded border border-slate-200 bg-white p-2 shadow-sm">
+                    <div className="rounded-lg border border-slate-200 bg-white p-2 shadow-lg ring-1 ring-black/5">
                         <div className="flex items-center gap-2">
-                             <div className="h-3 w-3 rounded-full" style={{ backgroundColor: point.serieColor }}></div>
-                             <p className="text-xs font-semibold text-slate-500">{point.serieId}</p>
+                             <div className="h-2 w-2 rounded-full" style={{ backgroundColor: point.serieColor }}></div>
+                             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{point.serieId}</p>
                         </div>
-                        <p className="text-xs text-slate-500">{point.data.xFormatted}</p>
+                        <p className="text-xs font-medium text-slate-500">{point.data.xFormatted}</p>
                         <p className="text-sm font-bold text-slate-900">{formatCurrency(Number(point.data.y))}</p>
                     </div>
                 )}

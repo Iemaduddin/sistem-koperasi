@@ -17,6 +17,14 @@ class DashboardController extends Controller
     public function index(Request $request): Response
     {
         $now = Carbon::now();
+        $cashPeriod = $request->query('cash_period', 'hari');
+        $loanPeriod = $request->query('loan_period', 'hari');
+
+        // New filters for stats
+        $asetPeriod = $request->query('aset_period', 'semua');
+        $saldoKeluarPeriod = $request->query('saldo_keluar_period', 'semua');
+        $pinjamanAktifPeriod = $request->query('pinjaman_aktif_period', 'semua');
+        $tagihanPeriod = $request->query('tagihan_period', 'semua');
 
         // Total Anggota Counts
         $anggotaCounts = [
@@ -26,116 +34,212 @@ class DashboardController extends Controller
             'keluar' => Anggota::where('status', 'keluar')->count(),
         ];
 
-        // Total Aset (Simpanan Anggota + Saldo Rekening Koperasi)
-        $totalSimpananAll = (float) RekeningSimpanan::sum('saldo');
-        $totalRekeningKoperasiAll = (float) \App\Models\RekeningKoperasi::sum('saldo');
-        $totalAsetAll = $totalSimpananAll + $totalRekeningKoperasiAll;
+        // --- Metric: Aset ---
+        // For 'semua', we show the current cumulative total.
+        // For specific periods, we show total inflows (Kas Masuk) in that period.
+        if ($asetPeriod === 'semua') {
+            $totalSimpananAll = (float) RekeningSimpanan::sum('saldo');
+            $totalRekeningKoperasiAll = (float) \App\Models\RekeningKoperasi::sum('saldo');
+            $asetValue = $totalSimpananAll + $totalRekeningKoperasiAll;
+        } else {
+            $query = \App\Models\TransaksiKasKoperasi::where('jenis', 'masuk');
+            $this->applyPeriodFilter($query, $asetPeriod);
+            $asetValue = (float) $query->sum('jumlah');
+        }
 
-        $totalSimpananBulanIni = (float) TransaksiSimpanan::where('jenis_transaksi', 'setor')
-            ->whereYear('created_at', $now->year)
-            ->whereMonth('created_at', $now->month)
-            ->sum('jumlah');
-            
-        $totalKasMasukBulanIni = (float) \App\Models\TransaksiKasKoperasi::where('jenis', 'masuk')
-            ->whereYear('created_at', $now->year)
-            ->whereMonth('created_at', $now->month)
-            ->sum('jumlah');
-            
-        // Gunakan total kas masuk sebagai representasi aset masuk bulan ini jika lebih relevan
-        $totalAsetBulanIni = $totalKasMasukBulanIni; 
+        // --- Metric: Saldo Keluar ---
+        // For specific periods, we show receivables created in that timeframe.
+        $saldoKeluarQuery = AngsuranPinjaman::where('status', '!=', 'lunas');
+        $this->applyPeriodFilter($saldoKeluarQuery, $saldoKeluarPeriod);
+        $saldoKeluarValue = (float) $saldoKeluarQuery->selectRaw('SUM(total_tagihan + denda - jumlah_dibayar) as total')->value('total');
 
-        // Pinjaman Aktif (Total anggota yang pinjam)
-        $pinjamanAktifCount = Pinjaman::where('status', 'aktif')
-            ->distinct('anggota_id')
-            ->count('anggota_id');
+        // --- Metric: Pinjaman Aktif ---
+        $pinjamanAktifQuery = Pinjaman::where('status', 'aktif');
+        $this->applyPeriodFilter($pinjamanAktifQuery, $pinjamanAktifPeriod);
+        $pinjamanAktifValue = $pinjamanAktifQuery->distinct('anggota_id')->count('anggota_id');
 
-        // Tagihan Jatuh Tempo
-        $tagihanJatuhTempoAll = AngsuranPinjaman::where('status', '!=', 'lunas')
-            ->whereDate('tanggal_jatuh_tempo', '<=', $now->toDateString())
-            ->count();
-            
-        $tagihanJatuhTempoBulanIni = AngsuranPinjaman::where('status', '!=', 'lunas')
-            ->whereYear('tanggal_jatuh_tempo', $now->year)
-            ->whereMonth('tanggal_jatuh_tempo', $now->month)
-            ->count();
+        // --- Metric: Tagihan Jatuh Tempo ---
+        $tagihanQuery = AngsuranPinjaman::where('status', '!=', 'lunas');
+        if ($tagihanPeriod === 'semua') {
+            $tagihanQuery->whereDate('tanggal_jatuh_tempo', '<=', $now->toDateString());
+        } else {
+            $this->applyPeriodFilter($tagihanQuery, $tagihanPeriod, 'tanggal_jatuh_tempo');
+        }
+        $tagihanValue = $tagihanQuery->count();
 
-        // Saldo Keluar (Outstanding Receivables: Pokok + Bunga + Denda - Paid)
-        $saldoKeluar = (float) AngsuranPinjaman::where('status', '!=', 'lunas')
-            ->selectRaw('SUM(total_tagihan + denda - jumlah_dibayar) as total')
-            ->value('total');
+        // --- CHART: LOANS ---
+        $chartLoans = $this->getChartData(
+            Pinjaman::query(),
+            $loanPeriod,
+            'jumlah_pinjaman'
+        );
 
-        // Charts Data (Monthly for current year)
-        $months = collect(range(1, 12))->map(function ($month) use ($now) {
-            return [
-                'month' => Carbon::createFromDate($now->year, $month, 1)->format('M'),
-                'month_num' => $month,
-            ];
-        });
-
-        // Loans per month
-        $loanData = \App\Models\Pinjaman::whereYear('created_at', $now->year)
-            ->selectRaw('MONTH(created_at) as month, SUM(jumlah_pinjaman) as total')
-            ->groupBy('month')
-            ->get()
-            ->pluck('total', 'month');
-
-        $chartLoans = $months->map(fn($m) => [
-            'month' => $m['month'],
-            'total' => (float) ($loanData[$m['month_num']] ?? 0),
-        ]);
-
-        // Cash flow per month
-        $cashDataMasuk = \App\Models\TransaksiKasKoperasi::where('jenis', 'masuk')
-            ->whereYear('created_at', $now->year)
-            ->selectRaw('MONTH(created_at) as month, SUM(jumlah) as total')
-            ->groupBy('month')
-            ->get()
-            ->pluck('total', 'month');
-
-        $cashDataKeluar = \App\Models\TransaksiKasKoperasi::where('jenis', 'keluar')
-            ->whereYear('created_at', $now->year)
-            ->selectRaw('MONTH(created_at) as month, SUM(jumlah) as total')
-            ->groupBy('month')
-            ->get()
-            ->pluck('total', 'month');
+        // --- CHART: CASH FLOW ---
+        $cashMasukRaw = $this->getChartData(
+            \App\Models\TransaksiKasKoperasi::where('jenis', 'masuk'),
+            $cashPeriod,
+            'jumlah'
+        );
+        $cashKeluarRaw = $this->getChartData(
+            \App\Models\TransaksiKasKoperasi::where('jenis', 'keluar'),
+            $cashPeriod,
+            'jumlah'
+        );
 
         $chartCashFlow = [
             [
                 'id' => 'Masuk',
                 'color' => 'hsl(142, 70%, 45%)',
-                'data' => $months->map(fn($m) => [
-                    'x' => $m['month'],
-                    'y' => (float) ($cashDataMasuk[$m['month_num']] ?? 0),
-                ]),
+                'data' => $cashMasukRaw,
             ],
             [
                 'id' => 'Keluar',
                 'color' => 'hsl(0, 70%, 50%)',
-                'data' => $months->map(fn($m) => [
-                    'x' => $m['month'],
-                    'y' => (float) ($cashDataKeluar[$m['month_num']] ?? 0),
-                ]),
+                'data' => $cashKeluarRaw,
             ],
         ];
 
         return Inertia::render('Dashboard/Dashboard', [
             'stats' => [
                 'anggota' => $anggotaCounts,
-                'aset' => [ // Renamed from simpanan
-                    'all' => $totalAsetAll,
-                    'bulan_ini' => $totalAsetBulanIni,
+                'aset' => [
+                    'value' => $asetValue,
+                    'period' => $asetPeriod,
                 ],
-                'pinjaman_aktif' => $pinjamanAktifCount,
+                'pinjaman_aktif' => [
+                    'value' => $pinjamanAktifValue,
+                    'period' => $pinjamanAktifPeriod,
+                ],
                 'tagihan_jatuh_tempo' => [
-                    'all' => $tagihanJatuhTempoAll,
-                    'bulan_ini' => $tagihanJatuhTempoBulanIni,
+                    'value' => $tagihanValue,
+                    'period' => $tagihanPeriod,
                 ],
-                'saldo_keluar' => $saldoKeluar,
+                'saldo_keluar' => [
+                    'value' => $saldoKeluarValue,
+                    'period' => $saldoKeluarPeriod,
+                ],
             ],
             'charts' => [
                 'loans' => $chartLoans,
                 'cashflow' => $chartCashFlow,
+                'filters' => [
+                    'cash_period' => $cashPeriod,
+                    'loan_period' => $loanPeriod,
+                ]
             ],
         ]);
     }
+
+    private function applyPeriodFilter($query, $period, $dateColumn = 'created_at')
+    {
+        $now = Carbon::now();
+        switch ($period) {
+            case 'hari':
+                $query->whereDate($dateColumn, $now->toDateString());
+                break;
+            case 'minggu':
+                $query->whereBetween($dateColumn, [$now->copy()->startOfWeek()->toDateString(), $now->toDateString()]);
+                break;
+            case 'bulan':
+                $query->whereYear($dateColumn, $now->year)->whereMonth($dateColumn, $now->month);
+                break;
+            case 'tahun':
+                $query->whereYear($dateColumn, $now->year);
+                break;
+            // 'semua' remains without date filter
+        }
+    }
+
+
+    private function getChartData($query, $period, $valueColumn, $dateColumn = 'created_at')
+    {
+        $now = Carbon::now();
+        $data = collect();
+        $labels = collect();
+
+        switch ($period) {
+            case 'hari':
+                // Today by Hours (6 AM - 6 PM)
+                $labels = collect(range(6, 18))->map(fn($h) => str_pad($h, 2, '0', STR_PAD_LEFT) . ':00');
+                $results = $query->whereDate($dateColumn, $now->toDateString())
+                    ->selectRaw("HOUR($dateColumn) as label, SUM($valueColumn) as total")
+                    ->groupBy('label')
+                    ->pluck('total', 'label');
+                
+                $data = $labels->map(fn($l, $i) => [
+                    'x' => $l,
+                    'y' => (float) ($results[$i + 6] ?? 0)
+                ]);
+                break;
+
+            case 'minggu':
+                // Current week by Days
+                $startOfWeek = $now->copy()->startOfWeek();
+                for ($i = 0; $i < 7; $i++) {
+                    $date = $startOfWeek->copy()->addDays($i);
+                    $labels->put($date->toDateString(), $date->format('D'));
+                }
+                
+                $results = $query->whereBetween($dateColumn, [$startOfWeek->toDateString(), $now->toDateString()])
+                    ->selectRaw("DATE($dateColumn) as label, SUM($valueColumn) as total")
+                    ->groupBy('label')
+                    ->pluck('total', 'label');
+
+                $data = $labels->map(fn($l, $d) => [
+                    'x' => $l,
+                    'y' => (float) ($results[$d] ?? 0)
+                ])->values();
+                break;
+
+            case 'bulan':
+                // Current month by Days
+                $daysInMonth = $now->daysInMonth;
+                for ($i = 1; $i <= $daysInMonth; $i++) {
+                    $labels->put($i, $i);
+                }
+
+                $results = $query->whereYear($dateColumn, $now->year)
+                    ->whereMonth($dateColumn, $now->month)
+                    ->selectRaw("DAY($dateColumn) as label, SUM($valueColumn) as total")
+                    ->groupBy('label')
+                    ->pluck('total', 'label');
+
+                $data = $labels->map(fn($l, $d) => [
+                    'x' => (string)$l,
+                    'y' => (float) ($results[$d] ?? 0)
+                ])->values();
+                break;
+
+            case 'semua':
+                // All time by Years
+                $results = $query->selectRaw("YEAR($dateColumn) as label, SUM($valueColumn) as total")
+                    ->groupBy('label')
+                    ->orderBy('label')
+                    ->get();
+                
+                $data = $results->map(fn($r) => [
+                    'x' => (string)$r->label,
+                    'y' => (float)$r->total
+                ]);
+                break;
+
+            case 'tahun':
+            default:
+                // Current year by Months
+                $months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                $results = $query->whereYear($dateColumn, $now->year)
+                    ->selectRaw("MONTH($dateColumn) as label, SUM($valueColumn) as total")
+                    ->groupBy('label')
+                    ->pluck('total', 'label');
+
+                $data = collect($months)->map(fn($m, $i) => [
+                    'x' => $m,
+                    'y' => (float) ($results[$i + 1] ?? 0)
+                ]);
+                break;
+        }
+
+        return $data;
+    }
+
 }

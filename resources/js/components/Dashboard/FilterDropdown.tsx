@@ -30,10 +30,13 @@ export default function FilterDropdown({ value, onChange, options, className = '
     }, []);
 
     return (
-        <div className={`relative inline-block text-left ${className}`} ref={dropdownRef}>
+        <div className={`relative z-10 inline-block text-left ${className}`} ref={dropdownRef}>
             <button
                 type="button"
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={(e) => {
+                    e.preventDefault();
+                    setIsOpen(!isOpen);
+                }}
                 className="group flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition-all hover:border-blue-400 hover:bg-blue-50 active:scale-95 shadow-sm"
             >
                 <span className="truncate">{selectedOption.label}</span>

@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { useState, type ReactElement } from 'react';
 import DashboardLayout from '@/layouts/Dashboard/DasboardLayout';
 
@@ -14,21 +14,27 @@ interface Stats {
         keluar: number;
     };
     aset: {
-        all: number;
-        bulan_ini: number;
+        value: number;
+        period: string;
     };
-    pinjaman_aktif: number;
+    pinjaman_aktif: {
+        value: number;
+        period: string;
+    };
     tagihan_jatuh_tempo: {
-        all: number;
-        bulan_ini: number;
+        value: number;
+        period: string;
     };
-    saldo_keluar: number;
+    saldo_keluar: {
+        value: number;
+        period: string;
+    };
 }
 
 interface ChartData {
     loans: {
-        month: string;
-        total: number;
+        x: string;
+        y: number;
     }[];
     cashflow: {
         id: string;
@@ -38,12 +44,22 @@ interface ChartData {
             y: number;
         }[];
     }[];
+    filters: {
+        cash_period: string;
+        loan_period: string;
+    };
 }
+
+const periodOptions = [
+    { value: 'hari', label: 'Hari' },
+    { value: 'minggu', label: 'Minggu' },
+    { value: 'bulan', label: 'Bulan' },
+    { value: 'tahun', label: 'Tahun' },
+    { value: 'semua', label: 'Semua' },
+];
 
 export default function Dashboard({ stats, charts }: { stats: Stats, charts: ChartData }) {
     const [anggotaFilter, setAnggotaFilter] = useState<keyof Stats['anggota']>('aktif');
-    const [asetFilter, setAsetFilter] = useState<keyof Stats['aset']>('all');
-    const [tagihanFilter, setTagihanFilter] = useState<keyof Stats['tagihan_jatuh_tempo']>('all');
 
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat('id-ID', {
@@ -53,6 +69,17 @@ export default function Dashboard({ stats, charts }: { stats: Stats, charts: Cha
         }).format(value);
     };
 
+    const handlePeriodChange = (type: string, value: string) => {
+        const params = new URLSearchParams(window.location.search);
+        params.set(`${type}_period`, value);
+        
+        router.get('/dashboard', Object.fromEntries(params.entries()), {
+            preserveState: true,
+            preserveScroll: true,
+            only: ['stats', 'charts'],
+        });
+    };
+
     const anggotaOptions = [
         { value: 'total', label: 'Semua' },
         { value: 'aktif', label: 'Aktif' },
@@ -60,15 +87,9 @@ export default function Dashboard({ stats, charts }: { stats: Stats, charts: Cha
         { value: 'keluar', label: 'Keluar' },
     ];
 
-    const asetOptions = [
-        { value: 'all', label: 'Semua' },
-        { value: 'bulan_ini', label: 'Bulan Ini' },
-    ];
-
-    const tagihanOptions = [
-        { value: 'all', label: 'Semua' },
-        { value: 'bulan_ini', label: 'Bulan Ini' },
-    ];
+    const getPeriodLabel = (period: string) => {
+        return periodOptions.find(opt => opt.value === period)?.label || 'Semua';
+    };
 
     return (
         <>
@@ -98,35 +119,49 @@ export default function Dashboard({ stats, charts }: { stats: Stats, charts: Cha
                     <div className="flex items-center justify-between">
                         <p className="text-sm font-medium text-slate-500">Aset</p>
                         <FilterDropdown 
-                            value={asetFilter}
-                            onChange={(val) => setAsetFilter(val as any)}
-                            options={asetOptions}
+                            value={stats.aset.period}
+                            onChange={(val) => handlePeriodChange('aset', val)}
+                            options={periodOptions}
                         />
                     </div>
                     <p className="mt-2 text-2xl font-bold text-slate-900 truncate">
-                        {formatCurrency(stats.aset[asetFilter])}
+                        {formatCurrency(stats.aset.value)}
                     </p>
                     <p className="mt-1 text-xs text-slate-500">
-                        {asetFilter === 'all' ? 'Saldo kumulatif (Simpanan + Kas)' : 'Total dana masuk (Semua sumber)'}
+                        Periode: {getPeriodLabel(stats.aset.period)}
                     </p>
                 </div>
 
                 {/* Saldo Keluar */}
                 <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <p className="text-sm font-medium text-slate-500">Saldo Keluar</p>
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-slate-500">Saldo Keluar</p>
+                        <FilterDropdown 
+                            value={stats.saldo_keluar.period}
+                            onChange={(val) => handlePeriodChange('saldo_keluar', val)}
+                            options={periodOptions}
+                        />
+                    </div>
                     <p className="mt-2 text-2xl font-bold text-blue-600 truncate">
-                        {formatCurrency(stats.saldo_keluar)}
+                        {formatCurrency(stats.saldo_keluar.value)}
                     </p>
-                    <p className="mt-1 text-xs text-slate-500">Total piutang (Pokok+Bunga+Denda)</p>
+                    <p className="mt-1 text-xs text-slate-500">Periode: {getPeriodLabel(stats.saldo_keluar.period)}</p>
                 </div>
 
                 {/* Pinjaman Aktif */}
                 <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <p className="text-sm font-medium text-slate-500">Pinjaman Aktif</p>
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-slate-500">Pinjaman Aktif</p>
+                        <FilterDropdown 
+                            value={stats.pinjaman_aktif.period}
+                            onChange={(val) => handlePeriodChange('pinjaman_aktif', val)}
+                            options={periodOptions}
+                        />
+                    </div>
                     <p className="mt-2 text-3xl font-bold text-slate-900">
-                        {stats.pinjaman_aktif}
+                        {stats.pinjaman_aktif.value}
                     </p>
-                    <p className="mt-1 text-xs text-slate-500">Total anggota meminjam</p>
+                    <p className="mt-1 text-xs text-slate-500">Periode: {getPeriodLabel(stats.pinjaman_aktif.period)}</p>
                 </div>
 
                 {/* Tagihan Jatuh Tempo */}
@@ -134,16 +169,16 @@ export default function Dashboard({ stats, charts }: { stats: Stats, charts: Cha
                     <div className="flex items-center justify-between">
                         <p className="text-sm font-medium text-slate-500">Tagihan Jatuh Tempo</p>
                         <FilterDropdown 
-                            value={tagihanFilter}
-                            onChange={(val) => setTagihanFilter(val as any)}
-                            options={tagihanOptions}
+                            value={stats.tagihan_jatuh_tempo.period}
+                            onChange={(val) => handlePeriodChange('tagihan', val)}
+                            options={periodOptions}
                         />
                     </div>
                     <p className="mt-2 text-3xl font-bold text-red-600">
-                        {stats.tagihan_jatuh_tempo[tagihanFilter]}
+                        {stats.tagihan_jatuh_tempo.value}
                     </p>
                     <p className="mt-1 text-xs text-slate-500">
-                        {tagihanFilter === 'all' ? 'Total tagihan menunggak' : 'Jatuh tempo bulan ini'}
+                        Periode: {getPeriodLabel(stats.tagihan_jatuh_tempo.period)}
                     </p>
                 </div>
             </section>
@@ -152,22 +187,37 @@ export default function Dashboard({ stats, charts }: { stats: Stats, charts: Cha
             <section className="mt-6 grid gap-6 lg:grid-cols-2">
                 {/* Cash Flow Chart */}
                 <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <div className="mb-4">
-                        <h3 className="text-lg font-semibold text-slate-900">Grafik Kas Bulanan</h3>
-                        <p className="text-sm text-slate-500">Perbandingan Kas Masuk vs Kas Keluar</p>
+                    <div className="mb-4 flex items-center justify-between">
+                        <div>
+                            <h3 className="text-lg font-semibold text-slate-900">Grafik Kas</h3>
+                            <p className="text-sm text-slate-500">Perbandingan Kas Masuk vs Kas Keluar</p>
+                        </div>
+                        <FilterDropdown 
+                            value={charts.filters.cash_period}
+                            onChange={(val) => handlePeriodChange('cash', val)}
+                            options={periodOptions}
+                        />
                     </div>
                     <CashChart data={charts.cashflow} />
                 </div>
 
                 {/* Loan Chart */}
                 <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <div className="mb-4">
-                        <h3 className="text-lg font-semibold text-slate-900">Grafik Pinjaman</h3>
-                        <p className="text-sm text-slate-500">Total Pencairan Pinjaman per Bulan</p>
+                    <div className="mb-4 flex items-center justify-between">
+                        <div>
+                            <h3 className="text-lg font-semibold text-slate-900">Grafik Pinjaman</h3>
+                            <p className="text-sm text-slate-500">Total Pencairan Pinjaman</p>
+                        </div>
+                        <FilterDropdown 
+                            value={charts.filters.loan_period}
+                            onChange={(val) => handlePeriodChange('loan', val)}
+                            options={periodOptions}
+                        />
                     </div>
                     <LoanChart data={charts.loans} />
                 </div>
             </section>
+
 
             <section className="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
                 <h2 className="text-lg font-semibold text-slate-900">
