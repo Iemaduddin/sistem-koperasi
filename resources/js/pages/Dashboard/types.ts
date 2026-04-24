@@ -6,20 +6,17 @@ export interface Stats {
         keluar: number;
     };
     aset: {
-        value: number;
-        period: string;
+        total: number;
+        period_value: number;
     };
     pinjaman_aktif: {
         value: number;
-        period: string;
     };
     tagihan_jatuh_tempo: {
         value: number;
-        period: string;
     };
     saldo_keluar: {
         value: number;
-        period: string;
     };
 }
 
@@ -37,17 +34,18 @@ export interface ChartData {
         }[];
     }[];
     filters: {
-        cash_period: string;
-        loan_period: string;
+        start_date: string;
+        end_date: string;
+        group_by: 'day' | 'week' | 'month' | 'year';
     };
 }
 
-export const periodOptions = [
-    { value: 'hari', label: 'Hari' },
-    { value: 'minggu', label: 'Minggu' },
-    { value: 'bulan', label: 'Bulan' },
-    { value: 'tahun', label: 'Tahun' },
-    { value: 'semua', label: 'Semua' },
+export const groupByOptions = [
+    { value: 'day', label: 'Harian' },
+    { value: 'week', label: 'Mingguan' },
+    { value: 'month', label: 'Bulanan' },
+    { value: 'year', label: 'Tahunan' },
+    { value: 'all', label: 'Tampil Semua' },
 ];
 
 export const anggotaOptions = [

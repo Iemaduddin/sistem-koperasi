@@ -1,11 +1,12 @@
 import { Head, router } from '@inertiajs/react';
-import { useState, type ReactElement } from 'react';
+import { type ReactElement } from 'react';
 import DashboardLayout from '@/layouts/Dashboard/DasboardLayout';
-import { type ChartData, type Stats, periodOptions } from './types';
+import { type ChartData, type Stats, groupByOptions } from './types';
 import LoanChart from './partials/LoanChart';
 import CashChart from './partials/CashChart';
 import FloatingSelect from '@/components/floating-input/select';
 import StatisticCard from './partials/StatisticCard';
+import FloatingInput from '@/components/floating-input/input';
 
 type DashboardProps = {
     stats: Stats;
@@ -13,95 +14,100 @@ type DashboardProps = {
 };
 
 export default function Dashboard({ stats, charts }: DashboardProps) {
-    const [periodFilters, setPeriodFilters] = useState({
-        cash: charts.filters.cash_period,
-        loan: charts.filters.loan_period,
-        aset: stats.aset.period,
-        saldo_keluar: stats.saldo_keluar.period,
-        pinjaman_aktif: stats.pinjaman_aktif.period,
-        tagihan: stats.tagihan_jatuh_tempo.period,
-    });
+    const filters = charts.filters;
 
-    const handlePeriodChange = (
-        key: keyof typeof periodFilters,
+    const handleFilterChange = (
+        key: keyof typeof filters,
         value: string,
     ) => {
-        const nextFilters = { ...periodFilters, [key]: value };
-        setPeriodFilters(nextFilters);
+        const nextFilters = { ...filters, [key]: value };
 
         router.reload({
             data: {
-                cash_period: nextFilters.cash,
-                loan_period: nextFilters.loan,
-                aset_period: nextFilters.aset,
-                saldo_keluar_period: nextFilters.saldo_keluar,
-                pinjaman_aktif_period: nextFilters.pinjaman_aktif,
-                tagihan_period: nextFilters.tagihan,
+                start_date: nextFilters.start_date,
+                end_date: nextFilters.end_date,
+                group_by: nextFilters.group_by,
             },
             only: ['stats', 'charts'],
             preserveUrl: true,
+            preserveState: true,
         });
+    };
+
+    const formatCurrency = (value: number) => {
+        return new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 0,
+        }).format(value);
     };
 
     return (
         <>
             <Head title="Dashboard" />
-            <StatisticCard
-                stats={stats}
-                periodFilters={periodFilters}
-                onPeriodChange={handlePeriodChange}
-            />
-            <section className="mt-6 grid gap-6 lg:grid-cols-2">
+            
+            {/* Global Filter Bar */}
+            <section className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex flex-wrap items-end gap-4">
+                    <div className="w-48">
+                        <FloatingSelect
+                            label="Grup Data"
+                            value={filters.group_by}
+                            options={groupByOptions}
+                            onValueChange={(value) => handleFilterChange('group_by', value)}
+                            searchable={false}
+                        />
+                    </div>
+                    {filters.group_by !== 'all' && (
+                        <>
+                            <div className="flex-1 min-w-[200px]">
+                                <FloatingInput
+                                    label="Tanggal Mulai"
+                                    type="date"
+                                    value={filters.start_date}
+                                    onChange={(e) => handleFilterChange('start_date', e.target.value)}
+                                />
+                            </div>
+                            <div className="flex-1 min-w-[200px]">
+                                <FloatingInput
+                                    label="Tanggal Selesai"
+                                    type="date"
+                                    value={filters.end_date}
+                                    onChange={(e) => handleFilterChange('end_date', e.target.value)}
+                                />
+                            </div>
+                        </>
+                    )}
+                </div>
+            </section>
+
+            <div className="mb-6">
+                <StatisticCard stats={stats} />
+            </div>
+
+            <section className="grid gap-6 lg:grid-cols-2">
                 {/* Cash Flow Chart */}
                 <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <div className="mb-4 flex items-center justify-between">
-                        <div>
-                            <h3 className="text-lg font-semibold text-slate-900">
-                                Grafik Kas
-                            </h3>
-                            <p className="text-sm text-slate-500">
-                                Perbandingan Kas Masuk vs Kas Keluar
-                            </p>
-                        </div>
-                        <FloatingSelect
-                            label="Pilih Periode"
-                            value={periodFilters.cash}
-                            options={periodOptions}
-                            onValueChange={(value) =>
-                                handlePeriodChange('cash', value)
-                            }
-                            searchable={false}
-                            containerClassName="max-w-32"
-                            className="text-xs"
-                            size="sm"
-                        />
+                    <div className="mb-4">
+                        <h3 className="text-lg font-semibold text-slate-900">
+                            Grafik Kas
+                        </h3>
+                        <p className="text-sm text-slate-500">
+                            Perbandingan Kas Masuk vs Kas Keluar
+                        </p>
                     </div>
                     <CashChart data={charts.cashflow} />
                 </div>
 
                 {/* Loan Chart */}
                 <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <div className="mb-4 flex items-center justify-between">
-                        <div>
-                            <h3 className="text-lg font-semibold text-slate-900">
-                                Grafik Pinjaman
-                            </h3>
-                            <p className="text-sm text-slate-500">
-                                Total Pencairan Pinjaman
-                            </p>
-                        </div>
-                        <FloatingSelect
-                            label="Pilih Periode"
-                            value={periodFilters.loan}
-                            options={periodOptions}
-                            onValueChange={(value) =>
-                                handlePeriodChange('loan', value)
-                            }
-                            searchable={false}
-                            containerClassName="max-w-32 "
-                            className="text-xs"
-                            size="sm"
-                        />
+                    <div className="mb-4">
+                        <h3 className="text-lg font-semibold text-slate-900">
+                            Grafik Pinjaman
+                        </h3>
+                        <p className="text-sm text-slate-500">
+                            Total Pencairan Pinjaman
+                        </p>
                     </div>
                     <LoanChart data={charts.loans} />
                 </div>
