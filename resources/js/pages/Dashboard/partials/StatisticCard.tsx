@@ -19,7 +19,33 @@ export default function StatisticCard({ stats }: Props) {
     };
 
     return (
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {/* Stacked Pemasukan & Pengeluaran */}
+            <div className="flex flex-col gap-4">
+                <div className="flex-1 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <p className="text-xs font-medium text-slate-500">
+                        Pemasukan
+                    </p>
+                    <p className="mt-1 truncate text-2xl font-bold text-emerald-600">
+                        {formatCurrency(stats.aset.period_value)}
+                    </p>
+                    <p className="text-[10px] text-slate-400">
+                        Tabungan & Angsuran Masuk
+                    </p>
+                </div>
+                <div className="flex-1 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <p className="text-xs font-medium text-slate-500">
+                        Pengeluaran (Piutang)
+                    </p>
+                    <p className="mt-1 truncate text-2xl font-bold text-blue-600">
+                        {formatCurrency(stats.saldo_keluar.value)}
+                    </p>
+                    <p className="text-[10px] text-slate-400">
+                        Total Angsuran Belum Bayar
+                    </p>
+                </div>
+            </div>
+
             <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="flex items-center justify-between gap-2">
                     <p className="text-sm font-medium text-slate-500">
@@ -67,30 +93,6 @@ export default function StatisticCard({ stats }: Props) {
                 </p>
                 <p className="mt-1 text-xs text-slate-500">
                     Tagihan belum lunas
-                </p>
-            </div>
-
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                <p className="text-sm font-medium text-slate-500">
-                    Aset
-                </p>
-                <p className="mt-2 truncate text-3xl font-bold text-slate-900">
-                    {formatCurrency(stats.aset.total)}
-                </p>
-                <p className="mt-1 text-xs text-slate-500">
-                    Total saldo saat ini
-                </p>
-            </div>
-
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                <p className="text-sm font-medium text-slate-500">
-                    Piutang Angsuran
-                </p>
-                <p className="mt-2 truncate text-2xl font-bold text-blue-600">
-                    {formatCurrency(stats.saldo_keluar.value)}
-                </p>
-                <p className="mt-1 text-xs text-slate-500">
-                    Tagihan di rentang ini
                 </p>
             </div>
         </section>
