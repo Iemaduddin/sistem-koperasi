@@ -10,7 +10,6 @@ import {
 } from 'react-icons/lu';
 import Button from './button';
 import FloatingSelect from './floating-input/select';
-import { size } from 'zod';
 import FloatingInput from './floating-input/input';
 
 type SortDirection = 'asc' | 'desc';
@@ -32,6 +31,13 @@ export type DataTableColumn<TData> = {
     searchValue?: (row: TData) => string;
 };
 
+export type DataTableHeaderGroup = {
+    id: string;
+    label: string;
+    columnIds: string[];
+    className?: string;
+};
+
 export type DataTableProps<TData> = {
     data: TData[];
     columns: DataTableColumn<TData>[];
@@ -46,6 +52,12 @@ export type DataTableProps<TData> = {
     selectable?: boolean;
     onSelectionChange?: (selectedIds: string[]) => void;
     selectionResetKey?: string | number;
+    stickyHeader?: boolean;
+    stickyFirstColumn?: boolean;
+    stickyColumnCount?: number;
+    stickySelectionColumn?: boolean;
+    tableContainerClassName?: string;
+    headerGroups?: DataTableHeaderGroup[];
 };
 
 function toSearchText(value: unknown): string {
@@ -101,6 +113,12 @@ export default function DataTable<TData>({
     selectable = true,
     onSelectionChange,
     selectionResetKey,
+    stickyHeader = false,
+    stickyFirstColumn = false,
+    stickyColumnCount,
+    stickySelectionColumn = true,
+    tableContainerClassName,
+    headerGroups,
 }: DataTableProps<TData>) {
     const [query, setQuery] = useState('');
     const [page, setPage] = useState(1);
@@ -111,6 +129,13 @@ export default function DataTable<TData>({
     } | null>(initialSortState);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+    const [stickyLeftMap, setStickyLeftMap] = useState<Record<string, number>>(
+        {},
+    );
+    const stickyHeaderRefs = useMemo(
+        () => new Map<string, HTMLTableCellElement | null>(),
+        [],
+    );
 
     const searchableColumns = useMemo(() => {
         if (!searchable) return [];
@@ -157,6 +182,92 @@ export default function DataTable<TData>({
         [columns],
     );
 
+    const resolvedStickyColumnCount =
+        stickyColumnCount !== undefined
+            ? Math.max(0, Math.min(columns.length, stickyColumnCount))
+            : stickyFirstColumn
+              ? 1
+              : 0;
+
+    const stickyColumnIds = useMemo(
+        () => columns.slice(0, resolvedStickyColumnCount).map((c) => c.id),
+        [columns, resolvedStickyColumnCount],
+    );
+
+    const groupByColumnId = useMemo(() => {
+        const map = new Map<string, DataTableHeaderGroup>();
+        if (!headerGroups || headerGroups.length === 0) {
+            return map;
+        }
+
+        const columnIdSet = new Set(columns.map((column) => column.id));
+        headerGroups.forEach((group) => {
+            group.columnIds.forEach((columnId) => {
+                if (columnIdSet.has(columnId)) {
+                    map.set(columnId, group);
+                }
+            });
+        });
+
+        return map;
+    }, [columns, headerGroups]);
+
+    const orderedHeaderGroups = useMemo(() => {
+        if (!headerGroups || headerGroups.length === 0) {
+            return [] as Array<
+                DataTableHeaderGroup & {
+                    orderedColumnIds: string[];
+                    firstColumnId: string;
+                }
+            >;
+        }
+
+        const columnOrder = columns.map((column) => column.id);
+
+        return headerGroups
+            .map((group) => {
+                const orderedColumnIds = columnOrder.filter((columnId) =>
+                    group.columnIds.includes(columnId),
+                );
+
+                if (orderedColumnIds.length === 0) {
+                    return null;
+                }
+
+                return {
+                    ...group,
+                    orderedColumnIds,
+                    firstColumnId: orderedColumnIds[0],
+                };
+            })
+            .filter(
+                (
+                    group,
+                ): group is DataTableHeaderGroup & {
+                    orderedColumnIds: string[];
+                    firstColumnId: string;
+                } => group !== null,
+            );
+    }, [columns, headerGroups]);
+
+    const groupMetaByFirstColumnId = useMemo(() => {
+        const map = new Map<
+            string,
+            DataTableHeaderGroup & {
+                orderedColumnIds: string[];
+                firstColumnId: string;
+            }
+        >();
+
+        orderedHeaderGroups.forEach((group) => {
+            map.set(group.firstColumnId, group);
+        });
+
+        return map;
+    }, [orderedHeaderGroups]);
+
+    const hasGroupedHeaders = orderedHeaderGroups.length > 0;
+
     useEffect(() => {
         if (page > totalPages) {
             setPage(totalPages);
@@ -182,6 +293,32 @@ export default function DataTable<TData>({
             return next;
         });
     }, [getRowId, paginatedRows]);
+
+    useEffect(() => {
+        const recalcStickyOffsets = () => {
+            const next: Record<string, number> = {};
+            let left =
+                selectable &&
+                stickySelectionColumn &&
+                stickyColumnIds.length > 0
+                    ? 40
+                    : 0;
+
+            for (const columnId of stickyColumnIds) {
+                next[columnId] = left;
+                const headerCell = stickyHeaderRefs.get(columnId);
+                left += headerCell?.offsetWidth ?? 0;
+            }
+
+            setStickyLeftMap(next);
+        };
+
+        recalcStickyOffsets();
+        window.addEventListener('resize', recalcStickyOffsets);
+        return () => {
+            window.removeEventListener('resize', recalcStickyOffsets);
+        };
+    }, [selectable, stickyColumnIds, stickyHeaderRefs, stickySelectionColumn]);
 
     const pageRowIds = paginatedRows.map((row) => getRowId(row));
     const allPageSelected =
@@ -232,6 +369,43 @@ export default function DataTable<TData>({
         });
     };
 
+    const stickyHeaderClass = stickyHeader
+        ? 'sticky top-0 z-10 bg-slate-100'
+        : '';
+
+    const isStickyColumn = (columnId: string) =>
+        stickyColumnIds.includes(columnId);
+
+    const getStickyLeft = (columnId: string) => stickyLeftMap[columnId] ?? 0;
+
+    const renderColumnHeaderContent = (
+        column: DataTableColumn<TData>,
+        isSorted: boolean,
+    ) => {
+        if (sortable && column.sortable) {
+            return (
+                <button
+                    type="button"
+                    onClick={() => toggleSort(column.id)}
+                    className="inline-flex items-center gap-1 text-left"
+                >
+                    {column.header}
+                    {isSorted ? (
+                        sortState?.direction === 'asc' ? (
+                            <LuArrowUp className="h-4 w-4" />
+                        ) : (
+                            <LuArrowDown className="h-4 w-4" />
+                        )
+                    ) : (
+                        <LuArrowUpDown className="h-4 w-4 opacity-60" />
+                    )}
+                </button>
+            );
+        }
+
+        return column.header;
+    };
+
     return (
         <div className="rounded-2xl border border-blue-100 bg-white p-4">
             <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -279,12 +453,15 @@ export default function DataTable<TData>({
                 </div>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className={`overflow-auto ${tableContainerClassName ?? ''}`}>
                 <table className="min-w-full border-separate border-spacing-0 text-sm">
                     <thead>
                         <tr>
                             {selectable && (
-                                <th className="w-10 border-b border-blue-100 px-2 py-3 text-left">
+                                <th
+                                    rowSpan={hasGroupedHeaders ? 2 : 1}
+                                    className={`w-10 border-b border-blue-100 px-2 py-3 text-left ${stickyHeaderClass} ${stickySelectionColumn && stickyColumnIds.length > 0 ? 'sticky left-0 z-50 bg-slate-100' : ''}`}
+                                >
                                     <input
                                         type="checkbox"
                                         checked={allPageSelected}
@@ -300,48 +477,136 @@ export default function DataTable<TData>({
                                 </th>
                             )}
                             {columns.map((column) => {
+                                const columnGroup = groupByColumnId.get(
+                                    column.id,
+                                );
+                                const groupMeta = groupMetaByFirstColumnId.get(
+                                    column.id,
+                                );
+
+                                if (
+                                    hasGroupedHeaders &&
+                                    columnGroup &&
+                                    !groupMeta
+                                ) {
+                                    return null;
+                                }
+
                                 const isSorted =
                                     sortState?.columnId === column.id;
                                 const isHiddenMobile = column.responsiveHidden;
+
+                                if (groupMeta) {
+                                    return (
+                                        <th
+                                            key={`group-${groupMeta.id}`}
+                                            colSpan={
+                                                groupMeta.orderedColumnIds
+                                                    .length
+                                            }
+                                            className={`border-b border-blue-100 px-3 py-3 text-center font-semibold text-slate-700 ${stickyHeader ? 'sticky top-0 z-10 bg-slate-100' : ''} ${groupMeta.className ?? ''}`}
+                                        >
+                                            {groupMeta.label}
+                                        </th>
+                                    );
+                                }
+
                                 return (
                                     <th
                                         key={column.id}
+                                        rowSpan={hasGroupedHeaders ? 2 : 1}
+                                        ref={(cell) => {
+                                            if (isStickyColumn(column.id)) {
+                                                stickyHeaderRefs.set(
+                                                    column.id,
+                                                    cell,
+                                                );
+                                            }
+                                        }}
+                                        style={
+                                            isStickyColumn(column.id)
+                                                ? {
+                                                      left: `${getStickyLeft(column.id)}px`,
+                                                  }
+                                                : undefined
+                                        }
                                         className={`border-b border-blue-100 px-3 py-3 text-left font-semibold text-slate-700 ${
                                             isHiddenMobile
                                                 ? 'hidden md:table-cell'
                                                 : ''
-                                        } ${column.headerClassName ?? ''}`}
+                                        } ${stickyHeaderClass} ${isStickyColumn(column.id) ? 'sticky z-40 bg-slate-100' : ''} ${column.headerClassName ?? ''}`}
                                     >
-                                        {sortable && column.sortable ? (
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    toggleSort(column.id)
-                                                }
-                                                className="inline-flex items-center gap-1 text-left"
-                                            >
-                                                {column.header}
-                                                {isSorted ? (
-                                                    sortState.direction ===
-                                                    'asc' ? (
-                                                        <LuArrowUp className="h-4 w-4" />
-                                                    ) : (
-                                                        <LuArrowDown className="h-4 w-4" />
-                                                    )
-                                                ) : (
-                                                    <LuArrowUpDown className="h-4 w-4 opacity-60" />
-                                                )}
-                                            </button>
-                                        ) : (
-                                            column.header
+                                        {renderColumnHeaderContent(
+                                            column,
+                                            isSorted,
                                         )}
                                     </th>
                                 );
                             })}
                             {hiddenColumns.length > 0 && (
-                                <th className="w-10 border-b border-blue-100 py-3 md:hidden" />
+                                <th
+                                    rowSpan={hasGroupedHeaders ? 2 : 1}
+                                    className="w-10 border-b border-blue-100 py-3 md:hidden"
+                                />
                             )}
                         </tr>
+
+                        {hasGroupedHeaders && (
+                            <tr>
+                                {columns
+                                    .filter((column) =>
+                                        groupByColumnId.has(column.id),
+                                    )
+                                    .map((column) => {
+                                        const isSorted =
+                                            sortState?.columnId === column.id;
+                                        const isHiddenMobile =
+                                            column.responsiveHidden;
+
+                                        return (
+                                            <th
+                                                key={`leaf-${column.id}`}
+                                                ref={(cell) => {
+                                                    if (
+                                                        isStickyColumn(
+                                                            column.id,
+                                                        )
+                                                    ) {
+                                                        stickyHeaderRefs.set(
+                                                            column.id,
+                                                            cell,
+                                                        );
+                                                    }
+                                                }}
+                                                style={
+                                                    isStickyColumn(column.id)
+                                                        ? {
+                                                              left: `${getStickyLeft(column.id)}px`,
+                                                              top: stickyHeader
+                                                                  ? '44px'
+                                                                  : undefined,
+                                                          }
+                                                        : {
+                                                              top: stickyHeader
+                                                                  ? '44px'
+                                                                  : undefined,
+                                                          }
+                                                }
+                                                className={`border-b border-blue-100 px-3 py-3 text-left font-semibold text-slate-700 ${
+                                                    isHiddenMobile
+                                                        ? 'hidden md:table-cell'
+                                                        : ''
+                                                } ${stickyHeader ? 'sticky z-10 bg-slate-100' : ''} ${isStickyColumn(column.id) ? 'sticky z-40 bg-slate-100' : ''} ${column.headerClassName ?? ''}`}
+                                            >
+                                                {renderColumnHeaderContent(
+                                                    column,
+                                                    isSorted,
+                                                )}
+                                            </th>
+                                        );
+                                    })}
+                            </tr>
+                        )}
                     </thead>
                     <tbody>
                         {paginatedRows.length === 0 ? (
@@ -365,7 +630,9 @@ export default function DataTable<TData>({
                                     <Fragment key={rowId}>
                                         <tr className="hover:bg-blue-50/60">
                                             {selectable && (
-                                                <td className="border-b border-blue-100 px-2 py-3 align-top">
+                                                <td
+                                                    className={`border-b border-blue-100 px-2 py-3 align-top ${stickySelectionColumn && stickyColumnIds.length > 0 ? 'sticky left-0 z-20 bg-white' : ''}`}
+                                                >
                                                     <input
                                                         type="checkbox"
                                                         checked={isSelected}
@@ -391,11 +658,20 @@ export default function DataTable<TData>({
                                                 return (
                                                     <td
                                                         key={`${rowId}-${column.id}`}
+                                                        style={
+                                                            isStickyColumn(
+                                                                column.id,
+                                                            )
+                                                                ? {
+                                                                      left: `${getStickyLeft(column.id)}px`,
+                                                                  }
+                                                                : undefined
+                                                        }
                                                         className={`border-b border-blue-100 px-3 py-3 align-top text-slate-700 ${
                                                             column.responsiveHidden
                                                                 ? 'hidden md:table-cell'
                                                                 : ''
-                                                        } ${column.cellClassName ?? ''}`}
+                                                        } ${isStickyColumn(column.id) ? 'sticky z-20 bg-white' : ''} ${column.cellClassName ?? ''}`}
                                                     >
                                                         {cell}
                                                     </td>

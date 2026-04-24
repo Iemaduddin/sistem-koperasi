@@ -29,6 +29,14 @@ export type ImportSummary = {
         row: number;
         message: string;
     }>;
+    header_warnings?: Array<{
+        sheet: string;
+        row: number;
+        column: string;
+        expected: string;
+        actual: string | null;
+        message: string;
+    }>;
     table_rows: Array<{
         sheet: string;
         row: number;
@@ -51,7 +59,7 @@ export type ImportSummary = {
             kolom_range: string;
             bulan_tahun: string;
             angsuran_dibayar: number | null;
-            simpanan_pokok_dibayar: number | null;
+            simpanan_wajib_dibayar: number | null;
             simpanan_sukarela_dibayar: number | null;
         }>;
     }>;

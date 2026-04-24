@@ -399,6 +399,7 @@ const menuSections: SidebarSection[] = [
     },
     {
         id: 'users',
+        title: 'Manajemen Pengguna',
         items: [
             {
                 id: 'users',

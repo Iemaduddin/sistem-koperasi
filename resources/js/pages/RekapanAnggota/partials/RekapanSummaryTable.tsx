@@ -122,6 +122,9 @@ export default function RekapanSummaryTable({
                 initialPageSize={20}
                 searchPlaceholder="Cari Nomor/Nama Anggota"
                 emptyMessage="Belum ada data rekapan anggota."
+                stickyHeader
+                stickyColumnCount={2}
+                tableContainerClassName="max-h-[70vh]"
             />
         </div>
     );

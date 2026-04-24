@@ -1,4 +1,7 @@
-import DataTable, { type DataTableColumn } from '@/components/data-table';
+import DataTable, {
+    type DataTableColumn,
+    type DataTableHeaderGroup,
+} from '@/components/data-table';
 import { useMemo } from 'react';
 import { PageProps } from '../type';
 
@@ -64,7 +67,7 @@ export default function RekapanDetailedTable({
             },
             {
                 id: 'simpanan_anggota',
-                header: 'Daftar Anggota',
+                header: 'Anggota',
                 sortable: true,
                 sortValue: (row) => row.simpanan_awal.anggota,
                 cellClassName: 'text-right',
@@ -72,7 +75,7 @@ export default function RekapanDetailedTable({
             },
             {
                 id: 'simpanan_wajib',
-                header: 'Daftar Wajib',
+                header: 'Wajib',
                 sortable: true,
                 sortValue: (row) => row.simpanan_awal.wajib,
                 cellClassName: 'text-right',
@@ -80,7 +83,7 @@ export default function RekapanDetailedTable({
             },
             {
                 id: 'simpanan_sukarela',
-                header: 'Daftar Sukarela',
+                header: 'Sukarela',
                 sortable: true,
                 sortValue: (row) => row.simpanan_awal.sukarela,
                 cellClassName: 'text-right',
@@ -94,7 +97,7 @@ export default function RekapanDetailedTable({
             monthlyColumns.push(
                 {
                     id: `${month.key}-angsuran`,
-                    header: `${month.label} Angsuran`,
+                    header: 'Angsuran',
                     sortable: true,
                     sortValue: (row) =>
                         row.entries_bulanan.find(
@@ -111,7 +114,7 @@ export default function RekapanDetailedTable({
                 },
                 {
                     id: `${month.key}-wajib`,
-                    header: `${month.label} Wajib`,
+                    header: 'Wajib',
                     sortable: true,
                     sortValue: (row) =>
                         row.entries_bulanan.find(
@@ -128,7 +131,7 @@ export default function RekapanDetailedTable({
                 },
                 {
                     id: `${month.key}-sukarela`,
-                    header: `${month.label} Sukarela`,
+                    header: 'Sukarela',
                     sortable: true,
                     sortValue: (row) =>
                         row.entries_bulanan.find(
@@ -149,6 +152,34 @@ export default function RekapanDetailedTable({
         return [...baseColumns, ...monthlyColumns];
     }, [formatCurrency, monthColumns]);
 
+    const headerGroups = useMemo<DataTableHeaderGroup[]>(() => {
+        const groups: DataTableHeaderGroup[] = [
+            {
+                id: 'daftar',
+                label: 'Daftar',
+                columnIds: [
+                    'simpanan_anggota',
+                    'simpanan_wajib',
+                    'simpanan_sukarela',
+                ],
+            },
+        ];
+
+        monthColumns.forEach((month) => {
+            groups.push({
+                id: `group-${month.key}`,
+                label: month.label,
+                columnIds: [
+                    `${month.key}-angsuran`,
+                    `${month.key}-wajib`,
+                    `${month.key}-sukarela`,
+                ],
+            });
+        });
+
+        return groups;
+    }, [monthColumns]);
+
     return (
         <div className="mt-4">
             <DataTable
@@ -159,6 +190,10 @@ export default function RekapanDetailedTable({
                 initialPageSize={20}
                 searchPlaceholder="Cari Nomor/Nama Anggota"
                 emptyMessage="Belum ada data rekapan detail per bulan."
+                headerGroups={headerGroups}
+                stickyHeader
+                stickyColumnCount={2}
+                tableContainerClassName="max-h-[70vh]"
             />
         </div>
     );

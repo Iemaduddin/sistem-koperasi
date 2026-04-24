@@ -64,6 +64,42 @@ export default function ImportSummaryCard({ summary }: Props) {
                 </p>
             )}
 
+            {summary.header_warnings && summary.header_warnings.length > 0 && (
+                <div className="mt-3 overflow-x-auto rounded-lg border border-amber-200 bg-amber-50/60">
+                    <table className="min-w-full text-left text-xs text-amber-900">
+                        <thead className="bg-amber-100/80 text-amber-800">
+                            <tr>
+                                <th className="px-3 py-2">Sheet</th>
+                                <th className="px-3 py-2">Kolom</th>
+                                <th className="px-3 py-2">Expected</th>
+                                <th className="px-3 py-2">Actual</th>
+                                <th className="px-3 py-2">Catatan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {summary.header_warnings.map((item) => (
+                                <tr
+                                    key={`header-warning-${item.sheet}-${item.column}-${item.row}`}
+                                    className="border-t border-amber-200/80"
+                                >
+                                    <td className="px-3 py-2">{item.sheet}</td>
+                                    <td className="px-3 py-2">{item.column}</td>
+                                    <td className="px-3 py-2">
+                                        {item.expected}
+                                    </td>
+                                    <td className="px-3 py-2">
+                                        {item.actual ?? '-'}
+                                    </td>
+                                    <td className="px-3 py-2">
+                                        {item.message}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
             {summary.processed_sheets.length > 0 && (
                 <div className="mt-3 overflow-x-auto rounded-lg border border-emerald-200 bg-white">
                     <table className="min-w-full text-left text-xs text-slate-700">
@@ -202,7 +238,7 @@ export default function ImportSummaryCard({ summary }: Props) {
                                                                 {`Angsuran: ${monthDetail.angsuran_dibayar ?? '-'} `}
                                                             </div>
                                                             <div>
-                                                                {`Pokok: ${monthDetail.simpanan_pokok_dibayar ?? '-'}`}
+                                                                {`Wajib: ${monthDetail.simpanan_wajib_dibayar ?? '-'}`}
                                                             </div>
                                                             <div>
                                                                 {`Sukarela: ${monthDetail.simpanan_sukarela_dibayar ?? '-'}`}

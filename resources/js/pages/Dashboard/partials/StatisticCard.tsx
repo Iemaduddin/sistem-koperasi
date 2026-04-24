@@ -65,53 +65,6 @@ export default function StatisticCard({
                     {anggotaFilter === 'total' ? 'Semua' : anggotaFilter}
                 </p>
             </div>
-
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-medium text-slate-500">Aset</p>
-                    <FloatingSelect
-                        label="Periode"
-                        value={periodFilters.aset}
-                        options={periodOptions}
-                        onValueChange={(value) => onPeriodChange('aset', value)}
-                        searchable={false}
-                        containerClassName="max-w-28"
-                        size="xs"
-                    />
-                </div>
-                <p className="mt-2 truncate text-2xl font-bold text-slate-900">
-                    {formatCurrency(stats.aset.value)}
-                </p>
-                <p className="mt-1 text-xs text-slate-500">
-                    Periode: {getPeriodLabel(periodFilters.aset)}
-                </p>
-            </div>
-
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-medium text-slate-500">
-                        Saldo Keluar
-                    </p>
-                    <FloatingSelect
-                        label="Periode"
-                        value={periodFilters.saldo_keluar}
-                        options={periodOptions}
-                        onValueChange={(value) =>
-                            onPeriodChange('saldo_keluar', value)
-                        }
-                        searchable={false}
-                        containerClassName="max-w-28"
-                        size="xs"
-                    />
-                </div>
-                <p className="mt-2 truncate text-2xl font-bold text-blue-600">
-                    {formatCurrency(stats.saldo_keluar.value)}
-                </p>
-                <p className="mt-1 text-xs text-slate-500">
-                    Periode: {getPeriodLabel(periodFilters.saldo_keluar)}
-                </p>
-            </div>
-
             <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="flex items-center justify-between gap-2">
                     <p className="text-sm font-medium text-slate-500">
@@ -160,6 +113,57 @@ export default function StatisticCard({
                 <p className="mt-1 text-xs text-slate-500">
                     Periode: {getPeriodLabel(periodFilters.tagihan)}
                 </p>
+            </div>
+            <div className="col-span-2 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-medium text-slate-500">
+                            Aset
+                        </p>
+                        <FloatingSelect
+                            label="Periode"
+                            value={periodFilters.aset}
+                            options={periodOptions}
+                            onValueChange={(value) =>
+                                onPeriodChange('aset', value)
+                            }
+                            searchable={false}
+                            containerClassName="max-w-28"
+                            size="xs"
+                        />
+                    </div>
+                    <p className="mt-2 truncate text-2xl font-bold text-slate-900">
+                        {formatCurrency(stats.aset.value)}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                        Periode: {getPeriodLabel(periodFilters.aset)}
+                    </p>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-medium text-slate-500">
+                            Saldo Keluar
+                        </p>
+                        <FloatingSelect
+                            label="Periode"
+                            value={periodFilters.saldo_keluar}
+                            options={periodOptions}
+                            onValueChange={(value) =>
+                                onPeriodChange('saldo_keluar', value)
+                            }
+                            searchable={false}
+                            containerClassName="max-w-28"
+                            size="xs"
+                        />
+                    </div>
+                    <p className="mt-2 truncate text-2xl font-bold text-blue-600">
+                        {formatCurrency(stats.saldo_keluar.value)}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                        Periode: {getPeriodLabel(periodFilters.saldo_keluar)}
+                    </p>
+                </div>
             </div>
         </section>
     );

@@ -103,6 +103,13 @@ class RekapanAnggotaController extends Controller
         $anggotaDetailRows = $anggotaRecords->map(function ($anggota) use (&$monthKeys) {
             $pinjamanPertama = $anggota->pinjaman->first();
             $monthlyMap = [];
+            $tanggalMasukKey = $anggota->tanggal_bergabung?->toDateString();
+            $tanggalMasukMonthKey = $anggota->tanggal_bergabung?->format('Y-m');
+            $simpananAwalByJenis = [
+                1 => 0.0,
+                2 => 0.0,
+                3 => 0.0,
+            ];
 
             foreach ($anggota->pinjaman as $pinjaman) {
                 foreach ($pinjaman->transaksi as $transaksiPinjaman) {
@@ -111,6 +118,11 @@ class RekapanAnggotaController extends Controller
                     }
 
                     $key = Carbon::parse($transaksiPinjaman->tanggal_bayar)->format('Y-m');
+
+                    if ($tanggalMasukMonthKey !== null && $key === $tanggalMasukMonthKey) {
+                        continue;
+                    }
+
                     $monthKeys[$key] = true;
 
                     if (! isset($monthlyMap[$key])) {
@@ -136,6 +148,26 @@ class RekapanAnggotaController extends Controller
                     }
 
                     $key = Carbon::parse($tanggalTransaksi)->format('Y-m');
+                    $tanggalTransaksiDate = Carbon::parse($tanggalTransaksi)->toDateString();
+
+                    $signedJumlah = (float) $transaksiSimpanan->jumlah;
+                    if ($transaksiSimpanan->jenis_transaksi === 'tarik') {
+                        $signedJumlah *= -1;
+                    }
+
+                    $jenisId = (int) $rekening->jenis_simpanan_id;
+                    if (
+                        $tanggalMasukKey !== null
+                        && $tanggalTransaksiDate === $tanggalMasukKey
+                        && array_key_exists($jenisId, $simpananAwalByJenis)
+                    ) {
+                        $simpananAwalByJenis[$jenisId] += $signedJumlah;
+                    }
+
+                    if ($tanggalMasukMonthKey !== null && $key === $tanggalMasukMonthKey) {
+                        continue;
+                    }
+
                     $monthKeys[$key] = true;
 
                     if (! isset($monthlyMap[$key])) {
@@ -147,16 +179,11 @@ class RekapanAnggotaController extends Controller
                         ];
                     }
 
-                    $signedJumlah = (float) $transaksiSimpanan->jumlah;
-                    if ($transaksiSimpanan->jenis_transaksi === 'tarik') {
-                        $signedJumlah *= -1;
-                    }
-
-                    if ((int) $rekening->jenis_simpanan_id === 2) {
+                    if ($jenisId === 2) {
                         $monthlyMap[$key]['wajib'] += $signedJumlah;
                     }
 
-                    if ((int) $rekening->jenis_simpanan_id === 3) {
+                    if ($jenisId === 3) {
                         $monthlyMap[$key]['sukarela'] += $signedJumlah;
                     }
                 }
@@ -173,15 +200,9 @@ class RekapanAnggotaController extends Controller
                 'angsuran' => (float) ($pinjamanPertama?->jumlah_angsuran ?? 0),
                 'tenor' => (int) ($pinjamanPertama?->tenor_bulan ?? 0),
                 'simpanan_awal' => [
-                    'anggota' => (float) $anggota->rekeningSimpanan
-                        ->where('jenis_simpanan_id', 1)
-                        ->sum('saldo'),
-                    'wajib' => (float) $anggota->rekeningSimpanan
-                        ->where('jenis_simpanan_id', 2)
-                        ->sum('saldo'),
-                    'sukarela' => (float) $anggota->rekeningSimpanan
-                        ->where('jenis_simpanan_id', 3)
-                        ->sum('saldo'),
+                    'anggota' => (float) $simpananAwalByJenis[1],
+                    'wajib' => (float) $simpananAwalByJenis[2],
+                    'sukarela' => (float) $simpananAwalByJenis[3],
                 ],
                 'entries_bulanan' => array_values($monthlyMap),
             ];

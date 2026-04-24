@@ -22,6 +22,7 @@ use RuntimeException;
 class ImportRekapanAnggotaService
 {
     private const START_ROW = 4;
+    private const HEADER_ROW = 3;
     private const MAX_TABLE_ROWS = 300;
 
     /**
@@ -44,6 +45,7 @@ class ImportRekapanAnggotaService
 
         $processedSheets = [];
         $skippedSheets = [];
+        $headerWarnings = [];
         $invalidRows = [];
         $tableRows = [];
         $isTableTruncated = false;
@@ -59,6 +61,11 @@ class ImportRekapanAnggotaService
             if (preg_match('/^rekap/i', $sheetLabel) === 1) {
                 $skippedSheets[] = $sheetLabel;
                 continue;
+            }
+
+            $sheetHeaderWarnings = $this->validateSheetHeader($sheetLabel, $rows);
+            if (count($sheetHeaderWarnings) > 0) {
+                $headerWarnings = array_merge($headerWarnings, $sheetHeaderWarnings);
             }
 
             $remainingTableSlots = max(0, self::MAX_TABLE_ROWS - count($tableRows));
@@ -110,15 +117,89 @@ class ImportRekapanAnggotaService
             'valid_rows' => $validRows,
             'invalid_rows_count' => count($invalidRows),
             'entries_bulanan_count' => $parsedMonthlyEntries,
+            'header_warnings' => array_slice($headerWarnings, 0, 100),
             'invalid_rows' => array_slice($invalidRows, 0, 100),
             'table_rows' => $tableRows,
             'table_rows_truncated' => $isTableTruncated,
             'mode' => $persist ? 'persist' : 'dry-run',
             'persist_summary' => $persistSummary,
-            'note' => $persist
+            'note' => ($persist
                 ? 'Data berhasil diparse dan dipersist ke tabel transaksi.'
-                : 'Dry-run: data hanya diparse untuk preview, tidak disimpan ke database.',
+                : 'Dry-run: data hanya diparse untuk preview, tidak disimpan ke database.') .
+                (count($headerWarnings) > 0
+                    ? ' Terdapat warning header template, silakan cek ringkasan warning.'
+                    : ''),
         ];
+    }
+
+    /**
+     * @param  array<int, array<int, mixed>>  $rows
+     * @return array<int, array<string, mixed>>
+     */
+    private function validateSheetHeader(string $sheetName, array $rows): array
+    {
+        $expectedColumns = [
+            ['index' => 0, 'expected' => 'No Anggota', 'pattern' => '/no\s*anggota|anggota\s*no/i'],
+            ['index' => 1, 'expected' => 'Nama', 'pattern' => '/nama/i'],
+            ['index' => 2, 'expected' => 'Tanggal Masuk', 'pattern' => '/tanggal\s*masuk|tgl\s*masuk/i'],
+            ['index' => 3, 'expected' => 'Pinjaman', 'pattern' => '/pinjaman/i'],
+            ['index' => 4, 'expected' => 'Angsuran', 'pattern' => '/angsuran/i'],
+            ['index' => 5, 'expected' => 'Tenor', 'pattern' => '/tenor/i'],
+            ['index' => 6, 'expected' => 'Simpanan Pokok', 'pattern' => '/pokok/i'],
+            ['index' => 7, 'expected' => 'Simpanan Wajib', 'pattern' => '/wajib/i'],
+            ['index' => 8, 'expected' => 'Simpanan Sukarela', 'pattern' => '/sukarela/i'],
+            ['index' => 9, 'expected' => 'Angsuran Bulanan', 'pattern' => '/angsuran/i'],
+            ['index' => 10, 'expected' => 'Simpanan Wajib Bulanan', 'pattern' => '/wajib/i'],
+            ['index' => 11, 'expected' => 'Simpanan Sukarela Bulanan', 'pattern' => '/sukarela/i'],
+        ];
+
+        $warnings = [];
+
+        foreach ($expectedColumns as $column) {
+            $headerValue = $this->resolveHeaderValueForColumn($rows, (int) $column['index']);
+
+            if ($headerValue === null) {
+                $warnings[] = [
+                    'sheet' => $sheetName,
+                    'row' => self::HEADER_ROW,
+                    'column' => $this->columnLabelFromIndex((int) $column['index']),
+                    'expected' => $column['expected'],
+                    'actual' => null,
+                    'message' => 'Header kolom tidak terbaca.',
+                ];
+                continue;
+            }
+
+            if (preg_match((string) $column['pattern'], $headerValue) !== 1) {
+                $warnings[] = [
+                    'sheet' => $sheetName,
+                    'row' => self::HEADER_ROW,
+                    'column' => $this->columnLabelFromIndex((int) $column['index']),
+                    'expected' => $column['expected'],
+                    'actual' => $headerValue,
+                    'message' => 'Header kolom tidak sesuai template.',
+                ];
+            }
+        }
+
+        return $warnings;
+    }
+
+    /**
+     * @param  array<int, array<int, mixed>>  $rows
+     */
+    private function resolveHeaderValueForColumn(array $rows, int $columnIndex): ?string
+    {
+        // Template kerap memakai merge cell. Ambil nilai non-kosong terakhir
+        // dari baris 1 sampai baris header utama.
+        for ($rowIndex = self::HEADER_ROW - 1; $rowIndex >= 0; $rowIndex--) {
+            $value = $this->normalizeText($rows[$rowIndex][$columnIndex] ?? null);
+            if ($value !== null) {
+                return $value;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -182,12 +263,12 @@ class ImportRekapanAnggotaService
                 $startColumnIndex = 9 + (($bulanKe - 1) * 3);
 
                 $angsuranDibayar = $this->normalizeAmount($row[$startColumnIndex] ?? null);
-                $simpananPokokDibayar = $this->normalizeAmount($row[$startColumnIndex + 1] ?? null);
+                $simpananWajibDibayar = $this->normalizeAmount($row[$startColumnIndex + 1] ?? null);
                 $simpananSukarelaDibayar = $this->normalizeAmount($row[$startColumnIndex + 2] ?? null);
 
                 if (
                     $angsuranDibayar === null
-                    && $simpananPokokDibayar === null
+                    && $simpananWajibDibayar === null
                     && $simpananSukarelaDibayar === null
                 ) {
                     continue;
@@ -200,7 +281,7 @@ class ImportRekapanAnggotaService
                     'kolom_range' => $this->columnLabelFromIndex($startColumnIndex) . '-' . $this->columnLabelFromIndex($startColumnIndex + 2),
                     'tanggal' => $tanggalMasuk->copy()->addMonths($bulanKe)->toDateString(),
                     'angsuran_dibayar' => $angsuranDibayar,
-                    'simpanan_pokok_dibayar' => $simpananPokokDibayar,
+                    'simpanan_wajib_dibayar' => $simpananWajibDibayar,
                     'simpanan_sukarela_dibayar' => $simpananSukarelaDibayar,
                 ];
             }
@@ -215,7 +296,7 @@ class ImportRekapanAnggotaService
                     'tanggal' => (string) $item['tanggal'],
                     'entry_key' => md5($sheetName . '|' . $excelRowNumber . '|' . $noAnggota . '|' . (string) $item['bulan_ke'] . '|' . (string) $item['kolom_range']),
                     'angsuran_dibayar' => $item['angsuran_dibayar'],
-                    'simpanan_pokok_dibayar' => $item['simpanan_pokok_dibayar'],
+                    'simpanan_wajib_dibayar' => $item['simpanan_wajib_dibayar'],
                     'simpanan_sukarela_dibayar' => $item['simpanan_sukarela_dibayar'],
                 ],
                 $bulanan,
@@ -451,8 +532,8 @@ class ImportRekapanAnggotaService
                         userId: $userId,
                         jenisByKode: $jenisByKode->all(),
                         tanggal: $tanggalBayar,
-                        pokok: $this->toAmount($entry['simpanan_pokok_dibayar'] ?? null),
-                        wajib: 0,
+                        pokok: 0,
+                        wajib: $this->toAmount($entry['simpanan_wajib_dibayar'] ?? null),
                         sukarela: $this->toAmount($entry['simpanan_sukarela_dibayar'] ?? null),
                         keterangan: 'Import simpanan bulanan',
                         importKey: (string) ($entry['entry_key'] ?? md5(json_encode($entry))),
