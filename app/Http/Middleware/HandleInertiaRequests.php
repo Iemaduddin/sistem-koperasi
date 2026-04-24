@@ -52,6 +52,31 @@ class HandleInertiaRequests extends Middleware
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
             ],
+            'notifications' => [
+                'count' => $user ? \App\Models\AngsuranPinjaman::where('status', '!=', 'lunas')
+                    ->whereDate('tanggal_jatuh_tempo', '<=', now()->addDays(2))
+                    ->whereDate('tanggal_jatuh_tempo', '>=', now())
+                    ->count() : 0,
+                'list' => $user ? \App\Models\AngsuranPinjaman::with(['pinjaman.anggota'])
+                    ->where('status', '!=', 'lunas')
+                    ->whereDate('tanggal_jatuh_tempo', '<=', now()->addDays(2))
+                    ->whereDate('tanggal_jatuh_tempo', '>=', now())
+                    ->orderBy('tanggal_jatuh_tempo', 'asc')
+                    ->limit(10)
+                    ->get()
+                    ->map(function ($item) {
+                        $diff = now()->startOfDay()->diffInDays($item->tanggal_jatuh_tempo->startOfDay(), false);
+                        $label = $diff == 0 ? 'Hari Ini' : "H-$diff";
+
+                        return [
+                            'id' => $item->id,
+                            'anggota_nama' => $item->pinjaman->anggota->nama,
+                            'tanggal_jatuh_tempo' => $item->tanggal_jatuh_tempo->format('d M Y'),
+                            'total_tagihan' => (float)$item->total_tagihan,
+                            'label' => $label,
+                        ];
+                    }) : [],
+            ],
         ];
     }
 }

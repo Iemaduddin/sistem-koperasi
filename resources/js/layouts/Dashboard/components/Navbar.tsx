@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import {
     LuBell,
     LuChevronDown,
@@ -40,6 +40,7 @@ export default function Navbar({
     onToggleMobile,
     onToggleCollapsed,
 }: NavbarProps) {
+    const { notifications } = usePage<any>().props;
     const [openMenu, setOpenMenu] = useState<OpenMenu>(null);
     const wrapperRef = useRef<HTMLDivElement>(null);
     const initials = useMemo(() => getInitialsFromName(userName), [userName]);
@@ -134,17 +135,79 @@ export default function Navbar({
                 <div className="relative">
                     <button
                         type="button"
-                        className={`${iconTriggerClass} inline-flex`}
+                        className={`${iconTriggerClass} relative inline-flex`}
                         onClick={() => toggleMenu('notification')}
                         aria-label="Open notifications"
                     >
                         <LuBell className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        {notifications?.count > 0 && (
+                            <span className="absolute right-0.5 top-0.5 flex h-2.5 w-2.5 sm:h-3 sm:w-3">
+                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
+                                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500 sm:h-3 sm:w-3"></span>
+                            </span>
+                        )}
                     </button>
                     {openMenu === 'notification' && (
-                        <div className="absolute right-0 z-20 mt-2 w-56 rounded-2xl bg-blue-50 p-3 shadow-sm">
-                            <p className="text-sm text-slate-600">
-                                No new notifications
-                            </p>
+                        <div className="absolute right-0 z-20 mt-2 w-72 origin-top-right rounded-2xl bg-white p-2 shadow-xl ring-1 ring-slate-200 sm:w-80">
+                            <div className="mb-2 px-3 py-2 border-b border-slate-100">
+                                <h3 className="text-sm font-bold text-slate-800">
+                                    Notifikasi Angsuran
+                                </h3>
+                            </div>
+                            <div className="max-h-[350px] overflow-y-auto">
+                                {notifications?.list?.length > 0 ? (
+                                    <div className="flex flex-col gap-1">
+                                        {notifications.list.map((item: any) => (
+                                            <div
+                                                key={item.id}
+                                                className="group relative flex flex-col gap-1 rounded-xl p-3 transition hover:bg-blue-50"
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
+                                                        {item.label}
+                                                    </span>
+                                                    <span className="text-[10px] text-slate-400 font-medium">
+                                                        {item.tanggal_jatuh_tempo}
+                                                    </span>
+                                                </div>
+                                                <p className="text-sm font-semibold text-slate-900 line-clamp-1">
+                                                    {item.anggota_nama}
+                                                </p>
+                                                <p className="text-xs text-slate-500">
+                                                    Tagihan:{' '}
+                                                    <span className="font-semibold text-slate-700">
+                                                        Rp{' '}
+                                                        {item.total_tagihan.toLocaleString(
+                                                            'id-ID',
+                                                        )}
+                                                    </span>
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="py-8 text-center">
+                                        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-50 text-slate-300">
+                                            <LuBell className="h-6 w-6" />
+                                        </div>
+                                        <p className="text-sm text-slate-500">
+                                            Tidak ada angsuran jatuh tempo
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                            {notifications?.count > 10 && (
+                                <div className="mt-2 border-t border-slate-100 pt-2 px-1">
+                                    <button
+                                        onClick={() =>
+                                            router.get('/angsuran-pinjaman')
+                                        }
+                                        className="w-full rounded-lg py-2 text-center text-xs font-semibold text-blue-600 transition hover:bg-blue-50"
+                                    >
+                                        Lihat Semua ({notifications.count})
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

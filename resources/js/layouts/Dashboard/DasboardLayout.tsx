@@ -25,6 +25,16 @@ type SharedPageProps = {
         success?: string;
         error?: string;
     };
+    notifications: {
+        count: number;
+        list: Array<{
+            id: string;
+            anggota_nama: string;
+            tanggal_jatuh_tempo: string;
+            total_tagihan: number;
+            label: string;
+        }>;
+    };
 };
 
 export default function DashboardLayout({
