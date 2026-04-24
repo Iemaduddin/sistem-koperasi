@@ -7,6 +7,7 @@ import CashChart from './partials/CashChart';
 import FloatingSelect from '@/components/floating-input/select';
 import StatisticCard from './partials/StatisticCard';
 import FloatingInput from '@/components/floating-input/input';
+import { LuArrowUp, LuArrowDown } from 'react-icons/lu';
 
 type DashboardProps = {
     stats: Stats;
@@ -170,7 +171,8 @@ export default function Dashboard({ stats, charts, recent_transactions }: Dashbo
                                         <td className="px-4 py-3 text-slate-500">
                                             {getSourceLabel(tx)}
                                         </td>
-                                        <td className={`px-4 py-3 text-right font-semibold ${tx.jenis === 'masuk' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                        <td className={`px-4 py-3 text-right font-semibold flex items-center justify-end gap-1 ${tx.jenis === 'masuk' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                            {tx.jenis === 'masuk' ? <LuArrowUp size={16} /> : <LuArrowDown size={16} />}
                                             {tx.jenis === 'keluar' ? '-' : ''}
                                             {formatCurrency(parseFloat(tx.jumlah))}
                                         </td>

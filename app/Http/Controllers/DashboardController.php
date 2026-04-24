@@ -122,9 +122,6 @@ class DashboardController extends Controller
                 'pinjaman_aktif' => [
                     'value' => $pinjamanAktifValue,
                 ],
-                'tagihan_jatuh_tempo' => [
-                    'value' => $tagihanValue,
-                ],
                 'saldo_keluar' => [
                     'value' => $saldoKeluarValue,
                 ],

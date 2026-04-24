@@ -12,9 +12,6 @@ export interface Stats {
     pinjaman_aktif: {
         value: number;
     };
-    tagihan_jatuh_tempo: {
-        value: number;
-    };
     saldo_keluar: {
         value: number;
     };
