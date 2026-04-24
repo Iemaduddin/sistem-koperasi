@@ -27,13 +27,21 @@ type SharedPageProps = {
     };
     notifications: {
         count: number;
-        list: Array<{
+        upcoming: Array<{
             id: string;
             anggota_nama: string;
             tanggal_jatuh_tempo: string;
             total_tagihan: number;
             label: string;
         }>;
+        overdue: Array<{
+            id: string;
+            anggota_nama: string;
+            tanggal_jatuh_tempo: string;
+            total_tagihan: number;
+            label: string;
+        }>;
+        overdue_count: number;
     };
 };
 

@@ -55,14 +55,13 @@ class HandleInertiaRequests extends Middleware
             'notifications' => [
                 'count' => $user ? \App\Models\AngsuranPinjaman::where('status', '!=', 'lunas')
                     ->whereDate('tanggal_jatuh_tempo', '<=', now()->addDays(2))
-                    ->whereDate('tanggal_jatuh_tempo', '>=', now())
+                    ->whereDate('tanggal_jatuh_tempo', '>=', now()->toDateString())
                     ->count() : 0,
-                'list' => $user ? \App\Models\AngsuranPinjaman::with(['pinjaman.anggota'])
+                'upcoming' => $user ? \App\Models\AngsuranPinjaman::with(['pinjaman.anggota'])
                     ->where('status', '!=', 'lunas')
                     ->whereDate('tanggal_jatuh_tempo', '<=', now()->addDays(2))
-                    ->whereDate('tanggal_jatuh_tempo', '>=', now())
+                    ->whereDate('tanggal_jatuh_tempo', '>=', now()->toDateString())
                     ->orderBy('tanggal_jatuh_tempo', 'asc')
-                    ->limit(10)
                     ->get()
                     ->map(function ($item) {
                         $diff = now()->startOfDay()->diffInDays($item->tanggal_jatuh_tempo->startOfDay(), false);
@@ -76,6 +75,26 @@ class HandleInertiaRequests extends Middleware
                             'label' => $label,
                         ];
                     }) : [],
+                'overdue' => $user ? \App\Models\AngsuranPinjaman::with(['pinjaman.anggota'])
+                    ->where('status', '!=', 'lunas')
+                    ->whereDate('tanggal_jatuh_tempo', '<', now()->toDateString())
+                    ->orderBy('tanggal_jatuh_tempo', 'desc')
+                    ->limit(10)
+                    ->get()
+                    ->map(function ($item) {
+                        $diff = now()->startOfDay()->diffInDays($item->tanggal_jatuh_tempo->startOfDay(), false);
+                        
+                        return [
+                            'id' => $item->id,
+                            'anggota_nama' => $item->pinjaman->anggota->nama,
+                            'tanggal_jatuh_tempo' => $item->tanggal_jatuh_tempo->format('d M Y'),
+                            'total_tagihan' => (float)$item->total_tagihan,
+                            'label' => 'Terlambat ' . abs($diff) . ' hari',
+                        ];
+                    }) : [],
+                'overdue_count' => $user ? \App\Models\AngsuranPinjaman::where('status', '!=', 'lunas')
+                    ->whereDate('tanggal_jatuh_tempo', '<', now()->toDateString())
+                    ->count() : 0,
             ],
         ];
     }

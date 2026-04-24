@@ -42,6 +42,9 @@ export default function Navbar({
 }: NavbarProps) {
     const { notifications } = usePage<any>().props;
     const [openMenu, setOpenMenu] = useState<OpenMenu>(null);
+    const [activeTab, setActiveTab] = useState<'upcoming' | 'overdue'>(
+        'upcoming',
+    );
     const wrapperRef = useRef<HTMLDivElement>(null);
     const initials = useMemo(() => getInitialsFromName(userName), [userName]);
     const currentDate = useMemo(
@@ -141,49 +144,82 @@ export default function Navbar({
                     >
                         <LuBell className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         {notifications?.count > 0 && (
-                            <span className="absolute right-0.5 top-0.5 flex h-2.5 w-2.5 sm:h-3 sm:w-3">
-                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
-                                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500 sm:h-3 sm:w-3"></span>
+                            <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm ring-1 ring-white">
+                                {notifications.count}
                             </span>
                         )}
                     </button>
                     {openMenu === 'notification' && (
                         <div className="absolute right-0 z-20 mt-2 w-72 origin-top-right rounded-2xl bg-white p-2 shadow-xl ring-1 ring-slate-200 sm:w-80">
-                            <div className="mb-2 px-3 py-2 border-b border-slate-100">
-                                <h3 className="text-sm font-bold text-slate-800">
+                            <div className="mb-2 flex flex-col gap-2 border-b border-slate-100 px-1 pb-2">
+                                <h3 className="px-2 pt-1 text-sm font-bold text-slate-800">
                                     Notifikasi Angsuran
                                 </h3>
+                                <div className="flex gap-1 rounded-lg bg-slate-100 p-1">
+                                    <button
+                                        onClick={() => setActiveTab('upcoming')}
+                                        className={`flex-1 rounded-md py-1 text-xs font-semibold transition ${
+                                            activeTab === 'upcoming'
+                                                ? 'bg-white text-blue-700 shadow-sm'
+                                                : 'text-slate-500 hover:text-slate-700'
+                                        }`}
+                                    >
+                                        Mendatang ({notifications?.count || 0})
+                                    </button>
+                                    <button
+                                        onClick={() => setActiveTab('overdue')}
+                                        className={`flex-1 rounded-md py-1 text-xs font-semibold transition ${
+                                            activeTab === 'overdue'
+                                                ? 'bg-white text-red-700 shadow-sm'
+                                                : 'text-slate-500 hover:text-slate-700'
+                                        }`}
+                                    >
+                                        Terlambat (
+                                        {notifications?.overdue_count || 0})
+                                    </button>
+                                </div>
                             </div>
                             <div className="max-h-[350px] overflow-y-auto">
-                                {notifications?.list?.length > 0 ? (
+                                {notifications?.[activeTab]?.length > 0 ? (
                                     <div className="flex flex-col gap-1">
-                                        {notifications.list.map((item: any) => (
-                                            <div
-                                                key={item.id}
-                                                className="group relative flex flex-col gap-1 rounded-xl p-3 transition hover:bg-blue-50"
-                                            >
-                                                <div className="flex items-center justify-between">
-                                                    <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
-                                                        {item.label}
-                                                    </span>
-                                                    <span className="text-[10px] text-slate-400 font-medium">
-                                                        {item.tanggal_jatuh_tempo}
-                                                    </span>
+                                        {notifications[activeTab].map(
+                                            (item: any) => (
+                                                <div
+                                                    key={item.id}
+                                                    className="group relative flex flex-col gap-1 rounded-xl p-3 transition hover:bg-slate-50"
+                                                >
+                                                    <div className="flex items-center justify-between">
+                                                        <span
+                                                            className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                                                                activeTab ===
+                                                                'upcoming'
+                                                                    ? 'text-blue-700 bg-blue-100'
+                                                                    : 'text-red-700 bg-red-100'
+                                                            }`}
+                                                        >
+                                                            {item.label}
+                                                        </span>
+                                                        <span className="text-[10px] text-slate-400 font-medium">
+                                                            {
+                                                                item.tanggal_jatuh_tempo
+                                                            }
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-sm font-semibold text-slate-900 line-clamp-1">
+                                                        {item.anggota_nama}
+                                                    </p>
+                                                    <p className="text-xs text-slate-500">
+                                                        Tagihan:{' '}
+                                                        <span className="font-semibold text-slate-700">
+                                                            Rp{' '}
+                                                            {item.total_tagihan.toLocaleString(
+                                                                'id-ID',
+                                                            )}
+                                                        </span>
+                                                    </p>
                                                 </div>
-                                                <p className="text-sm font-semibold text-slate-900 line-clamp-1">
-                                                    {item.anggota_nama}
-                                                </p>
-                                                <p className="text-xs text-slate-500">
-                                                    Tagihan:{' '}
-                                                    <span className="font-semibold text-slate-700">
-                                                        Rp{' '}
-                                                        {item.total_tagihan.toLocaleString(
-                                                            'id-ID',
-                                                        )}
-                                                    </span>
-                                                </p>
-                                            </div>
-                                        ))}
+                                            ),
+                                        )}
                                     </div>
                                 ) : (
                                     <div className="py-8 text-center">
@@ -191,20 +227,23 @@ export default function Navbar({
                                             <LuBell className="h-6 w-6" />
                                         </div>
                                         <p className="text-sm text-slate-500">
-                                            Tidak ada angsuran jatuh tempo
+                                            Tidak ada angsuran{' '}
+                                            {activeTab === 'upcoming'
+                                                ? 'mendatang'
+                                                : 'terlambat'}
                                         </p>
                                     </div>
                                 )}
                             </div>
-                            {notifications?.count > 10 && (
+                            {((activeTab === 'upcoming' && notifications.count > 0) ||
+                                (activeTab === 'overdue' &&
+                                    notifications.overdue_count > 0)) && (
                                 <div className="mt-2 border-t border-slate-100 pt-2 px-1">
                                     <button
-                                        onClick={() =>
-                                            router.get('/angsuran-pinjaman')
-                                        }
+                                        onClick={() => router.get('/pinjaman')}
                                         className="w-full rounded-lg py-2 text-center text-xs font-semibold text-blue-600 transition hover:bg-blue-50"
                                     >
-                                        Lihat Semua ({notifications.count})
+                                        Lihat Semua Pinjaman
                                     </button>
                                 </div>
                             )}
