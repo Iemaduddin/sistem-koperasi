@@ -1,4 +1,4 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, router, Link } from '@inertiajs/react';
 import { type ReactElement } from 'react';
 import DashboardLayout from '@/layouts/Dashboard/DasboardLayout';
 import { type ChartData, type Stats, groupByOptions } from './types';
@@ -11,9 +11,10 @@ import FloatingInput from '@/components/floating-input/input';
 type DashboardProps = {
     stats: Stats;
     charts: ChartData;
+    recent_transactions: any[];
 };
 
-export default function Dashboard({ stats, charts }: DashboardProps) {
+export default function Dashboard({ stats, charts, recent_transactions }: DashboardProps) {
     const filters = charts.filters;
 
     const handleFilterChange = (
@@ -40,6 +41,26 @@ export default function Dashboard({ stats, charts }: DashboardProps) {
             currency: 'IDR',
             minimumFractionDigits: 0,
         }).format(value);
+    };
+
+    const getSourceLabel = (tx: any) => {
+        const type = tx.sumber_tipe;
+        const sumber = tx.sumber;
+        if (type === 'simpanan') return `Simpanan ${sumber?.rekening_simpanan?.jenis_simpanan?.nama || ''}`;
+        if (type === 'pinjaman') return 'Pinjaman';
+        if (type === 'angsuran_pinjaman') return 'Angsuran Pinjaman';
+        if (type === 'deposito') return 'Simpanan Deposito';
+        return type;
+    };
+
+    const getMemberName = (tx: any) => {
+        const type = tx.sumber_tipe;
+        const sumber = tx.sumber;
+        if (type === 'simpanan') return sumber?.rekening_simpanan?.anggota?.nama || '-';
+        if (type === 'pinjaman') return sumber?.anggota?.nama || '-';
+        if (type === 'angsuran_pinjaman') return sumber?.angsuran?.pinjaman?.anggota?.nama || '-';
+        if (type === 'deposito') return sumber?.anggota?.nama || '-';
+        return '-';
     };
 
     return (
@@ -114,34 +135,72 @@ export default function Dashboard({ stats, charts }: DashboardProps) {
             </section>
 
             <section className="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 className="text-lg font-semibold text-slate-900">
-                    Aktivitas Terbaru
-                </h2>
-                <div className="mt-4 flex flex-col items-center justify-center py-10 text-center">
-                    <div className="mb-4 rounded-full bg-slate-50 p-4">
-                        <svg
-                            className="h-8 w-8 text-slate-400"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                        </svg>
-                    </div>
-                    <p className="text-sm font-medium text-slate-900">
-                        Belum Ada Aktivitas Terbaru
-                    </p>
-                    <p className="mt-1 max-w-xs text-xs text-slate-500">
-                        Area ini akan menampilkan riwayat transaksi, notifikasi,
-                        dan ringkasan operasional harian koperasi secara
-                        real-time.
-                    </p>
+                <div className="mb-6 flex items-center justify-between">
+                    <h2 className="text-lg font-semibold text-slate-900">
+                        Aktivitas Terbaru
+                    </h2>
+                    <Link 
+                        href="/riwayat-transaksi" 
+                        className="text-sm font-medium text-blue-600 hover:text-blue-700"
+                    >
+                        Lihat Semua
+                    </Link>
                 </div>
+                
+                {recent_transactions.length > 0 ? (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                            <thead className="bg-slate-50 text-slate-600">
+                                <tr>
+                                    <th className="px-4 py-3 font-semibold">Tanggal</th>
+                                    <th className="px-4 py-3 font-semibold">Member</th>
+                                    <th className="px-4 py-3 font-semibold">Sumber</th>
+                                    <th className="px-4 py-3 font-semibold text-right">Jumlah</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {recent_transactions.map((tx) => (
+                                    <tr key={tx.id} className="hover:bg-slate-50/50">
+                                        <td className="px-4 py-3 whitespace-nowrap">
+                                            {new Date(tx.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                        </td>
+                                        <td className="px-4 py-3 font-medium text-slate-700 truncate max-w-[150px]">
+                                            {getMemberName(tx)}
+                                        </td>
+                                        <td className="px-4 py-3 text-slate-500">
+                                            {getSourceLabel(tx)}
+                                        </td>
+                                        <td className={`px-4 py-3 text-right font-semibold ${tx.jenis === 'masuk' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                            {tx.jenis === 'keluar' ? '-' : ''}
+                                            {formatCurrency(parseFloat(tx.jumlah))}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center justify-center py-10 text-center">
+                        <div className="mb-4 rounded-full bg-slate-50 p-4">
+                            <svg
+                                className="h-8 w-8 text-slate-400"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                            </svg>
+                        </div>
+                        <p className="text-sm font-medium text-slate-900">
+                            Belum Ada Aktivitas Terbaru
+                        </p>
+                    </div>
+                )}
             </section>
         </>
     );

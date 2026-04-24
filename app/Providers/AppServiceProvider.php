@@ -24,6 +24,13 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+
+        \Illuminate\Database\Eloquent\Relations\Relation::morphMap([
+            'simpanan' => \App\Models\Simpanan::class,
+            'pinjaman' => \App\Models\Pinjaman::class,
+            'angsuran_pinjaman' => \App\Models\TransaksiPinjaman::class,
+            'deposito' => \App\Models\SimpananDeposito::class,
+        ]);
     }
 
     /**

@@ -100,6 +100,18 @@ class DashboardController extends Controller
             ],
         ];
 
+        // --- RECENT TRANSACTIONS ---
+        $recentTransactions = \App\Models\TransaksiKasKoperasi::with([
+            'sumber' => function ($morphTo) {
+                $morphTo->morphWith([
+                    \App\Models\Simpanan::class => ['rekeningSimpanan.anggota', 'rekeningSimpanan.jenisSimpanan'],
+                    \App\Models\Pinjaman::class => ['anggota'],
+                    \App\Models\TransaksiPinjaman::class => ['angsuran.pinjaman.anggota'],
+                    \App\Models\SimpananDeposito::class => ['anggota'],
+                ]);
+            },
+        ])->latest()->limit(5)->get();
+
         return Inertia::render('Dashboard/Dashboard', [
             'stats' => [
                 'anggota' => $anggotaCounts,
@@ -126,6 +138,7 @@ class DashboardController extends Controller
                     'group_by' => $groupBy,
                 ]
             ],
+            'recent_transactions' => $recentTransactions,
         ]);
     }
 
