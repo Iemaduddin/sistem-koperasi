@@ -31,10 +31,15 @@ export default function SimpananTableBatchSection({
             return;
         }
 
-        detailSectionRef.current.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start',
-        });
+        // Delay scroll to allow layout to stabilize
+        const timeoutId = setTimeout(() => {
+            detailSectionRef.current?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+            });
+        }, 100);
+
+        return () => clearTimeout(timeoutId);
     }, [selectedAnggota]);
 
     const columns = useMemo<DataTableColumn<BatchSummaryRow>[]>(

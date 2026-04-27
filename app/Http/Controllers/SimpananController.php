@@ -29,6 +29,26 @@ class SimpananController extends Controller
     }
 
     /**
+     * Get anggota dropdown data for form (lazy load)
+     */
+    public function getAnggotaOptions(): array
+    {
+        return [
+            'anggota' => $this->simpananService->getAnggotaForForm(),
+        ];
+    }
+
+    /**
+     * Get rekening simpanan data for form (lazy load)
+     */
+    public function getRekeningSimpananOptions(): array
+    {
+        return [
+            'rekening_simpanan' => $this->simpananService->getRekeningSimpananForForm(),
+        ];
+    }
+
+    /**
      * Show the form for creating a new resource.
      */
     public function create()

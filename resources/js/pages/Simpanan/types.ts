@@ -69,8 +69,6 @@ export type SimpananRow = {
 export type SimpananPageProps = {
     simpanan: SimpananRow[];
     rekening_koperasi: RekeningKoperasiOption[];
-    anggota: AnggotaOption[];
-    rekening_simpanan: RekeningSimpananOption[];
     flash?: {
         success?: string;
         error?: string;

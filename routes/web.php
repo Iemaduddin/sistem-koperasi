@@ -76,6 +76,10 @@ Route::middleware(['auth', 'active.user'])->group(function (): void {
 			->parameters(['anggota' => 'anggota'])
 			->except(['show', 'create', 'edit']);
 		// Simpanan management
+		Route::get('/simpanan/options/anggota', [SimpananController::class, 'getAnggotaOptions'])
+			->name('simpanan.options.anggota');
+		Route::get('/simpanan/options/rekening-simpanan', [SimpananController::class, 'getRekeningSimpananOptions'])
+			->name('simpanan.options.rekening-simpanan');
 		Route::post('/simpanan/tarik-sukarela', [SimpananController::class, 'tarikSukarela'])
 			->name('simpanan.tarik-sukarela');
 		Route::resource('/simpanan', SimpananController::class)

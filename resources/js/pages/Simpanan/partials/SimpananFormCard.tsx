@@ -7,6 +7,7 @@ import type { SimpananForm } from '../types';
 type Props = {
     formData: SimpananForm;
     isSubmitting: boolean;
+    isLoadingOptions?: boolean;
     isPokokLocked: boolean;
     pokokInfoText: string;
     isWajibLocked: boolean;
@@ -23,6 +24,7 @@ type Props = {
 export default function SimpananFormCard({
     formData,
     isSubmitting,
+    isLoadingOptions,
     isPokokLocked,
     pokokInfoText,
     isWajibLocked,
@@ -64,6 +66,7 @@ export default function SimpananFormCard({
                                 onChangeField('anggota_id', value)
                             }
                             searchable
+                            disabled={isLoadingOptions}
                             required
                         />
                     </div>

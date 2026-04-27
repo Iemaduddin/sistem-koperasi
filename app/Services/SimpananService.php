@@ -18,7 +18,7 @@ use RuntimeException;
 class SimpananService
 {
     /**
-     * @return array{simpanan: Collection<int, Simpanan>, rekening_simpanan: Collection<int, RekeningSimpanan>}
+     * @return array{simpanan: Collection<int, Simpanan>, rekening_koperasi: Collection<int, RekeningKoperasi>}
      */
     public function getIndexData(): array
     {
@@ -28,23 +28,38 @@ class SimpananService
                 'rekeningSimpanan.jenisSimpanan',
                 'batch.anggota',
                 'batch.user',
-                'batch.transaksiSimpanan.rekeningSimpanan.anggota',
-                'batch.transaksiSimpanan.rekeningSimpanan.jenisSimpanan',
             ])
                 ->latest('created_at')
+                ->limit(100)
                 ->get(),
             'rekening_koperasi' => RekeningKoperasi::query()
                 ->orderBy('nama')
                 ->get(['id', 'nama', 'jenis', 'nomor_rekening', 'saldo']),
-            'anggota' => Anggota::query()
-                ->where('status', 'aktif')
-                ->orderBy('nama')
-                ->get(['id', 'no_anggota', 'nama', 'alamat']),
-            'rekening_simpanan' => RekeningSimpanan::query()
-                ->with(['anggota', 'jenisSimpanan'])
-                ->orderBy('created_at', 'desc')
-                ->get(),
         ];
+    }
+
+    /**
+     * Get active anggota for form dropdown (lazy load on-demand)
+     * @return Collection<int, Anggota>
+     */
+    public function getAnggotaForForm(): Collection
+    {
+        return Anggota::query()
+            ->where('status', 'aktif')
+            ->orderBy('nama')
+            ->get(['id', 'no_anggota', 'nama', 'alamat']);
+    }
+
+    /**
+     * Get rekening simpanan for form dropdowns (lazy load on-demand)
+     * @return Collection<int, RekeningSimpanan>
+     */
+    public function getRekeningSimpananForForm(): Collection
+    {
+        return RekeningSimpanan::query()
+            ->with(['anggota', 'jenisSimpanan'])
+            ->orderBy('created_at', 'desc')
+            ->get();
     }
 
     public function create(array $data): Simpanan

@@ -12,6 +12,8 @@ import SimpananFormCard from './partials/SimpananFormCard';
 import SimpananTableCard from './partials/SimpananTableCard';
 import {
     initialSimpananForm,
+    type AnggotaOption,
+    type RekeningSimpananOption,
     type SimpananForm,
     type SimpananPageProps,
 } from './types';
@@ -58,8 +60,12 @@ export default function SimpananIndex() {
     const pageProps = props as unknown as SimpananPageProps;
     const rows = pageProps.simpanan ?? [];
     const rekeningKoperasiData = pageProps.rekening_koperasi ?? [];
-    const anggotaData = pageProps.anggota ?? [];
-    const rekeningSimpananData = pageProps.rekening_simpanan ?? [];
+
+    const [anggotaData, setAnggotaData] = useState<AnggotaOption[]>([]);
+    const [rekeningSimpananData, setRekeningSimpananData] = useState<
+        RekeningSimpananOption[]
+    >([]);
+    const [isLoadingFormData, setIsLoadingFormData] = useState(false);
 
     const [formData, setFormData] = useState<SimpananForm>(initialSimpananForm);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -72,6 +78,41 @@ export default function SimpananIndex() {
     const [tarikForm, setTarikForm] = useState<TarikSukarelaForm>(
         initialTarikSukarelaForm,
     );
+
+    // Load form data (anggota & rekening simpanan) once when component mounts
+    useEffect(() => {
+        const loadFormData = async () => {
+            setIsLoadingFormData(true);
+            try {
+                const [anggotaRes, rekeningSimpananRes] = await Promise.all([
+                    fetch('/simpanan/options/anggota'),
+                    fetch('/simpanan/options/rekening-simpanan'),
+                ]);
+
+                if (!anggotaRes.ok || !rekeningSimpananRes.ok) {
+                    throw new Error('Failed to load form options');
+                }
+
+                const anggotaData = (await anggotaRes.json()) as {
+                    anggota: AnggotaOption[];
+                };
+                const rekeningSimpananData =
+                    (await rekeningSimpananRes.json()) as {
+                        rekening_simpanan: RekeningSimpananOption[];
+                    };
+
+                setAnggotaData(anggotaData.anggota);
+                setRekeningSimpananData(rekeningSimpananData.rekening_simpanan);
+            } catch (error) {
+                console.error('Error loading form options:', error);
+                toast.error('Gagal memuat data form. Silakan refresh halaman.');
+            } finally {
+                setIsLoadingFormData(false);
+            }
+        };
+
+        loadFormData();
+    }, []);
 
     const rekeningKoperasiOptions = useMemo(
         () =>
@@ -347,6 +388,7 @@ export default function SimpananIndex() {
                 <SimpananFormCard
                     formData={formData}
                     isSubmitting={isSubmitting}
+                    isLoadingOptions={isLoadingFormData}
                     isPokokLocked={isPokokLocked}
                     pokokInfoText={pokokInfoText}
                     isWajibLocked={isWajibLocked}

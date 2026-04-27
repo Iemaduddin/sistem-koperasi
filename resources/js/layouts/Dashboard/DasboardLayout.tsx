@@ -99,7 +99,7 @@ export default function DashboardLayout({
     const currentPath = url || '/dashboard';
 
     return (
-        <div className="h-dvh overflow-hidden bg-slate-100 text-slate-900">
+        <div className="flex h-screen flex-col bg-slate-100 text-slate-900">
             <ToastContainer position="top-right" autoClose={3000} />
             <Sidebar
                 currentPath={currentPath}
@@ -112,8 +112,8 @@ export default function DashboardLayout({
             <div
                 className={
                     collapsed
-                        ? 'relative flex h-dvh flex-col lg:ml-20'
-                        : 'relative flex h-dvh flex-col lg:ml-72'
+                        ? 'relative flex flex-1 flex-col lg:ml-20'
+                        : 'relative flex flex-1 flex-col lg:ml-72'
                 }
             >
                 <Navbar
