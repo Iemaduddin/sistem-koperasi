@@ -393,7 +393,6 @@ const menuSections: SidebarSection[] = [
                 label: 'Dashboard',
                 routeName: 'dashboard',
                 icon: LuHouse,
-                roles: ['Master Admin', 'Super Admin', 'Admin'],
             },
         ],
     },
@@ -525,6 +524,7 @@ const menuSections: SidebarSection[] = [
                 label: 'Riwayat Audit',
                 routeName: 'audit.index',
                 icon: LuChartColumnIncreasing,
+                roles: ['Master Admin', 'Super Admin', 'Admin'],
             },
             {
                 id: 'riwayat-transaksi',
@@ -795,16 +795,18 @@ export default function Sidebar({
                 </nav>
 
                 <div className={`py-4 ${collapsed ? 'px-2' : 'px-4'}`}>
-                    <Button
-                        onClick={handleSignOut}
-                        variant="danger"
-                        title="Logout"
-                        aria-label="Logout"
-                        rightIcon={<LuLogOut className="h-4 w-4" />}
-                        fullWidth={!collapsed}
-                    >
-                        {collapsed ? '' : 'Logout'}
-                    </Button>
+                    {userRoles.length > 0 && (
+                        <Button
+                            onClick={handleSignOut}
+                            variant="danger"
+                            title="Logout"
+                            aria-label="Logout"
+                            rightIcon={<LuLogOut className="h-4 w-4" />}
+                            fullWidth={!collapsed}
+                        >
+                            {collapsed ? '' : 'Logout'}
+                        </Button>
+                    )}
                 </div>
             </aside>
         </>

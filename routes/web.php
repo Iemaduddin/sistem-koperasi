@@ -14,7 +14,7 @@ use App\Http\Controllers\RiwayatTransaksiController;
 use App\Http\Controllers\RekapanAnggotaController;
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/login')->name('home');
+Route::redirect('/', '/dashboard')->name('home');
 
 Route::group(['prefix' => 'portal-anggota'], function (): void {
 	Route::get('/', [GuestPortalController::class, 'index'])
@@ -34,6 +34,8 @@ Route::middleware('guest')->group(function (): void {
 		->name('login.store');
 });
 
+Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
+
 Route::middleware(['auth', 'active.user'])->group(function (): void {
 	Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
 		->name('logout');
@@ -41,7 +43,7 @@ Route::middleware(['auth', 'active.user'])->group(function (): void {
 	Route::get('/audit', [AuditController::class, 'index'])
 		->name('audit.index');
 
-	Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
+
 
 	Route::middleware(['role:Master Admin'])->group(function (): void {
 		// jenis simpanan
