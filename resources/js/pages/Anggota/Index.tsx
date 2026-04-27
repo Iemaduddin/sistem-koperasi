@@ -33,6 +33,10 @@ function getNoAnggotaPrefix(tanggalBergabung: string): string {
     return `${month}${year}`;
 }
 
+function normalizeNoAnggotaDigits(value: string): string {
+    return value.replace(/\D/g, '');
+}
+
 function buildSuggestedNoAnggota(
     tanggalBergabung: string,
     anggota: AnggotaRow[],
@@ -44,11 +48,8 @@ function buildSuggestedNoAnggota(
     }
 
     const maxSequence = anggota.reduce((max, item) => {
-        if (!item.no_anggota.startsWith(prefix)) {
-            return max;
-        }
-
-        const sequence = Number.parseInt(item.no_anggota.slice(4), 10);
+        const digits = normalizeNoAnggotaDigits(item.no_anggota);
+        const sequence = Number.parseInt(digits.slice(4), 10);
 
         if (Number.isNaN(sequence)) {
             return max;
@@ -103,6 +104,7 @@ export default function AnggotaIndex() {
     const createForm = useForm<AnggotaForm>(initialAnggotaForm);
     const updateForm = useForm<AnggotaForm>(initialAnggotaForm);
     const lastSuggestedNoAnggotaRef = useRef('');
+    const isNoAnggotaManuallyEditedRef = useRef(false);
 
     const editingAnggota = useMemo(
         () => anggota.find((item) => item.id === editingAnggotaId) ?? null,
@@ -120,12 +122,28 @@ export default function AnggotaIndex() {
             return;
         }
 
-        const currentNoAnggota = createForm.data.no_anggota.trim();
-        const shouldApplySuggestion =
-            currentNoAnggota === '' ||
-            currentNoAnggota === lastSuggestedNoAnggotaRef.current;
+        const currentNoAnggota = normalizeNoAnggotaDigits(
+            createForm.data.no_anggota.trim(),
+        );
+        const lastSuggestedNoAnggota = normalizeNoAnggotaDigits(
+            lastSuggestedNoAnggotaRef.current,
+        );
+        const nextSuggestedNoAnggota =
+            normalizeNoAnggotaDigits(suggestedNoAnggota);
 
-        if (shouldApplySuggestion && currentNoAnggota !== suggestedNoAnggota) {
+        if (currentNoAnggota === '') {
+            isNoAnggotaManuallyEditedRef.current = false;
+        }
+
+        const shouldApplySuggestion =
+            !isNoAnggotaManuallyEditedRef.current &&
+            (currentNoAnggota === '' ||
+                currentNoAnggota === lastSuggestedNoAnggota);
+
+        if (
+            shouldApplySuggestion &&
+            currentNoAnggota !== nextSuggestedNoAnggota
+        ) {
             createForm.setData('no_anggota', suggestedNoAnggota);
         }
 
@@ -379,6 +397,19 @@ export default function AnggotaIndex() {
                         if (editingAnggota) {
                             updateForm.setData(field, value as never);
                             return;
+                        }
+
+                        if (field === 'no_anggota') {
+                            const typedNoAnggota =
+                                normalizeNoAnggotaDigits(value);
+                            const suggestedNoAnggotaDigits =
+                                normalizeNoAnggotaDigits(
+                                    lastSuggestedNoAnggotaRef.current,
+                                );
+
+                            isNoAnggotaManuallyEditedRef.current =
+                                typedNoAnggota !== '' &&
+                                typedNoAnggota !== suggestedNoAnggotaDigits;
                         }
 
                         createForm.setData(field, value as never);

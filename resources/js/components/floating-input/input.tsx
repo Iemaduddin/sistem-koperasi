@@ -12,7 +12,8 @@ import { LuEye, LuEyeOff } from 'react-icons/lu';
 type FloatingInputType =
     | InputHTMLAttributes<HTMLInputElement>['type']
     | 'currency'
-    | 'rupiah';
+    | 'rupiah'
+    | 'no_anggota';
 
 export type CurrencyValue = {
     raw: string;
@@ -50,6 +51,20 @@ function formatRupiah(value: string) {
     return `Rp ${new Intl.NumberFormat('id-ID').format(numberValue)}`;
 }
 
+function formatNoAnggota(value: string) {
+    const digits = extractDigits(value);
+    if (!digits) return '';
+
+    const first = digits.slice(0, 2);
+    const second = digits.slice(2, 4);
+    const rest = digits.slice(4);
+
+    if (digits.length <= 2) return first;
+    if (digits.length <= 4) return `${first}.${second}`;
+
+    return `${first}.${second}.${rest}`;
+}
+
 const FloatingInput = forwardRef<HTMLInputElement, FloatingInputProps>(
     function FloatingInput(
         {
@@ -73,6 +88,7 @@ const FloatingInput = forwardRef<HTMLInputElement, FloatingInputProps>(
         const generatedId = useId();
         const resolvedId = id ?? generatedId;
         const isCurrency = type === 'currency' || type === 'rupiah';
+        const isNoAnggota = type === 'no_anggota';
         const isPasswordType = type === 'password';
         const isControlled = value !== undefined;
         const [showPassword, setShowPassword] = useState(false);
@@ -85,20 +101,37 @@ const FloatingInput = forwardRef<HTMLInputElement, FloatingInputProps>(
         const sourceValue = isControlled ? String(value ?? '') : internalValue;
         const displayValue = isCurrency
             ? formatRupiah(sourceValue)
-            : sourceValue;
+            : isNoAnggota
+              ? formatNoAnggota(sourceValue)
+              : sourceValue;
 
         const inputType: InputHTMLAttributes<HTMLInputElement>['type'] =
             isCurrency
                 ? 'text'
-                : isPasswordType && showPassword
+                : isNoAnggota
                   ? 'text'
-                  : type;
+                  : isPasswordType && showPassword
+                    ? 'text'
+                    : type;
 
         const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-            if (!isCurrency) {
+            if (!isCurrency && !isNoAnggota) {
                 if (!isControlled) {
                     setInternalValue(event.currentTarget.value);
                 }
+                onChange?.(event);
+                return;
+            }
+
+            if (isNoAnggota) {
+                const raw = extractDigits(event.currentTarget.value);
+                const formatted = formatNoAnggota(raw);
+
+                if (!isControlled) {
+                    setInternalValue(raw);
+                }
+
+                event.currentTarget.value = formatted;
                 onChange?.(event);
                 return;
             }

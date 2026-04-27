@@ -154,7 +154,7 @@ class AnggotaService
                     : now();
 
                 $prefix = $joinDate->format('my');
-                $nextSequence = $this->getNextNoAnggotaSequence($prefix);
+                $nextSequence = $this->getNextNoAnggotaSequence();
 
                 $payload['no_anggota'] = $prefix.str_pad(
                     (string) $nextSequence,
@@ -166,6 +166,8 @@ class AnggotaService
                 $payload['no_anggota'] = $providedNoAnggota;
             }
 
+            $payload = $this->normalizeAnggotaPayload($payload);
+
             /** @var Anggota $anggota */
             $anggota = Anggota::query()->create($payload);
 
@@ -173,12 +175,11 @@ class AnggotaService
         });
     }
 
-    private function getNextNoAnggotaSequence(string $prefix): int
+    private function getNextNoAnggotaSequence(): int
     {
         $lastSequence = Anggota::query()
-            ->where('no_anggota', 'like', $prefix.'%')
             ->lockForUpdate()
-            ->selectRaw('MAX(CAST(SUBSTRING(no_anggota, 5) AS UNSIGNED)) as last_sequence')
+            ->selectRaw("MAX(CAST(SUBSTRING(REPLACE(no_anggota, '.', ''), 5) AS UNSIGNED)) as last_sequence")
             ->value('last_sequence');
 
         return ((int) $lastSequence) + 1;
@@ -186,9 +187,76 @@ class AnggotaService
 
     /**
      * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
+    private function normalizeAnggotaPayload(array $payload): array
+    {
+        $noAnggota = $this->formatNoAnggota(trim((string) ($payload['no_anggota'] ?? '')));
+        $nik = trim((string) ($payload['nik'] ?? ''));
+        $alamat = trim((string) ($payload['alamat'] ?? ''));
+        $noHp = trim((string) ($payload['no_hp'] ?? ''));
+
+        $payload['no_anggota'] = $noAnggota;
+
+        $payload['nik'] = $nik !== '' ? $nik : $this->generateUniqueNik($noAnggota);
+        $payload['alamat'] = $alamat !== '' ? $alamat : '-';
+        $payload['no_hp'] = $noHp !== '' ? $noHp : '0000000000';
+        $payload['no_hp_cadangan'] = isset($payload['no_hp_cadangan']) && trim((string) $payload['no_hp_cadangan']) !== ''
+            ? trim((string) $payload['no_hp_cadangan'])
+            : null;
+
+        return $payload;
+    }
+
+    private function formatNoAnggota(string $value): string
+    {
+        $digits = preg_replace('/\D/', '', $value) ?? '';
+
+        if ($digits === '') {
+            return '';
+        }
+
+        if (strlen($digits) <= 2) {
+            return $digits;
+        }
+
+        if (strlen($digits) <= 4) {
+            return substr($digits, 0, 2).'.'.substr($digits, 2);
+        }
+
+        return substr($digits, 0, 2).'.'.substr($digits, 2, 2).'.'.substr($digits, 4);
+    }
+
+    private function generateUniqueNik(string $noAnggota): string
+    {
+        $digits = preg_replace('/\D/', '', $noAnggota) ?? '';
+        $digits = str_pad(substr($digits, -12), 12, '0', STR_PAD_LEFT);
+        $prefix = '88' . $digits;
+        $counter = 0;
+
+        while (true) {
+            $suffix = str_pad((string) $counter, 2, '0', STR_PAD_LEFT);
+            $candidate = $prefix . $suffix;
+
+            if (!Anggota::query()->where('nik', $candidate)->exists()) {
+                return $candidate;
+            }
+
+            $counter++;
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $payload
      */
     public function updateAnggota(Anggota $anggota, array $payload): Anggota
     {
+        if (!isset($payload['no_anggota']) || trim((string) $payload['no_anggota']) === '') {
+            $payload['no_anggota'] = $anggota->no_anggota;
+        }
+
+        $payload = $this->normalizeAnggotaPayload($payload);
+
         $anggota->update($payload);
 
         return $anggota;

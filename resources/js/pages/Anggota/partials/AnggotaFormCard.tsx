@@ -74,10 +74,12 @@ export default function AnggotaFormCard({
                 <div className="grid h-full grid-cols-1 items-center gap-4 md:grid-cols-2">
                     <FloatingInput
                         label="No. Anggota"
+                        type="no_anggota"
                         value={formData.no_anggota}
                         onChange={(event) =>
                             onChangeField('no_anggota', event.target.value)
                         }
+                        placeholder="Contoh: 02.21.449"
                         errorText={errors.no_anggota}
                         required
                     />
@@ -89,8 +91,8 @@ export default function AnggotaFormCard({
                         onChange={(event) =>
                             onChangeField('nik', event.target.value)
                         }
+                        placeholder="16 digit angka"
                         errorText={errors.nik}
-                        required
                     />
                     <FloatingInput
                         label="Nama"
@@ -116,7 +118,6 @@ export default function AnggotaFormCard({
                             )
                         }
                         errorText={errors.no_hp}
-                        required
                     />
                     <FloatingInput
                         label="No. HP Cadangan"
@@ -168,7 +169,6 @@ export default function AnggotaFormCard({
                             onChangeField('alamat', event.target.value)
                         }
                         errorText={errors.alamat}
-                        required
                     />
                 </div>
 

@@ -39,13 +39,13 @@ export default function AnggotaTableCard({
                 sortable: true,
                 searchable: true,
             },
-            {
-                id: 'nik',
-                header: 'NIK',
-                accessor: 'nik',
-                sortable: true,
-                searchable: true,
-            },
+            // {
+            //     id: 'nik',
+            //     header: 'NIK',
+            //     accessor: 'nik',
+            //     sortable: true,
+            //     searchable: true,
+            // },
             {
                 id: 'nama',
                 header: 'Nama',
@@ -58,28 +58,28 @@ export default function AnggotaTableCard({
                             {row.nama}
                         </span>
                         <br />
-                        <span className="text-xs text-slate-500">
+                        {/* <span className="text-xs text-slate-500">
                             {row.alamat}
-                        </span>
+                        </span> */}
                     </div>
                 ),
             },
-            {
-                id: 'no_hp',
-                header: 'No. HP',
-                accessor: 'no_hp',
-                searchable: true,
-                render: (row) => (
-                    <span>
-                        {row.no_hp} <br />
-                        {row.no_hp_cadangan && (
-                            <span className="text-xs text-slate-500">
-                                (Cadangan: {row.no_hp_cadangan})
-                            </span>
-                        )}
-                    </span>
-                ),
-            },
+            // {
+            //     id: 'no_hp',
+            //     header: 'No. HP',
+            //     accessor: 'no_hp',
+            //     searchable: true,
+            //     render: (row) => (
+            //         <span>
+            //             {row.no_hp} <br />
+            //             {row.no_hp_cadangan && (
+            //                 <span className="text-xs text-slate-500">
+            //                     (Cadangan: {row.no_hp_cadangan})
+            //                 </span>
+            //             )}
+            //         </span>
+            //     ),
+            // },
             {
                 id: 'status',
                 header: 'Status',
@@ -170,13 +170,13 @@ export default function AnggotaTableCard({
                         >
                             <LuPen className="h-4 w-4" />
                         </Button>
-                        <Button
+                        {/* <Button
                             size="sm"
                             variant="danger"
                             onClick={() => onRemove(row.id, row.nama)}
                         >
                             <LuTrash className="h-4 w-4" />
-                        </Button>
+                        </Button> */}
                     </div>
                 ),
             },
@@ -200,7 +200,7 @@ export default function AnggotaTableCard({
                     columns={columns}
                     getRowId={(row) => row.id}
                     selectable={false}
-                    searchPlaceholder="Cari NIK, nama, atau no. HP..."
+                    searchPlaceholder="Cari NIK atau Nama Anggota"
                     emptyMessage="Tidak ada data anggota ditemukan"
                 />
             </div>

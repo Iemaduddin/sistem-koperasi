@@ -15,29 +15,35 @@ const anggotaSchema = z
         no_anggota: z
             .string()
             .trim()
-            .min(6, 'No. Anggota minimal 6 karakter')
-            .max(255, 'No. Anggota maksimal 255 karakter')
-            .regex(/^[0-9]+$/, 'No. Anggota hanya boleh berisi angka'),
-        nik: z
-            .string()
-            .trim()
-            .min(16, 'NIK minimal 16 karakter')
-            .max(16, 'NIK maksimal 16 karakter'),
+            .min(1, 'No. Anggota harus diisi')
+            .max(255, 'No. Anggota maksimal 255 karakter'),
+        nik: z.preprocess(
+            toEmptyStringWhenNil,
+            z
+                .string()
+                .trim()
+                .refine(
+                    (value) => value === '' || /^[0-9]{16}$/.test(value),
+                    'NIK harus terdiri dari 16 angka',
+                ),
+        ),
         nama: z
             .string()
             .trim()
             .min(1, 'Nama harus diisi')
             .max(255, 'Nama maksimal 255 karakter'),
-        alamat: z.string().trim().min(1, 'Alamat harus diisi'),
-        no_hp: z
-            .string()
-            .trim()
-            .min(1, 'No. HP harus diisi')
-            .max(255, 'No. HP maksimal 255 karakter')
-            .regex(
-                nomorHpRegex,
-                'Format No. HP tidak valid. Gunakan angka dan awali 08.',
-            ),
+        alamat: z.preprocess(toEmptyStringWhenNil, z.string().trim()),
+        no_hp: z.preprocess(
+            toEmptyStringWhenNil,
+            z
+                .string()
+                .trim()
+                .max(255, 'No. HP maksimal 255 karakter')
+                .refine(
+                    (value) => value === '' || nomorHpRegex.test(value),
+                    'Format No. HP tidak valid. Gunakan angka dan awali 08.',
+                ),
+        ),
         no_hp_cadangan: z.preprocess(
             toEmptyStringWhenNil,
             z
@@ -87,10 +93,10 @@ export const updateAnggotaSchema = anggotaSchema;
 export const buildPayload = (data: AnggotaForm): AnggotaForm => ({
     ...data,
     no_anggota: data.no_anggota.trim(),
-    nik: data.nik.trim(),
+    nik: (data.nik ?? '').trim(),
     nama: data.nama.trim(),
-    alamat: data.alamat.trim(),
-    no_hp: data.no_hp.trim(),
+    alamat: (data.alamat ?? '').trim(),
+    no_hp: (data.no_hp ?? '').trim(),
     no_hp_cadangan: data.no_hp_cadangan.trim(),
     tanggal_bergabung: data.tanggal_bergabung.trim(),
 });

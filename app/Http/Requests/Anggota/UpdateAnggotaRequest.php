@@ -12,6 +12,16 @@ class UpdateAnggotaRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'nik' => $this->normalizeOptionalText($this->input('nik')),
+            'alamat' => $this->normalizeOptionalText($this->input('alamat')),
+            'no_hp' => $this->normalizeOptionalText($this->input('no_hp')),
+            'no_hp_cadangan' => $this->normalizeOptionalText($this->input('no_hp_cadangan')),
+        ]);
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -27,15 +37,15 @@ class UpdateAnggotaRequest extends FormRequest
                 Rule::unique('anggota', 'no_anggota')->ignore($anggotaId),
             ],
             'nik' => [
-                'required',
+                'nullable',
                 'string',
                 'max:255',
                 Rule::unique('anggota', 'nik')->ignore($anggotaId),
             ],
             'nama' => ['required', 'string', 'max:255'],
-            'alamat' => ['required', 'string'],
+            'alamat' => ['nullable', 'string'],
             'no_hp' => [
-                'required',
+                'nullable',
                 'string',
                 'max:255',
                 'regex:/^08[0-9]{8,13}$/',
@@ -53,5 +63,12 @@ class UpdateAnggotaRequest extends FormRequest
         return [
             'no_hp.unique' => 'No. HP sudah digunakan oleh anggota lain.',
         ];
+    }
+
+    private function normalizeOptionalText(mixed $value): ?string
+    {
+        $text = trim((string) ($value ?? ''));
+
+        return $text === '' ? null : $text;
     }
 }
