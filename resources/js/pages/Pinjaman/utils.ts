@@ -3,7 +3,9 @@ import { formatDateTimeLong, formatDateOnly } from '@/utils/text';
 import QRCode from 'qrcode';
 
 // ─── Format angka ke Rupiah ───────────────────────────────────────────────────
-export function formatRupiah(value: number | string | null | undefined): string {
+export function formatRupiah(
+    value: number | string | null | undefined,
+): string {
     const num = Number(value ?? 0);
     if (Number.isNaN(num)) return 'Rp 0';
     return 'Rp ' + num.toLocaleString('id-ID', { minimumFractionDigits: 0 });
@@ -30,14 +32,27 @@ export function hitungSisaAngsuran(pinjaman: PinjamanRow): number {
 // ─── Hitung total sudah dibayar ───────────────────────────────────────────────
 export function hitungTotalDibayar(pinjaman: PinjamanRow): number {
     if (!pinjaman.angsuran) return 0;
-    return pinjaman.angsuran.reduce((sum, a) => sum + Number(a.jumlah_dibayar ?? 0), 0);
+    return pinjaman.angsuran.reduce(
+        (sum, a) => sum + Number(a.jumlah_dibayar ?? 0),
+        0,
+    );
 }
 
 // ─── Hitung sisa hutang pokok ─────────────────────────────────────────────────
 export function hitungSisaHutang(pinjaman: PinjamanRow): number {
     const totalPinjaman = Number(pinjaman.jumlah_pinjaman ?? 0);
     const totalDibayarPokok = pinjaman.angsuran
-        ? pinjaman.angsuran.reduce((sum, a) => sum + Number(a.pokok ?? 0) * (a.status === 'lunas' ? 1 : a.status === 'sebagian' ? Number(a.jumlah_dibayar) / Number(a.total_tagihan) : 0), 0)
+        ? pinjaman.angsuran.reduce(
+              (sum, a) =>
+                  sum +
+                  Number(a.pokok ?? 0) *
+                      (a.status === 'lunas'
+                          ? 1
+                          : a.status === 'sebagian'
+                            ? Number(a.jumlah_dibayar) / Number(a.total_tagihan)
+                            : 0),
+              0,
+          )
         : 0;
     return Math.max(0, totalPinjaman - totalDibayarPokok);
 }
@@ -59,13 +74,18 @@ export function hitungHariTerlambat(angsuran: AngsuranPinjaman): number {
     jatuhTempo.setHours(0, 0, 0, 0);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return Math.floor((today.getTime() - jatuhTempo.getTime()) / (1000 * 60 * 60 * 24));
+    return Math.floor(
+        (today.getTime() - jatuhTempo.getTime()) / (1000 * 60 * 60 * 24),
+    );
 }
 
 // ─── Estimasi denda dari sisi frontend (0,1%/hari dari jumlah pokok PINJAMAN) ────
 // Konsisten dengan konstanta backend: DENDA_PERSEN_PER_HARI = 0.001
 // jumlahPinjaman = pinjaman.jumlah_pinjaman (bukan pokok per angsuran)
-export function hitungEstimasiDenda(angsuran: AngsuranPinjaman, jumlahPinjaman: number | string): number {
+export function hitungEstimasiDenda(
+    angsuran: AngsuranPinjaman,
+    jumlahPinjaman: number | string,
+): number {
     const dendaDB = Number(angsuran.denda ?? 0);
     // Jika backend sudah pernah menghitung (denda > 0), pakai nilai DB
     if (dendaDB > 0) return dendaDB;
@@ -138,7 +158,7 @@ export async function buildInvoiceHtml(
     const logoHorizontalUrl = `${window.location.origin}/logo-azzahwa-horizontal.png`;
     const logoIcoUrl = `${window.location.origin}/logo-azzahwa.ico`;
     const qrTargetUrl = `${window.location.origin}/portal-anggota`;
-    const kotaTanggal = `Kota Batu, ${formatDateOnly(angsuran.updated_at || angsuran.tanggal_bayar || new Date().toISOString())}`;
+    const kotaTanggal = `Pasuruan, ${formatDateOnly(angsuran.updated_at || angsuran.tanggal_bayar || new Date().toISOString())}`;
 
     const qrCodeDataUrl = await QRCode.toDataURL(qrTargetUrl, {
         errorCorrectionLevel: 'H',

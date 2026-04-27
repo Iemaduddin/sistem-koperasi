@@ -7,11 +7,13 @@ import {
     useRef,
     useState,
     type ChangeEvent,
+    type ReactNode,
     type SelectHTMLAttributes,
 } from 'react';
 
 export type FloatingSelectOption = {
     label: string;
+    richLabel?: ReactNode;
     value: string;
     disabled?: boolean;
 };
@@ -281,7 +283,9 @@ export default function FloatingSelect({
                                 !selectedOption && 'text-slate-400',
                             )}
                         >
-                            {selectedOption?.label ?? placeholder}
+                            {selectedOption?.richLabel ??
+                                selectedOption?.label ??
+                                placeholder}
                         </span>
                         <svg
                             className={cn(
@@ -372,7 +376,7 @@ export default function FloatingSelect({
                                         )}
                                     >
                                         <span className="truncate">
-                                            {option.label}
+                                            {option.richLabel ?? option.label}
                                         </span>
                                         {selectedValue === option.value && (
                                             <div className="ml-auto h-1.5 w-1.5 rounded-full bg-blue-600" />

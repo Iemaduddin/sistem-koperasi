@@ -55,6 +55,14 @@ const initialTarikSukarelaForm = (): TarikSukarelaForm => ({
     created_at: toDatetimeLocalValue(new Date()),
 });
 
+function formatIdr(value: number): string {
+    return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        maximumFractionDigits: 0,
+    }).format(value);
+}
+
 export default function SimpananIndex() {
     const { props } = usePage<{ props: SimpananPageProps }>();
     const pageProps = props as unknown as SimpananPageProps;
@@ -116,10 +124,33 @@ export default function SimpananIndex() {
 
     const rekeningKoperasiOptions = useMemo(
         () =>
-            rekeningKoperasiData.map((rekening) => ({
-                value: rekening.id,
-                label: `${rekening.nama} (${rekening.jenis})${rekening.nomor_rekening ? ` - ${rekening.nomor_rekening}` : ''}`,
-            })),
+            rekeningKoperasiData.map((rekening) => {
+                const saldo = Number(rekening.saldo ?? 0);
+                const isPositiveOrZero = saldo >= 0;
+                const absFormattedSaldo = formatIdr(Math.abs(saldo));
+
+                return {
+                    value: rekening.id,
+                    label: `${rekening.nama} (${rekening.jenis})${rekening.nomor_rekening ? ` - ${rekening.nomor_rekening}` : ''} ${absFormattedSaldo}`,
+                    richLabel: (
+                        <span>
+                            {rekening.nama} ({rekening.jenis})
+                            {rekening.nomor_rekening
+                                ? ` - ${rekening.nomor_rekening} -`
+                                : ''}{' '}
+                            <span
+                                className={
+                                    isPositiveOrZero
+                                        ? 'font-semibold text-emerald-600'
+                                        : 'font-semibold text-red-600'
+                                }
+                            >
+                                {absFormattedSaldo}
+                            </span>
+                        </span>
+                    ),
+                };
+            }),
         [rekeningKoperasiData],
     );
 
@@ -127,10 +158,43 @@ export default function SimpananIndex() {
         () =>
             anggotaData.map((anggota) => ({
                 value: anggota.id,
-                label: `${anggota.no_anggota} - ${anggota.nama} - ${anggota.alamat}`,
+                label: `${anggota.no_anggota} - ${anggota.nama}`,
             })),
         [anggotaData],
     );
+
+    const rekeningKoperasiSaldoById = useMemo(() => {
+        const map = new Map<string, number>();
+
+        for (const rekening of rekeningKoperasiData) {
+            const saldo = Number(rekening.saldo ?? 0);
+            map.set(rekening.id, Number.isNaN(saldo) ? 0 : saldo);
+        }
+
+        return map;
+    }, [rekeningKoperasiData]);
+
+    const isSelectedRekeningMinus = useMemo(() => {
+        if (!formData.rekening_koperasi_id) {
+            return false;
+        }
+
+        return (
+            (rekeningKoperasiSaldoById.get(formData.rekening_koperasi_id) ??
+                0) < 0
+        );
+    }, [formData.rekening_koperasi_id, rekeningKoperasiSaldoById]);
+
+    const isSelectedTarikRekeningMinus = useMemo(() => {
+        if (!tarikForm.rekening_koperasi_id) {
+            return false;
+        }
+
+        return (
+            (rekeningKoperasiSaldoById.get(tarikForm.rekening_koperasi_id) ??
+                0) < 0
+        );
+    }, [rekeningKoperasiSaldoById, tarikForm.rekening_koperasi_id]);
 
     const pokokSaldoByAnggota = useMemo(() => {
         const map = new Map<string, number>();
@@ -389,6 +453,7 @@ export default function SimpananIndex() {
                     formData={formData}
                     isSubmitting={isSubmitting}
                     isLoadingOptions={isLoadingFormData}
+                    isRekeningMinus={isSelectedRekeningMinus}
                     isPokokLocked={isPokokLocked}
                     pokokInfoText={pokokInfoText}
                     isWajibLocked={isWajibLocked}
@@ -401,6 +466,7 @@ export default function SimpananIndex() {
 
                 <SimpananTableCard
                     rows={rows}
+                    rekeningSimpananData={rekeningSimpananData}
                     onRequestTarik={openTarikModal}
                 />
             </section>
@@ -428,7 +494,10 @@ export default function SimpananIndex() {
                             type="button"
                             variant="warning"
                             loading={isTarikSubmitting}
-                            disabled={isTarikSubmitting}
+                            disabled={
+                                isTarikSubmitting ||
+                                isSelectedTarikRekeningMinus
+                            }
                             onClick={submitTarikSukarela}
                         >
                             Proses Tarik
@@ -436,7 +505,7 @@ export default function SimpananIndex() {
                     </>
                 }
             >
-                <div className="grid grid-cols-1 gap-4">
+                <div className="mt-2 grid grid-cols-1 gap-4">
                     <FloatingSelect
                         label="Rekening Koperasi"
                         value={tarikForm.rekening_koperasi_id}
@@ -455,6 +524,7 @@ export default function SimpananIndex() {
                         label="Nominal Tarik"
                         type="rupiah"
                         value={tarikForm.jumlah}
+                        disabled={isSelectedTarikRekeningMinus}
                         helperText={
                             tarikTarget
                                 ? `Maksimal: Rp ${tarikTarget.maxTarikSukarela.toLocaleString('id-ID')}`
@@ -481,6 +551,7 @@ export default function SimpananIndex() {
                     <FloatingInput
                         label="Keterangan (Opsional)"
                         value={tarikForm.keterangan}
+                        disabled={isSelectedTarikRekeningMinus}
                         onChange={(event) =>
                             setTarikForm((prev) => ({
                                 ...prev,
@@ -493,6 +564,7 @@ export default function SimpananIndex() {
                         label="Tanggal Transaksi"
                         type="datetime-local"
                         value={tarikForm.created_at}
+                        disabled={isSelectedTarikRekeningMinus}
                         onChange={(event) =>
                             setTarikForm((prev) => ({
                                 ...prev,
@@ -501,6 +573,12 @@ export default function SimpananIndex() {
                         }
                         required
                     />
+                    {isSelectedTarikRekeningMinus && (
+                        <p className="text-xs text-red-600">
+                            Rekening koperasi yang dipilih bersaldo minus.
+                            Proses tarik dinonaktifkan.
+                        </p>
+                    )}
                 </div>
             </Modal>
 

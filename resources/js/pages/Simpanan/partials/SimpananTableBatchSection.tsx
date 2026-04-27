@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { LuEye, LuX } from 'react-icons/lu';
 import Button from '@/components/button';
 import DataTable, { type DataTableColumn } from '@/components/data-table';
-import type { SimpananBatch } from '../types';
+import type { SimpananBatch, SimpananRow } from '../types';
 import type { AnggotaNominalRow, BatchSummaryRow } from '../types';
 import {
     buildAmountLabel,
@@ -15,7 +15,7 @@ type Props = {
     selectedAnggota: AnggotaNominalRow | null;
     data: BatchSummaryRow[];
     onClose: () => void;
-    onPreviewInvoice: (batch: SimpananBatch) => void;
+    onPreviewInvoice: (batch: SimpananBatch, rows: SimpananRow[]) => void;
 };
 
 export default function SimpananTableBatchSection({
@@ -101,6 +101,11 @@ export default function SimpananTableBatchSection({
                                 <div className="mt-1">
                                     {buildRekeningDetail(transaction)}
                                 </div>
+                                {transaction.keterangan && (
+                                    <div className="mt-1 text-slate-600">
+                                        Ket: {transaction.keterangan}
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>
@@ -133,7 +138,9 @@ export default function SimpananTableBatchSection({
                             size="sm"
                             variant="soft"
                             className="flex items-center gap-1.5"
-                            onClick={() => onPreviewInvoice(row.batch)}
+                            onClick={() =>
+                                onPreviewInvoice(row.batch, row.details)
+                            }
                         >
                             <LuEye className="h-4 w-4" />
                             Lihat Pembayaran

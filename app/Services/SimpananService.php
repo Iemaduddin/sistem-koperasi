@@ -30,7 +30,6 @@ class SimpananService
                 'batch.user',
             ])
                 ->latest('created_at')
-                ->limit(100)
                 ->get(),
             'rekening_koperasi' => RekeningKoperasi::query()
                 ->orderBy('nama')

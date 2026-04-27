@@ -1,7 +1,7 @@
 import Button from '@/components/button';
 import Modal from '@/components/modal';
-import { formatCurrency } from '@/utils/number';
-import type { SimpananBatch } from '../types';
+import { formatCurrency, toNumber } from '@/utils/number';
+import type { SimpananBatch, SimpananRow } from '../types';
 import {
     buildRekeningDetail,
     getBatchTransactions,
@@ -13,17 +13,28 @@ import { LuDownload } from 'react-icons/lu';
 
 type Props = {
     selectedInvoiceBatch: SimpananBatch | null;
+    selectedBatchRows: SimpananRow[];
     onClose: () => void;
     onExportPdf: () => void;
 };
 
 export default function SimpananInvoicePreviewModal({
     selectedInvoiceBatch,
+    selectedBatchRows,
     onClose,
     onExportPdf,
 }: Props) {
-    const summary = summarizeInvoice(selectedInvoiceBatch);
-    const transactions = getBatchTransactions(selectedInvoiceBatch);
+    // Use selectedBatchRows if available, otherwise try to get from batch
+    const transactions =
+        selectedBatchRows.length > 0
+            ? selectedBatchRows
+            : getBatchTransactions(selectedInvoiceBatch);
+
+    const summary = {
+        total: transactions.reduce((sum, row) => {
+            return sum + toNumber(row.jumlah);
+        }, 0),
+    };
 
     return (
         <Modal

@@ -73,14 +73,22 @@ export function summarizeInvoice(batch: SimpananBatch | null): InvoiceSummary {
     );
 }
 
-export async function buildInvoiceHtml(batch: SimpananBatch): Promise<string> {
-    const transactions = getBatchTransactions(batch);
-    const summary = summarizeInvoice(batch);
+export async function buildInvoiceHtml(
+    batch: SimpananBatch,
+    rows: SimpananRow[] = [],
+): Promise<string> {
+    // Use provided rows if available, otherwise try to get from batch
+    const transactions = rows.length > 0 ? rows : getBatchTransactions(batch);
+    const summary = {
+        total: transactions.reduce((sum, row) => {
+            return sum + toNumber(row.jumlah);
+        }, 0),
+    };
     const logoPngUrl = `${window.location.origin}/logo-azzahwa.png`;
     const logoHorizontalUrl = `${window.location.origin}/logo-azzahwa-horizontal.png`;
     const logoIcoUrl = `${window.location.origin}/logo-azzahwa.ico`;
     const qrTargetUrl = `${window.location.origin}/example-link`;
-    const kotaTanggal = `Kota Batu, ${formatDateOnly(batch.tanggal_transaksi)}`;
+    const kotaTanggal = `Pasuruan, ${formatDateOnly(batch.tanggal_transaksi)}`;
     const qrCodeDataUrl = await QRCode.toDataURL(qrTargetUrl, {
         errorCorrectionLevel: 'H',
         margin: 1,

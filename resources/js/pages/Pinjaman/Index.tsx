@@ -105,7 +105,7 @@ export default function PinjamanIndex() {
                     formData={formData}
                     anggotaOptions={anggotaData.map((a) => ({
                         value: a.id,
-                        label: `${a.no_anggota} - ${a.nama} - ${a.alamat}`,
+                        label: `${a.no_anggota} - ${a.nama}`,
                     }))}
                     rekeningOptions={rekeningKoperasiData.map((r) => ({
                         value: r.id,

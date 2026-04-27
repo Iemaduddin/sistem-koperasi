@@ -4,6 +4,7 @@ import type {
     SimpananRow,
     AnggotaNominalRow,
     BatchSummaryRow,
+    RekeningSimpananOption,
 } from '../types';
 import { buildInvoiceHtml, getAnggotaKey, summarizeInvoice } from '../utils';
 import { toNumber } from '@/utils/number';
@@ -13,6 +14,7 @@ import SimpananTableNominalSection from './SimpananTableNominalSection';
 
 type Props = {
     rows: SimpananRow[];
+    rekeningSimpananData: RekeningSimpananOption[];
     onRequestTarik: (payload: {
         anggotaId: string;
         anggotaLabel: string;
@@ -20,38 +22,32 @@ type Props = {
     }) => void;
 };
 
-export default function SimpananTableCard({ rows, onRequestTarik }: Props) {
+export default function SimpananTableCard({
+    rows,
+    rekeningSimpananData,
+    onRequestTarik,
+}: Props) {
     const [selectedAnggota, setSelectedAnggota] =
         useState<AnggotaNominalRow | null>(null);
     const [selectedInvoiceBatch, setSelectedInvoiceBatch] =
         useState<SimpananBatch | null>(null);
+    const [selectedBatchRows, setSelectedBatchRows] = useState<SimpananRow[]>(
+        [],
+    );
 
     const nominalPerAnggota = useMemo<AnggotaNominalRow[]>(() => {
-        const uniqueRekening = new Map<
-            string,
-            SimpananRow['rekening_simpanan']
-        >();
-
-        for (const row of rows) {
-            const rekeningId =
-                row.rekening_simpanan?.id ?? row.rekening_simpanan_id;
-
-            if (!rekeningId || uniqueRekening.has(rekeningId)) {
-                continue;
-            }
-
-            uniqueRekening.set(rekeningId, row.rekening_simpanan);
-        }
-
         const grouped = new Map<string, AnggotaNominalRow>();
 
-        for (const rekening of uniqueRekening.values()) {
+        // Build summary from rekeningSimpananData (has all rekening, not just recent transactions)
+        for (const rekening of rekeningSimpananData) {
             if (!rekening) {
                 continue;
             }
 
+            // Use consistent key generation with getAnggotaKey
             const anggotaId =
                 rekening.anggota?.id ??
+                rekening.anggota?.no_anggota ??
                 rekening.anggota?.nama ??
                 'tanpa-anggota';
             const anggotaNama = rekening.anggota?.nama ?? 'Tanpa nama';
@@ -88,11 +84,22 @@ export default function SimpananTableCard({ rows, onRequestTarik }: Props) {
         return Array.from(grouped.values()).sort((a, b) =>
             a.nama.localeCompare(b.nama, 'id-ID'),
         );
-    }, [rows]);
+    }, [rekeningSimpananData]);
 
     const transaksiAnggotaTerpilih = useMemo(() => {
         if (!selectedAnggota) {
             return [];
+        }
+
+        // Prefer stable anggota_id match to avoid key mismatches from fallback fields.
+        if (selectedAnggota.anggota_id) {
+            return rows.filter((row) => {
+                const rowAnggotaId =
+                    row.batch?.anggota?.id ??
+                    row.rekening_simpanan?.anggota?.id;
+
+                return rowAnggotaId === selectedAnggota.anggota_id;
+            });
         }
 
         return rows.filter(
@@ -122,13 +129,17 @@ export default function SimpananTableCard({ rows, onRequestTarik }: Props) {
             .map(([_, batchRows]) => {
                 const firstRow = batchRows[0];
                 const batch = firstRow.batch as SimpananBatch;
-                const summary = summarizeInvoice(batch);
+
+                // Calculate total from batchRows instead of batch object
+                const total = batchRows.reduce((sum, row) => {
+                    return sum + toNumber(row.jumlah);
+                }, 0);
 
                 return {
                     batch,
                     kode_transaksi: batch.kode_transaksi,
                     tanggal_transaksi: batch.tanggal_transaksi,
-                    total: summary.total,
+                    total,
                     jumlah_detail: batchRows.length,
                     details: batchRows,
                 };
@@ -155,7 +166,10 @@ export default function SimpananTableCard({ rows, onRequestTarik }: Props) {
             return;
         }
 
-        const invoiceHtml = await buildInvoiceHtml(selectedInvoiceBatch);
+        const invoiceHtml = await buildInvoiceHtml(
+            selectedInvoiceBatch,
+            selectedBatchRows,
+        );
 
         previewWindow.document.open();
         previewWindow.document.write(invoiceHtml);
@@ -165,6 +179,14 @@ export default function SimpananTableCard({ rows, onRequestTarik }: Props) {
         setTimeout(() => {
             previewWindow.print();
         }, 300);
+    };
+
+    const handlePreviewInvoice = (
+        batch: SimpananBatch,
+        batchRows: SimpananRow[],
+    ) => {
+        setSelectedInvoiceBatch(batch);
+        setSelectedBatchRows(batchRows);
     };
 
     return (
@@ -179,12 +201,16 @@ export default function SimpananTableCard({ rows, onRequestTarik }: Props) {
                 selectedAnggota={selectedAnggota}
                 data={batchRowsAnggotaTerpilih}
                 onClose={() => setSelectedAnggota(null)}
-                onPreviewInvoice={setSelectedInvoiceBatch}
+                onPreviewInvoice={handlePreviewInvoice}
             />
 
             <SimpananInvoicePreviewModal
                 selectedInvoiceBatch={selectedInvoiceBatch}
-                onClose={() => setSelectedInvoiceBatch(null)}
+                selectedBatchRows={selectedBatchRows}
+                onClose={() => {
+                    setSelectedInvoiceBatch(null);
+                    setSelectedBatchRows([]);
+                }}
                 onExportPdf={exportInvoiceToPdf}
             />
         </>
