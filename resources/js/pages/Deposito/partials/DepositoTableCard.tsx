@@ -141,11 +141,6 @@ export default function DepositoTableCard({ rows }: Props) {
         [],
     );
 
-    const maxVisibleLogDate = useMemo(() => {
-        const now = new Date();
-        return new Date(now.getFullYear(), now.getMonth() + 2, 0);
-    }, []);
-
     const visibleLogs = useMemo<VisibleLogRow[]>(() => {
         if (!selectedRow?.log_bagi_hasil) {
             return [];
@@ -166,13 +161,9 @@ export default function DepositoTableCard({ rows }: Props) {
                     parsedDate,
                 };
             })
-            .filter(
-                (log) =>
-                    !Number.isNaN(log.parsedDate.getTime()) &&
-                    log.parsedDate <= maxVisibleLogDate,
-            )
+            .filter((log) => !Number.isNaN(log.parsedDate.getTime()))
             .sort((a, b) => a.parsedDate.getTime() - b.parsedDate.getTime());
-    }, [maxVisibleLogDate, selectedRow]);
+    }, [selectedRow]);
 
     const eligibleLogs = useMemo(() => {
         const now = new Date();

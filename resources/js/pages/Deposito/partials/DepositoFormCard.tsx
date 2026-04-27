@@ -35,8 +35,8 @@ export default function DepositoFormCard({
             </h2>
             <p className="mt-1 text-sm text-slate-600">
                 Alur: pilih rekening koperasi, pilih anggota, isi saldo, pilih
-                tenor, lalu sistem menghitung bagi hasil per bulan dan
-                menyiapkan log otomatis sebanyak tenor.
+                tenor, lalu sistem menghitung bagi hasil per bulan dan total
+                bagi hasil hingga selesai tenor.
             </p>
 
             <form onSubmit={onSubmit} className="mt-4 space-y-4">
