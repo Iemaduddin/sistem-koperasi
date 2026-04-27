@@ -13,6 +13,7 @@ import type {
 } from './types';
 import { initialBayarAngsuranForm } from './types';
 import {
+    buildInvoiceHtml,
     formatRupiah,
     formatTanggal,
     getLabelStatusAngsuran,
@@ -22,6 +23,8 @@ import {
     hitungProgressPersen,
     isTerlambat,
 } from './utils';
+import PinjamanInvoicePreviewModal from './partials/PinjamanInvoicePreviewModal';
+import { LuEye } from 'react-icons/lu';
 
 export default function PinjamanShow() {
     const { props } = usePage<{ props: PinjamanShowProps }>();
@@ -42,6 +45,9 @@ export default function PinjamanShow() {
 
     const [pelunasanConfirmOpen, setPelunasanConfirmOpen] = useState(false);
     const [isPelunasanSubmitting, setIsPelunasanSubmitting] = useState(false);
+
+    const [invoiceAngsuran, setInvoiceAngsuran] =
+        useState<AngsuranPinjaman | null>(null);
 
     const openBayarModal = (angsuran: AngsuranPinjaman) => {
         const sisaTagihan =
@@ -119,6 +125,32 @@ export default function PinjamanShow() {
                 },
             },
         );
+    };
+
+    const exportInvoiceToPdf = async () => {
+        if (!invoiceAngsuran) return;
+
+        const previewWindow = window.open(
+            '',
+            '_blank',
+            'width=1200,height=900',
+        );
+
+        if (!previewWindow) {
+            toast.error('Gagal membuka jendela preview. Pastikan popup tidak diblokir.');
+            return;
+        }
+
+        const invoiceHtml = await buildInvoiceHtml(pinjaman, invoiceAngsuran);
+
+        previewWindow.document.open();
+        previewWindow.document.write(invoiceHtml);
+        previewWindow.document.close();
+        previewWindow.focus();
+
+        setTimeout(() => {
+            previewWindow.print();
+        }, 300);
     };
 
     const progressPersen = hitungProgressPersen(pinjaman);
@@ -356,20 +388,38 @@ export default function PinjamanShow() {
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3 text-center">
-                                                {!isLunas && (
-                                                    <Button
-                                                        type="button"
-                                                        variant="primary"
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            openBayarModal(
-                                                                angsuran,
-                                                            )
-                                                        }
-                                                    >
-                                                        Bayar
-                                                    </Button>
-                                                )}
+                                                <div className="flex items-center justify-center gap-2">
+                                                    {!isLunas && (
+                                                        <Button
+                                                            type="button"
+                                                            variant="primary"
+                                                            size="sm"
+                                                            onClick={() =>
+                                                                openBayarModal(
+                                                                    angsuran,
+                                                                )
+                                                            }
+                                                        >
+                                                            Bayar
+                                                        </Button>
+                                                    )}
+                                                    {isLunas && (
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="flex items-center gap-1.5"
+                                                            onClick={() =>
+                                                                setInvoiceAngsuran(
+                                                                    angsuran,
+                                                                )
+                                                            }
+                                                        >
+                                                            <LuEye className="h-4 w-4" />
+                                                            Lihat
+                                                        </Button>
+                                                    )}
+                                                </div>
                                             </td>
                                         </tr>
                                     );
@@ -520,6 +570,13 @@ export default function PinjamanShow() {
                         </Button>
                     </>
                 }
+            />
+
+            <PinjamanInvoicePreviewModal
+                pinjaman={pinjaman}
+                selectedAngsuran={invoiceAngsuran}
+                onClose={() => setInvoiceAngsuran(null)}
+                onExportPdf={exportInvoiceToPdf}
             />
         </>
     );

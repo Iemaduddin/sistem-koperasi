@@ -132,10 +132,11 @@ export default function SimpananTableBatchSection({
                         <Button
                             size="sm"
                             variant="soft"
+                            className="flex items-center gap-1.5"
                             onClick={() => onPreviewInvoice(row.batch)}
                         >
                             <LuEye className="h-4 w-4" />
-                            Preview Invoice
+                            Lihat Pembayaran
                         </Button>
                     </div>
                 ),
