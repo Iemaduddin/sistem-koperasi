@@ -153,7 +153,7 @@ export default function Navbar({
                         <div className="absolute right-0 z-20 mt-2 w-72 origin-top-right rounded-2xl bg-white p-2 shadow-xl ring-1 ring-slate-200 sm:w-80">
                             <div className="mb-2 flex flex-col gap-2 border-b border-slate-100 px-1 pb-2">
                                 <h3 className="px-2 pt-1 text-sm font-bold text-slate-800">
-                                    Notifikasi Angsuran
+                                    Notifikasi Koperasi
                                 </h3>
                                 <div className="flex gap-1 rounded-lg bg-slate-100 p-1">
                                     <button
@@ -184,40 +184,49 @@ export default function Navbar({
                                     <div className="flex flex-col gap-1">
                                         {notifications[activeTab].map(
                                             (item: any) => (
-                                                <div
+                                                <button
                                                     key={item.id}
-                                                    className="group relative flex flex-col gap-1 rounded-xl p-3 transition hover:bg-slate-50"
+                                                    onClick={() =>
+                                                        router.get(item.url)
+                                                    }
+                                                    className="group relative flex flex-col gap-1 rounded-xl p-3 text-left transition hover:bg-slate-50"
                                                 >
                                                     <div className="flex items-center justify-between">
-                                                        <span
-                                                            className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                                                                activeTab ===
-                                                                'upcoming'
-                                                                    ? 'text-blue-700 bg-blue-100'
-                                                                    : 'text-red-700 bg-red-100'
-                                                            }`}
-                                                        >
-                                                            {item.label}
-                                                        </span>
+                                                        <div className="flex flex-col gap-0.5">
+                                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                                                                {item.type}
+                                                            </span>
+                                                            <span
+                                                                className={`w-fit text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                                                                    activeTab ===
+                                                                    'upcoming'
+                                                                        ? 'text-blue-700 bg-blue-100'
+                                                                        : 'text-red-700 bg-red-100'
+                                                                }`}
+                                                            >
+                                                                {item.label}
+                                                            </span>
+                                                        </div>
                                                         <span className="text-[10px] text-slate-400 font-medium">
-                                                            {
-                                                                item.tanggal_jatuh_tempo
-                                                            }
+                                                            {item.tanggal}
                                                         </span>
                                                     </div>
                                                     <p className="text-sm font-semibold text-slate-900 line-clamp-1">
                                                         {item.anggota_nama}
                                                     </p>
                                                     <p className="text-xs text-slate-500">
-                                                        Tagihan:{' '}
+                                                        {item.type ===
+                                                        'Angsuran'
+                                                            ? 'Tagihan: '
+                                                            : 'Saldo: '}
                                                         <span className="font-semibold text-slate-700">
                                                             Rp{' '}
-                                                            {item.total_tagihan.toLocaleString(
+                                                            {item.nominal.toLocaleString(
                                                                 'id-ID',
                                                             )}
                                                         </span>
                                                     </p>
-                                                </div>
+                                                </button>
                                             ),
                                         )}
                                     </div>
@@ -227,7 +236,7 @@ export default function Navbar({
                                             <LuBell className="h-6 w-6" />
                                         </div>
                                         <p className="text-sm text-slate-500">
-                                            Tidak ada angsuran{' '}
+                                            Tidak ada notifikasi{' '}
                                             {activeTab === 'upcoming'
                                                 ? 'mendatang'
                                                 : 'terlambat'}
@@ -235,15 +244,22 @@ export default function Navbar({
                                     </div>
                                 )}
                             </div>
-                            {((activeTab === 'upcoming' && notifications.count > 0) ||
+                            {((activeTab === 'upcoming' &&
+                                notifications.count > 0) ||
                                 (activeTab === 'overdue' &&
                                     notifications.overdue_count > 0)) && (
-                                <div className="mt-2 border-t border-slate-100 pt-2 px-1">
+                                <div className="mt-2 border-t border-slate-100 px-1 pt-2">
                                     <button
-                                        onClick={() => router.get('/pinjaman')}
+                                        onClick={() =>
+                                            router.get(
+                                                activeTab === 'upcoming'
+                                                    ? '/riwayat-transaksi'
+                                                    : '/pinjaman',
+                                            )
+                                        }
                                         className="w-full rounded-lg py-2 text-center text-xs font-semibold text-blue-600 transition hover:bg-blue-50"
                                     >
-                                        Lihat Semua Pinjaman
+                                        Lihat Semua Data
                                     </button>
                                 </div>
                             )}
