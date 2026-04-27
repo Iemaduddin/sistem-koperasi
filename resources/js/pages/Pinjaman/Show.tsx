@@ -24,6 +24,7 @@ import {
     isTerlambat,
 } from './utils';
 import PinjamanInvoicePreviewModal from './partials/PinjamanInvoicePreviewModal';
+import { LuEye } from 'react-icons/lu';
 
 export default function PinjamanShow() {
     const { props } = usePage<{ props: PinjamanShowProps }>();
@@ -407,13 +408,15 @@ export default function PinjamanShow() {
                                                             type="button"
                                                             variant="outline"
                                                             size="sm"
+                                                            className="flex items-center gap-1.5"
                                                             onClick={() =>
                                                                 setInvoiceAngsuran(
                                                                     angsuran,
                                                                 )
                                                             }
                                                         >
-                                                            Invoice
+                                                            <LuEye className="h-4 w-4" />
+                                                            Lihat
                                                         </Button>
                                                     )}
                                                 </div>

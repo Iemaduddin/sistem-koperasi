@@ -3,6 +3,7 @@ import Modal from '@/components/modal';
 import type { AngsuranPinjaman, PinjamanRow } from '../types';
 import { formatRupiah, getLabelStatusPinjaman } from '../utils';
 import { formatDateTimeLong } from '@/utils/text';
+import { LuDownload } from 'react-icons/lu';
 
 type Props = {
     pinjaman: PinjamanRow;
@@ -22,7 +23,7 @@ export default function PinjamanInvoicePreviewModal({
     return (
         <Modal
             open={selectedAngsuran !== null}
-            title={`Preview Invoice Angsuran ke-${selectedAngsuran.angsuran_ke}`}
+            title={`Lihat Pembayaran Angsuran ke-${selectedAngsuran.angsuran_ke}`}
             description={`${pinjaman.anggota?.no_anggota ?? '-'} - ${pinjaman.anggota?.nama ?? '-'}`}
             onClose={onClose}
             maxWidthClassName="max-w-4xl"
@@ -31,8 +32,13 @@ export default function PinjamanInvoicePreviewModal({
                     <Button variant="outline" onClick={onClose}>
                         Tutup
                     </Button>
-                    <Button variant="primary" onClick={onExportPdf}>
-                        Export PDF
+                    <Button
+                        variant="primary"
+                        onClick={onExportPdf}
+                        className="flex items-center gap-1.5"
+                    >
+                        <LuDownload className="h-4 w-4" />
+                        Unduh PDF
                     </Button>
                 </>
             }

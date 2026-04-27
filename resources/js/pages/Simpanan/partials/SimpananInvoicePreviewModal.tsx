@@ -9,6 +9,7 @@ import {
     tipeTransaksiLabel,
 } from '../utils';
 import { formatDateTimeLong } from '@/utils/text';
+import { LuDownload } from 'react-icons/lu';
 
 type Props = {
     selectedInvoiceBatch: SimpananBatch | null;
@@ -29,8 +30,8 @@ export default function SimpananInvoicePreviewModal({
             open={selectedInvoiceBatch !== null}
             title={
                 selectedInvoiceBatch
-                    ? `Preview Invoice - ${selectedInvoiceBatch.kode_transaksi}`
-                    : 'Preview Invoice'
+                    ? `Lihat Pembayaran - ${selectedInvoiceBatch.kode_transaksi}`
+                    : 'Lihat Pembayaran'
             }
             description={
                 selectedInvoiceBatch
@@ -44,8 +45,13 @@ export default function SimpananInvoicePreviewModal({
                     <Button variant="outline" onClick={onClose}>
                         Tutup
                     </Button>
-                    <Button variant="primary" onClick={onExportPdf}>
-                        Export PDF
+                    <Button
+                        variant="primary"
+                        onClick={onExportPdf}
+                        className="flex items-center gap-1.5"
+                    >
+                        <LuDownload className="h-4 w-4" />
+                        Unduh PDF
                     </Button>
                 </>
             }
