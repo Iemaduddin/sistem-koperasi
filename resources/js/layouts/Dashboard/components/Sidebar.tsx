@@ -32,8 +32,6 @@ import type { IconType } from 'react-icons';
 import Button from '../../../components/button';
 import { toast } from 'react-toastify';
 import { dashboard } from '@/routes';
-import { index as usersIndex } from '@/routes/users';
-import { index as rolesIndex } from '@/routes/roles';
 
 type SidebarItem = {
     id?: string;
@@ -116,8 +114,8 @@ const isItemActive = (item: SidebarItem, pathname: string): boolean => {
 
 const routeNameToUrl: Record<string, () => string> = {
     dashboard: () => dashboard.url(),
-    'users.index': () => usersIndex.url(),
-    'roles.index': () => rolesIndex.url(),
+    'users.index': () => '/users',
+    'roles.index': () => '/roles',
     'audit.index': () => '/audit',
     'anggota.index': () => '/anggota',
     'jenis-simpanan.index': () => '/jenis-simpanan',

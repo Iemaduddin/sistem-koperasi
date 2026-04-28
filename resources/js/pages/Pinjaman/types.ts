@@ -121,3 +121,20 @@ export const initialBayarAngsuranForm = (): BayarAngsuranForm => ({
     denda_dibayar: '0',
     tanggal_bayar: new Date().toISOString().substring(0, 10),
 });
+
+export type PelunasanSummary = {
+    total_pokok: number;
+    total_bunga: number;
+    total_denda: number;
+    potongan_bunga: number;
+    total_pembayaran: number;
+    rincian: {
+        angsuran_ke: number;
+        tanggal_jatuh_tempo: string;
+        pokok: number;
+        bunga: number;
+        denda: number;
+        is_bebas_bunga: boolean;
+        subtotal: number;
+    }[];
+};

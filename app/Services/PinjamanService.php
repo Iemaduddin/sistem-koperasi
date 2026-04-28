@@ -326,11 +326,76 @@ class PinjamanService
     }
 
     /**
+     * Ambil ringkasan pelunasan awal (simulasi).
+     */
+    public function getPelunasanSummary(Pinjaman $pinjaman): array
+    {
+        $pinjaman->load(['angsuran' => fn($q) => $q->orderBy('angsuran_ke')]);
+
+        $totalTenor = $pinjaman->tenor_bulan;
+        $angsuranSisa = $pinjaman->angsuran->filter(
+            fn (AngsuranPinjaman $a) => $a->status !== 'lunas'
+        )->values();
+
+        $jumlahBebasBunga = (int) floor($totalTenor * 0.2);
+        $totalSisaAngsuran = $angsuranSisa->count();
+
+        $startIndexBebasBunga = $totalSisaAngsuran - $jumlahBebasBunga;
+        if ($startIndexBebasBunga < 0) {
+            $startIndexBebasBunga = 0;
+        }
+
+        $totalPokok = 0.0;
+        $totalBunga = 0.0;
+        $totalDenda = 0.0;
+        $potonganBunga = 0.0;
+        $rincian = [];
+
+        foreach ($angsuranSisa as $index => $angsuran) {
+            /** @var AngsuranPinjaman $angsuran */
+            $isBebasBunga = $index >= $startIndexBebasBunga;
+
+            $pokok = (float) $angsuran->pokok;
+            $bungaOriginal = (float) $angsuran->bunga;
+            $denda = $this->hitungDenda($pinjaman, $angsuran, now());
+
+            $bungaBayar = $isBebasBunga ? 0.0 : $bungaOriginal;
+            if ($isBebasBunga) {
+                $potonganBunga += $bungaOriginal;
+            }
+
+            $totalPokok += $pokok;
+            $totalBunga += $bungaBayar;
+            $totalDenda += $denda;
+
+            $rincian[] = [
+                'angsuran_ke' => $angsuran->angsuran_ke,
+                'tanggal_jatuh_tempo' => $angsuran->tanggal_jatuh_tempo,
+                'pokok' => $pokok,
+                'bunga' => $bungaBayar, // Gunakan bungaBayar agar diskon (0) tampil
+                'bunga_original' => $bungaOriginal,
+                'denda' => $denda,
+                'is_bebas_bunga' => $isBebasBunga,
+                'subtotal' => round($pokok + $bungaBayar + $denda, 2),
+            ];
+        }
+
+        return [
+            'total_pokok' => round($totalPokok, 2),
+            'total_bunga' => round($totalBunga, 2),
+            'total_denda' => round($totalDenda, 2),
+            'potongan_bunga' => round($potonganBunga, 2),
+            'total_pembayaran' => round($totalPokok + $totalBunga + $totalDenda, 2),
+            'rincian' => $rincian,
+        ];
+    }
+
+    /**
      * Pelunasan lebih awal.
      */
-    public function pelunasan(Pinjaman $pinjaman, string $userId, Carbon $tanggalPelunasan): void
+    public function pelunasan(Pinjaman $pinjaman, string $userId, Carbon $tanggalPelunasan, ?float $customDenda = null): void
     {
-        DB::transaction(function () use ($pinjaman, $userId, $tanggalPelunasan): void {
+        DB::transaction(function () use ($pinjaman, $userId, $tanggalPelunasan, $customDenda): void {
             $pinjaman->load(['angsuran' => fn($q) => $q->orderBy('angsuran_ke')]);
 
             // Hitung jumlah angsuran yang lunas
@@ -373,33 +438,57 @@ class PinjamanService
                 $startIndexBebasBunga = 0;
             }
 
-            $totalMasuk = 0.0;
+            $summary = $this->getPelunasanSummary($pinjaman);
+            
+            // Override denda if custom denda is provided
+            $totalDendaToCollect = $customDenda ?? $summary['total_denda'];
+            $totalMasuk = $summary['total_pokok'] + $summary['total_bunga'] + $totalDendaToCollect;
+
+            $dendaSisa = $totalDendaToCollect;
+            $countSisa = $angsuranSisa->count();
 
             foreach ($angsuranSisa as $index => $angsuran) {
                 /** @var AngsuranPinjaman $angsuran */
-                $isBebasBunga = $index >= $startIndexBebasBunga;
+                $itemRincian = collect($summary['rincian'])->firstWhere('angsuran_ke', $angsuran->angsuran_ke);
+                
+                if (!$itemRincian) continue;
 
-                if ($isBebasBunga) {
-                    $angsuran->bunga = 0;
-                    $angsuran->total_tagihan = round((float) $angsuran->pokok, 2);
+                $pokok = $itemRincian['pokok'];
+                $bunga = $itemRincian['is_bebas_bunga'] ? 0 : $itemRincian['bunga'];
+                
+                // Distribute custom denda: put all on the first installment or split it?
+                // Let's split it proportionally or just put it on the first one. 
+                // For simplicity and since it's a one-time payoff, we'll assign denda only as much as needed.
+                $dendaUntukIni = 0.0;
+                if ($dendaSisa > 0) {
+                    if ($index === $countSisa - 1) {
+                        $dendaUntukIni = $dendaSisa;
+                    } else {
+                        // Split or just take from the top. Let's take from the top.
+                        $dendaUntukIni = round($totalDendaToCollect / $countSisa, 2);
+                        $dendaSisa = round($dendaSisa - $dendaUntukIni, 2);
+                    }
                 }
 
-                $sisaTagihan = round((float) $angsuran->total_tagihan - (float) $angsuran->jumlah_dibayar, 2);
+                $totalTagihanBaru = round($pokok + $bunga + $dendaUntukIni, 2);
+                $sisaHarusBayar = round($totalTagihanBaru - (float) $angsuran->jumlah_dibayar, 2);
 
-                if ($sisaTagihan > 0) {
+                if ($sisaHarusBayar > 0) {
                     $transaksi = TransaksiPinjaman::query()->create([
                         'pinjaman_id'   => $pinjaman->id,
                         'angsuran_id'   => $angsuran->id,
-                        'jumlah_bayar'  => $sisaTagihan,
-                        'denda_dibayar' => 0,
+                        'jumlah_bayar'  => round($pokok + $bunga, 2),
+                        'denda_dibayar' => $dendaUntukIni,
                         'tanggal_bayar' => $tanggalPelunasan,
                         'created_at'    => now(),
                     ]);
 
-                    $angsuran->jumlah_dibayar = round((float) $angsuran->jumlah_dibayar + $sisaTagihan, 2);
-                    $totalMasuk = round($totalMasuk + $sisaTagihan, 2);
+                    $angsuran->bunga = $bunga;
+                    $angsuran->denda = $dendaUntukIni;
+                    $angsuran->total_tagihan = $totalTagihanBaru;
+                    $angsuran->jumlah_dibayar = round((float) $angsuran->jumlah_dibayar + $sisaHarusBayar, 2);
                 }
-                
+
                 $angsuran->status = 'lunas';
                 $angsuran->save();
             }
@@ -416,7 +505,7 @@ class PinjamanService
                     'sumber_tipe'          => 'pinjaman',
                     'sumber_id'            => $pinjaman->id,
                     'user_id'              => $userId,
-                    'keterangan'           => 'Pelunasan awal pinjaman',
+                    'keterangan'           => 'Pelunasan awal pinjaman (Sisa Pokok + Bunga + Denda)',
                     'created_at'           => now(),
                 ]);
             }
@@ -458,13 +547,13 @@ class PinjamanService
 
     private function updateStatusPinjamanJikaLunas(Pinjaman $pinjaman): void
     {
-        $pinjaman->loadMissing('angsuran');
+        // Pastikan kita mengecek status terbaru dari database
+        $countBelumLunas = \App\Models\AngsuranPinjaman::query()
+            ->where('pinjaman_id', $pinjaman->id)
+            ->where('status', '!=', 'lunas')
+            ->count();
 
-        $semuaLunas = $pinjaman->angsuran->every(
-            fn (AngsuranPinjaman $a) => $a->status === 'lunas'
-        );
-
-        if ($semuaLunas) {
+        if ($countBelumLunas === 0) {
             $pinjaman->status = 'lunas';
             $pinjaman->save();
         }

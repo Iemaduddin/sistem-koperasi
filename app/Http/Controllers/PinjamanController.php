@@ -8,6 +8,7 @@ use App\Models\Pinjaman;
 use App\Services\PinjamanService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -82,14 +83,24 @@ class PinjamanController extends Controller
     }
 
     /**
+     * Simulasi pelunasan pinjaman awal.
+     */
+    public function simulasiPelunasan(Pinjaman $pinjaman): \Illuminate\Http\JsonResponse
+    {
+        return response()->json($this->pinjamanService->getPelunasanSummary($pinjaman));
+    }
+
+    /**
      * Pelunasan Pinjaman Lebih Awal
      */
     public function pelunasan(\Illuminate\Http\Request $request, Pinjaman $pinjaman): RedirectResponse
     {
         try {
-            $tanggalPelunasan = Carbon\Carbon::parse($request->input('tanggal_pelunasan', now()));
+            $tanggalPelunasan = Carbon::parse($request->input('tanggal_pelunasan', now()));
             $userId = $request->user()?->id ?? '';
-            $this->pinjamanService->pelunasan($pinjaman, $userId, $tanggalPelunasan);
+            $customDenda = $request->has('denda_pelunasan') ? (float) $request->input('denda_pelunasan') : null;
+            
+            $this->pinjamanService->pelunasan($pinjaman, $userId, $tanggalPelunasan, $customDenda);
         } catch (QueryException|\RuntimeException $exception) {
             return redirect()
                 ->route('pinjaman.show', $pinjaman)

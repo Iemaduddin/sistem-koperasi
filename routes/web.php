@@ -102,6 +102,8 @@ Route::middleware(['auth', 'active.user'])->group(function (): void {
 			->name('pinjaman.terlambat');
 		Route::post('/pinjaman/{pinjaman}/bayar', [PinjamanController::class, 'bayarAngsuran'])
 			->name('pinjaman.bayar');
+		Route::get('/pinjaman/{pinjaman}/simulasi-pelunasan', [PinjamanController::class, 'simulasiPelunasan'])
+			->name('pinjaman.simulasi-pelunasan');
 		Route::post('/pinjaman/{pinjaman}/pelunasan', [PinjamanController::class, 'pelunasan'])
 			->name('pinjaman.pelunasan');
 		Route::resource('/pinjaman', PinjamanController::class)

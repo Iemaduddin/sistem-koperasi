@@ -9,11 +9,13 @@ import FloatingInput from '@/components/floating-input/input';
 import type {
     AngsuranPinjaman,
     BayarAngsuranForm,
+    PelunasanSummary,
     PinjamanShowProps,
 } from './types';
 import { initialBayarAngsuranForm } from './types';
 import {
     buildInvoiceHtml,
+    buildPelunasanInvoiceHtml,
     formatRupiah,
     formatTanggal,
     getLabelStatusAngsuran,
@@ -24,6 +26,7 @@ import {
     isTerlambat,
 } from './utils';
 import PinjamanInvoicePreviewModal from './partials/PinjamanInvoicePreviewModal';
+import PinjamanPelunasanInvoicePreviewModal from './partials/PinjamanPelunasanInvoicePreviewModal';
 import { LuEye } from 'react-icons/lu';
 
 export default function PinjamanShow() {
@@ -34,7 +37,9 @@ export default function PinjamanShow() {
 
     const lunasCount = angsuranList.filter((a) => a.status === 'lunas').length;
     const canPelunasanAwal =
-        pinjaman.status !== 'lunas' && lunasCount >= angsuranList.length * 0.5;
+        pinjaman.status !== 'lunas' &&
+        lunasCount < angsuranList.length &&
+        lunasCount >= angsuranList.length * 0.5;
 
     const [bayarForm, setBayarForm] = useState<BayarAngsuranForm>(
         initialBayarAngsuranForm(),
@@ -48,6 +53,12 @@ export default function PinjamanShow() {
 
     const [invoiceAngsuran, setInvoiceAngsuran] =
         useState<AngsuranPinjaman | null>(null);
+    const [showPelunasanInvoice, setShowPelunasanInvoice] = useState(false);
+
+    const [pelunasanSummary, setPelunasanSummary] =
+        useState<PelunasanSummary | null>(null);
+    const [isLoadingSummary, setIsLoadingSummary] = useState(false);
+    const [pelunasanDenda, setPelunasanDenda] = useState('0');
 
     const openBayarModal = (angsuran: AngsuranPinjaman) => {
         const totalPokokBungaDibayar =
@@ -112,11 +123,31 @@ export default function PinjamanShow() {
         });
     };
 
+    const openPelunasanModal = async () => {
+        setIsLoadingSummary(true);
+        setPelunasanConfirmOpen(true);
+        try {
+            const response = await fetch(
+                `/pinjaman/${pinjaman.id}/simulasi-pelunasan`,
+            );
+            const data = await response.json();
+            setPelunasanSummary(data);
+            setPelunasanDenda(String(data.total_denda));
+        } catch (error) {
+            toast.error('Gagal mengambil rincian pelunasan.');
+        } finally {
+            setIsLoadingSummary(false);
+        }
+    };
+
     const handlePelunasan = () => {
         setIsPelunasanSubmitting(true);
         router.post(
             `/pinjaman/${pinjaman.id}/pelunasan`,
-            { tanggal_pelunasan: new Date().toISOString().substring(0, 10) },
+            {
+                tanggal_pelunasan: new Date().toISOString().substring(0, 10),
+                denda_pelunasan: pelunasanDenda,
+            },
             {
                 preserveScroll: true,
                 onSuccess: (page) => {
@@ -150,6 +181,30 @@ export default function PinjamanShow() {
         }
 
         const invoiceHtml = await buildInvoiceHtml(pinjaman, invoiceAngsuran);
+
+        previewWindow.document.open();
+        previewWindow.document.write(invoiceHtml);
+        previewWindow.document.close();
+        previewWindow.focus();
+
+        setTimeout(() => {
+            previewWindow.print();
+        }, 300);
+    };
+
+    const exportPelunasanPdf = async () => {
+        const previewWindow = window.open(
+            '',
+            '_blank',
+            'width=1200,height=900',
+        );
+
+        if (!previewWindow) {
+            toast.error('Gagal membuka jendela preview. Pastikan popup tidak diblokir.');
+            return;
+        }
+
+        const invoiceHtml = await buildPelunasanInvoiceHtml(pinjaman);
 
         previewWindow.document.open();
         previewWindow.document.write(invoiceHtml);
@@ -249,9 +304,9 @@ export default function PinjamanShow() {
                             </div>
                             <Button
                                 variant="primary"
-                                onClick={() => setPelunasanConfirmOpen(true)}
+                                onClick={openPelunasanModal}
                             >
-                                Pelunasi Semua
+                                Lunasi Semua
                             </Button>
                         </div>
                     </div>
@@ -450,6 +505,21 @@ export default function PinjamanShow() {
                     </div>
                 </div>
 
+                {/* ── Tombol Invoice Pelunasan (Muncul jika Lunas) ───────────────── */}
+                {pinjaman.status === 'lunas' && (
+                    <div className="flex justify-center mt-8 pb-10">
+                        <Button
+                            variant="primary"
+                            size="lg"
+                            onClick={() => setShowPelunasanInvoice(true)}
+                            className="flex items-center gap-2 px-8 py-4 text-lg shadow-lg hover:shadow-xl transition-all"
+                        >
+                            <LuEye className="h-6 w-6" />
+                            Unduh Invoice Pelunasan
+                        </Button>
+                    </div>
+                )}
+
                 {/* ── Kembali ───────────────────────────────────────────────── */}
                 <div>
                     <Button
@@ -559,11 +629,15 @@ export default function PinjamanShow() {
 
             {/* ── Modal Konfirmasi Pelunasan ─────────────────────────────────────── */}
             <Modal
-                children={undefined}
                 open={pelunasanConfirmOpen}
                 title="Konfirmasi Pelunasan Pinjaman"
-                description="Anda akan melunasi seluruh sisa angsuran pinjaman ini. Sesuai ketentuan, beban bunga untuk persentase sisa bulan terakhir akan dibebaskan. Lanjutkan?"
+                description={
+                    pelunasanSummary
+                        ? `Anda akan melunasi seluruh sisa ${pelunasanSummary.rincian.length} bulan angsuran.`
+                        : 'Sedang menghitung rincian pelunasan...'
+                }
                 onClose={() => setPelunasanConfirmOpen(false)}
+                className="max-w-2xl"
                 footer={
                     <>
                         <Button
@@ -578,20 +652,137 @@ export default function PinjamanShow() {
                             type="button"
                             variant="primary"
                             loading={isPelunasanSubmitting}
-                            disabled={isPelunasanSubmitting}
+                            disabled={isPelunasanSubmitting || isLoadingSummary}
                             onClick={handlePelunasan}
                         >
-                            Ya, Pelunasi Semua
+                            Ya, Lunasi Sekarang
                         </Button>
                     </>
                 }
-            />
+            >
+                {isLoadingSummary ? (
+                    <div className="flex flex-col items-center justify-center py-10">
+                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-neutral-200 border-t-blue-600"></div>
+                        <p className="mt-4 text-sm text-neutral-500">
+                            Menghitung rincian pembayaran...
+                        </p>
+                    </div>
+                ) : (
+                    pelunasanSummary && (
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4 rounded-xl bg-neutral-50 p-4">
+                                <InfoItem
+                                    label="Total Sisa Pokok"
+                                    value={formatRupiah(
+                                        pelunasanSummary.total_pokok,
+                                    )}
+                                />
+                                <InfoItem
+                                    label="Total Bunga (Setelah Diskon)"
+                                    value={formatRupiah(
+                                        pelunasanSummary.total_bunga,
+                                    )}
+                                />
+                                <InfoItem
+                                    label="Total Denda Terakumulasi"
+                                    value={formatRupiah(
+                                        pelunasanSummary.total_denda,
+                                    )}
+                                />
+                                <div className="border-t border-neutral-200 pt-2 col-span-2">
+                                    <div className="mb-4">
+                                        <FloatingInput
+                                            label="Denda Pelunasan (Opsional/Bisa Diubah)"
+                                            type="rupiah"
+                                            value={pelunasanDenda}
+                                            onCurrencyValueChange={(value) =>
+                                                setPelunasanDenda(
+                                                    String(
+                                                        Math.max(
+                                                            0,
+                                                            Math.floor(
+                                                                value.numeric ?? 0,
+                                                            ),
+                                                        ),
+                                                    ),
+                                                )
+                                            }
+                                        />
+                                    </div>
+                                    <p className="text-xs text-neutral-400">Total Pembayaran</p>
+                                    <p className="text-xl font-bold text-blue-600">
+                                        {formatRupiah(
+                                            pelunasanSummary.total_pokok +
+                                                pelunasanSummary.total_bunga +
+                                                Number(pelunasanDenda),
+                                        )}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="rounded-lg border border-green-100 bg-green-50 p-3">
+                                <p className="text-sm font-medium text-green-800">
+                                    ✨ Anda Menghemat {formatRupiah(pelunasanSummary.potongan_bunga)}
+                                </p>
+                                <p className="mt-0.5 text-xs text-green-700">
+                                    Bunga untuk {Math.floor(angsuranList.length * 0.2)} bulan terakhir telah dibebaskan.
+                                </p>
+                            </div>
+
+                            <div className="overflow-hidden rounded-lg border border-neutral-200">
+                                <table className="w-full text-xs">
+                                    <thead className="bg-neutral-50 font-medium text-neutral-500">
+                                        <tr>
+                                            <th className="px-3 py-2 text-left">Bulan</th>
+                                            <th className="px-3 py-2 text-right">Pokok</th>
+                                            <th className="px-3 py-2 text-right">Bunga</th>
+                                            <th className="px-3 py-2 text-right">Denda</th>
+                                            <th className="px-3 py-2 text-right">Subtotal</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-neutral-100">
+                                        {pelunasanSummary.rincian.map((item) => (
+                                            <tr key={item.angsuran_ke} className={item.is_bebas_bunga ? 'bg-green-50/30' : ''}>
+                                                <td className="px-3 py-2">{item.angsuran_ke}</td>
+                                                <td className="px-3 py-2 text-right">{formatRupiah(item.pokok)}</td>
+                                                <td className="px-3 py-2 text-right">
+                                                    {item.is_bebas_bunga ? (
+                                                        <div className="flex flex-col items-end">
+                                                            <span className="text-[10px] text-neutral-400 line-through decoration-red-400">
+                                                                {formatRupiah(item.bunga_original)}
+                                                            </span>
+                                                            <span className="font-bold text-green-600">
+                                                                {formatRupiah(item.bunga)}
+                                                            </span>
+                                                        </div>
+                                                    ) : (
+                                                        formatRupiah(item.bunga)
+                                                    )}
+                                                </td>
+                                                <td className="px-3 py-2 text-right text-red-600">{item.denda > 0 ? formatRupiah(item.denda) : '-'}</td>
+                                                <td className="px-3 py-2 text-right font-medium">{formatRupiah(item.subtotal)}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )
+                )}
+            </Modal>
 
             <PinjamanInvoicePreviewModal
                 pinjaman={pinjaman}
                 selectedAngsuran={invoiceAngsuran}
                 onClose={() => setInvoiceAngsuran(null)}
                 onExportPdf={exportInvoiceToPdf}
+            />
+
+            <PinjamanPelunasanInvoicePreviewModal
+                pinjaman={pinjaman}
+                open={showPelunasanInvoice}
+                onClose={() => setShowPelunasanInvoice(false)}
+                onExportPdf={exportPelunasanPdf}
             />
         </>
     );
