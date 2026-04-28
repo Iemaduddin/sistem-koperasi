@@ -158,7 +158,7 @@ export default function ImportSummaryCard({ summary }: Props) {
                                 <th className="px-3 py-2">Pinjaman</th>
                                 <th className="px-3 py-2">Angsuran</th>
                                 <th className="px-3 py-2">Tenor</th>
-                                <th className="px-3 py-2">Bunga %</th>
+                                <th className="px-3 py-2">Bagi Hasil %</th>
                                 <th className="px-3 py-2">Simp. Pokok</th>
                                 <th className="px-3 py-2">Simp. Wajib</th>
                                 <th className="px-3 py-2">Simp. Sukarela</th>

@@ -253,7 +253,7 @@ export default function PinjamanShow() {
                             value={formatRupiah(pinjaman.jumlah_pinjaman)}
                         />
                         <InfoItem
-                            label="Bunga / Bulan"
+                            label="Bagi Hasil / Bulan"
                             value={`${pinjaman.bunga_persen}%`}
                         />
                         <InfoItem
@@ -297,7 +297,7 @@ export default function PinjamanShow() {
                                     Angsuran sudah berjalan {lunasCount} dari{' '}
                                     {angsuranList.length} bulan (≥ 50%). Anda
                                     dapat melunasi seluruh sisa pinjaman
-                                    sekaligus dengan diskon bunga untuk{' '}
+                                    sekaligus dengan diskon bagi hasil untuk{' '}
                                     {Math.floor(angsuranList.length * 0.2)}{' '}
                                     bulan angsuran terakhir.
                                 </p>
@@ -331,7 +331,7 @@ export default function PinjamanShow() {
                                         Pokok
                                     </th>
                                     <th className="px-4 py-3 text-right">
-                                        Bunga
+                                        Bagi Hasil
                                     </th>
                                     <th className="px-4 py-3 text-right">
                                         Denda
@@ -537,7 +537,7 @@ export default function PinjamanShow() {
                 title={`Bayar Angsuran ke-${selectedAngsuran?.angsuran_ke ?? ''}`}
                 description={
                     selectedAngsuran
-                        ? `Tagihan (Pokok + Bunga): ${formatRupiah(Number(selectedAngsuran.pokok) + Number(selectedAngsuran.bunga))}${isTerlambat(selectedAngsuran) ? ` · Terlambat ${hitungHariTerlambat(selectedAngsuran)} hari` : ''}`
+                        ? `Tagihan (Pokok + Bagi Hasil): ${formatRupiah(Number(selectedAngsuran.pokok) + Number(selectedAngsuran.bunga))}${isTerlambat(selectedAngsuran) ? ` · Terlambat ${hitungHariTerlambat(selectedAngsuran)} hari` : ''}`
                         : undefined
                 }
                 onClose={closeBayarModal}
@@ -586,7 +586,7 @@ export default function PinjamanShow() {
                         </div>
                     )}
                     <FloatingInput
-                        label="Jumlah Bayar (Pokok + Bunga)"
+                        label="Jumlah Bayar (Pokok + Bagi Hasil)"
                         type="rupiah"
                         value={bayarForm.jumlah_bayar}
                         onCurrencyValueChange={(value) =>
@@ -678,7 +678,7 @@ export default function PinjamanShow() {
                                     )}
                                 />
                                 <InfoItem
-                                    label="Total Bunga (Setelah Diskon)"
+                                    label="Total Bagi Hasil (Setelah Diskon)"
                                     value={formatRupiah(
                                         pelunasanSummary.total_bunga,
                                     )}
@@ -725,7 +725,7 @@ export default function PinjamanShow() {
                                     ✨ Anda Menghemat {formatRupiah(pelunasanSummary.potongan_bunga)}
                                 </p>
                                 <p className="mt-0.5 text-xs text-green-700">
-                                    Bunga untuk {Math.floor(angsuranList.length * 0.2)} bulan terakhir telah dibebaskan.
+                                    Bagi Hasil untuk {Math.floor(angsuranList.length * 0.2)} bulan terakhir telah dibebaskan.
                                 </p>
                             </div>
 
@@ -735,7 +735,7 @@ export default function PinjamanShow() {
                                         <tr>
                                             <th className="px-3 py-2 text-left">Bulan</th>
                                             <th className="px-3 py-2 text-right">Pokok</th>
-                                            <th className="px-3 py-2 text-right">Bunga</th>
+                                            <th className="px-3 py-2 text-right">Bagi Hasil</th>
                                             <th className="px-3 py-2 text-right">Denda</th>
                                             <th className="px-3 py-2 text-right">Subtotal</th>
                                         </tr>

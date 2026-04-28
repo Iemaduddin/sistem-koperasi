@@ -260,7 +260,7 @@ export async function buildInvoiceHtml(
                         <th>No</th>
                         <th>Deskripsi</th>
                         <th>Pokok</th>
-                        <th>Bunga</th>
+                        <th>Bagi Hasil</th>
                         <th>Denda</th>
                         <th>Total Dibayar</th>
                     </tr>
@@ -388,7 +388,7 @@ export async function buildPelunasanInvoiceHtml(
                         <th>No</th>
                         <th>Deskripsi</th>
                         <th>Total Pokok</th>
-                        <th>Total Bunga</th>
+                        <th>Total Bagi Hasil</th>
                         <th>Total Denda</th>
                         <th>Total Bayar</th>
                     </tr>

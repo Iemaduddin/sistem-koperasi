@@ -66,7 +66,7 @@ export default function PinjamanTerlambat({ overdue_angsuran, overdue_deposito }
             },
             {
                 id: 'tagihan',
-                header: 'Tagihan (P+B)',
+                header: 'Tagihan (P+BH)',
                 sortable: true,
                 render: (row) => formatRupiah(row.total_tagihan),
                 sortValue: (row) => row.total_tagihan,
