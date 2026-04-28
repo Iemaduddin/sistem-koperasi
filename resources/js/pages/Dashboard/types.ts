@@ -5,14 +5,14 @@ export interface Stats {
         nonaktif: number;
         keluar: number;
     };
+    arus_kas: {
+        masuk: number;
+        keluar: number;
+    };
     aset: {
         total: number;
-        period_value: number;
     };
     pinjaman_aktif: {
-        value: number;
-    };
-    saldo_keluar: {
         value: number;
     };
 }

@@ -67,13 +67,13 @@ export default function Dashboard({ stats, charts, recent_transactions }: Dashbo
     return (
         <>
             <Head title="Dashboard" />
-            
+
             {/* Global Filter Bar */}
             <section className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="flex flex-wrap items-end gap-4">
                     <div className="w-48">
                         <FloatingSelect
-                            label="Grup Data"
+                            label="Lihat Berdasarkan"
                             value={filters.group_by}
                             options={groupByOptions}
                             onValueChange={(value) => handleFilterChange('group_by', value)}
@@ -140,14 +140,14 @@ export default function Dashboard({ stats, charts, recent_transactions }: Dashbo
                     <h2 className="text-lg font-semibold text-slate-900">
                         Aktivitas Terbaru
                     </h2>
-                    <Link 
-                        href="/riwayat-transaksi" 
+                    <Link
+                        href="/riwayat-transaksi"
                         className="text-sm font-medium text-blue-600 hover:text-blue-700"
                     >
                         Lihat Semua
                     </Link>
                 </div>
-                
+
                 {recent_transactions.length > 0 ? (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">

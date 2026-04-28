@@ -42,24 +42,19 @@ class DashboardController extends Controller
         $totalRekeningKoperasiAll = (float) \App\Models\RekeningKoperasi::sum('saldo');
         $asetTotal = $totalSimpananAll + $totalRekeningKoperasiAll;
 
-        $asetQuery = \App\Models\TransaksiKasKoperasi::where('jenis', 'masuk');
-        $this->applyDateFilter($asetQuery, $startDate, $endDate);
-        $asetPeriodValue = (float) $asetQuery->sum('jumlah');
+        // --- Metric: Kas Masuk & Keluar (Arus Kas) ---
+        $kasMasukQuery = \App\Models\TransaksiKasKoperasi::where('jenis', 'masuk');
+        $this->applyDateFilter($kasMasukQuery, $startDate, $endDate);
+        $kasMasukValue = (float) $kasMasukQuery->sum('jumlah');
 
-        // --- Metric: Saldo Keluar ---
-        $saldoKeluarQuery = AngsuranPinjaman::where('status', '!=', 'lunas');
-        $this->applyDateFilter($saldoKeluarQuery, $startDate, $endDate, 'tanggal_jatuh_tempo');
-        $saldoKeluarValue = (float) $saldoKeluarQuery->selectRaw('SUM(total_tagihan + denda - jumlah_dibayar) as total')->value('total');
+        $kasKeluarQuery = \App\Models\TransaksiKasKoperasi::where('jenis', 'keluar');
+        $this->applyDateFilter($kasKeluarQuery, $startDate, $endDate);
+        $kasKeluarValue = (float) $kasKeluarQuery->sum('jumlah');
 
         // --- Metric: Pinjaman Aktif ---
         $pinjamanAktifQuery = Pinjaman::where('status', 'aktif');
         $this->applyDateFilter($pinjamanAktifQuery, $startDate, $endDate, 'tanggal_mulai');
         $pinjamanAktifValue = $pinjamanAktifQuery->distinct('anggota_id')->count('anggota_id');
-
-        // --- Metric: Tagihan Jatuh Tempo ---
-        $tagihanQuery = AngsuranPinjaman::where('status', '!=', 'lunas');
-        $this->applyDateFilter($tagihanQuery, $startDate, $endDate, 'tanggal_jatuh_tempo');
-        $tagihanValue = $tagihanQuery->count();
 
         // --- CHART: LOANS ---
         $chartLoans = $this->getChartData(
@@ -115,15 +110,15 @@ class DashboardController extends Controller
         return Inertia::render('Dashboard/Dashboard', [
             'stats' => [
                 'anggota' => $anggotaCounts,
+                'arus_kas' => [
+                    'masuk' => $kasMasukValue,
+                    'keluar' => $kasKeluarValue,
+                ],
                 'aset' => [
                     'total' => $asetTotal,
-                    'period_value' => $asetPeriodValue,
                 ],
                 'pinjaman_aktif' => [
                     'value' => $pinjamanAktifValue,
-                ],
-                'saldo_keluar' => [
-                    'value' => $saldoKeluarValue,
                 ],
             ],
             'charts' => [

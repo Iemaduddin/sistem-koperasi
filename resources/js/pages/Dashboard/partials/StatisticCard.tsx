@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import FloatingSelect from '@/components/floating-input/select';
 import { type Stats, anggotaOptions } from '../types';
-import { 
-    LuUsers, 
-    LuHandshake, 
-    LuClock, 
-    LuArrowUp, 
+import {
+    LuUsers,
+    LuHandshake,
+    LuClock,
+    LuArrowUp,
     LuArrowDown,
     LuTrendingUp,
     LuTrendingDown
@@ -43,9 +43,9 @@ export default function StatisticCard({ stats }: Props) {
                         </div>
                         <div className="flex items-baseline gap-1 text-emerald-600">
                             <LuArrowUp size={18} className="translate-y-0.5" />
-                            <span className="text-2xl font-bold truncate">{formatCurrency(stats.aset.period_value)}</span>
+                            <span className="text-2xl font-bold truncate">{formatCurrency(stats.arus_kas.masuk)}</span>
                         </div>
-                        <p className="text-[10px] text-slate-400">Tabungan & Angsuran Masuk</p>
+                        <p className="text-[12px] text-slate-400">Total Pemasukan Kas</p>
                     </div>
                     <div className="pl-6 space-y-2">
                         <div className="flex items-center gap-2 text-slate-500">
@@ -54,9 +54,9 @@ export default function StatisticCard({ stats }: Props) {
                         </div>
                         <div className="flex items-baseline gap-1 text-rose-600">
                             <LuArrowDown size={18} className="translate-y-0.5" />
-                            <span className="text-2xl font-bold truncate">{formatCurrency(stats.saldo_keluar.value)}</span>
+                            <span className="text-2xl font-bold truncate">{formatCurrency(stats.arus_kas.keluar)}</span>
                         </div>
-                        <p className="text-[10px] text-slate-400">Total Piutang Berjalan</p>
+                        <p className="text-[12px] text-slate-400">Total Pengeluaran Kas</p>
                     </div>
                 </div>
             </div>
@@ -88,7 +88,7 @@ export default function StatisticCard({ stats }: Props) {
                             />
                         </div>
                         <div className="text-2xl font-bold text-slate-900">{stats.anggota[anggotaFilter]}</div>
-                        <p className="text-[10px] text-slate-400 capitalize">
+                        <p className="text-[12px] text-slate-400 capitalize">
                             Status: {anggotaFilter === 'total' ? 'Semua' : anggotaFilter}
                         </p>
                     </div>
@@ -98,7 +98,7 @@ export default function StatisticCard({ stats }: Props) {
                             <span className="text-xs font-medium">Pinjaman Aktif</span>
                         </div>
                         <div className="text-2xl font-bold text-slate-900">{stats.pinjaman_aktif.value}</div>
-                        <p className="text-[10px] text-slate-400">Anggota meminjam</p>
+                        <p className="text-[12px] text-slate-400">Anggota meminjam</p>
                     </div>
                 </div>
             </div>
