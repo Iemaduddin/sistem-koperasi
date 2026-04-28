@@ -12,7 +12,7 @@ export default function ImportSummaryCard({ summary }: Props) {
 
     return (
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
-            <h3 className="font-semibold">Ringkasan Parsing</h3>
+            <h3 className="font-semibold">Ringkasan Import</h3>
             <p className="mt-1">
                 Start row: {summary.start_row} | Total baris:{' '}
                 {summary.total_rows} | Valid: {summary.valid_rows} | Invalid:{' '}
@@ -22,9 +22,6 @@ export default function ImportSummaryCard({ summary }: Props) {
                 Entries bulanan terbaca: {summary.entries_bulanan_count}
             </p>
             <p className="mt-1">{summary.note}</p>
-            <p className="mt-1 text-xs font-medium text-emerald-800">
-                Mode: {summary.mode ?? 'persist'}
-            </p>
 
             {summary.persist_summary && (
                 <div className="mt-3 rounded-lg border border-emerald-300 bg-white p-3 text-xs text-slate-700">

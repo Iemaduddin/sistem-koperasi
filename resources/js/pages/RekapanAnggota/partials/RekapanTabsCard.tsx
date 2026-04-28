@@ -3,6 +3,7 @@ import RekapanDetailedTable from './RekapanDetailedTable';
 import RekapanSummaryTable from './RekapanSummaryTable';
 import { PageProps } from '../type';
 import FloatingSelect from '@/components/floating-input/select';
+import Button from '@/components/button';
 
 type AnggotaListItem = NonNullable<PageProps['anggota_list']>[number];
 type AnggotaDetailRow = NonNullable<PageProps['anggota_detail_rows']>[number];
@@ -16,7 +17,7 @@ type Props = {
     setActiveTab: Dispatch<SetStateAction<'detailed' | 'summary'>>;
 };
 
-type FilterMode = 'month-year' | 'year';
+type FilterMode = 'all-data' | 'month-year' | 'year';
 
 const formatCurrency = (value: number | null | undefined) => {
     if (value === null || value === undefined) {
@@ -38,7 +39,7 @@ export default function RekapanTabsCard({
     activeTab,
     setActiveTab,
 }: Props) {
-    const [filterMode, setFilterMode] = useState<FilterMode>('month-year');
+    const [filterMode, setFilterMode] = useState<FilterMode>('all-data');
     const [selectedMonthYear, setSelectedMonthYear] = useState('');
     const [selectedYear, setSelectedYear] = useState('');
 
@@ -120,6 +121,10 @@ export default function RekapanTabsCard({
     };
 
     const passesFilter = (tanggalMasuk: string | null | undefined) => {
+        if (filterMode === 'all-data') {
+            return true;
+        }
+
         const parsed = parseDateParts(tanggalMasuk);
         if (!parsed) {
             return false;
@@ -151,6 +156,24 @@ export default function RekapanTabsCard({
         [anggotaDetailRows, filterMode, selectedMonthYear, selectedYear],
     );
 
+    const handleExportExcel = () => {
+        const params = new URLSearchParams();
+
+        params.set('filter_mode', filterMode);
+
+        if (filterMode === 'month-year' && selectedMonthYear) {
+            params.set('month_year', selectedMonthYear);
+            params.set('export_type', 'filtered');
+        } else if (filterMode === 'year' && selectedYear) {
+            params.set('year', selectedYear);
+            params.set('export_type', 'filtered');
+        } else {
+            params.set('export_type', 'all');
+        }
+
+        window.location.href = `/rekapan-anggota/export?${params.toString()}`;
+    };
+
     if (anggotaList.length === 0 && anggotaDetailRows.length === 0) {
         return null;
     }
@@ -180,65 +203,99 @@ export default function RekapanTabsCard({
                 </button>
             </div>
 
-            <div className="mt-6 flex flex-col gap-3 md:flex-row md:items-end">
-                <div className="min-w-52">
-                    <FloatingSelect
-                        label="Jenis Filter"
-                        value={filterMode}
-                        onChange={(event) => {
-                            const mode = event.target.value as FilterMode;
-                            setFilterMode(mode);
-                            setSelectedMonthYear('');
-                            setSelectedYear('');
-                        }}
-                        options={[
-                            { value: 'month-year', label: 'Bulan & Tahun' },
-                            { value: 'year', label: 'Tahun Saja' },
-                        ]}
-                        searchable={false}
-                        className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
-                    />
+            <div className="mt-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                <div className="flex flex-col gap-3 md:flex-row md:items-end">
+                    <div className="min-w-52">
+                        <FloatingSelect
+                            label="Jenis Filter"
+                            containerClassName="relative z-[70]"
+                            value={filterMode}
+                            onChange={(event) => {
+                                const mode = event.target.value as FilterMode;
+                                setFilterMode(mode);
+
+                                if (mode === 'month-year') {
+                                    setSelectedMonthYear(
+                                        monthYearOptions[0] ?? '',
+                                    );
+                                    setSelectedYear('');
+                                } else if (mode === 'year') {
+                                    setSelectedYear(
+                                        yearOptions[0]
+                                            ? String(yearOptions[0])
+                                            : '',
+                                    );
+                                    setSelectedMonthYear('');
+                                } else {
+                                    setSelectedMonthYear('');
+                                    setSelectedYear('');
+                                }
+                            }}
+                            options={[
+                                {
+                                    value: 'all-data',
+                                    label: 'Seluruh Data',
+                                },
+                                { value: 'month-year', label: 'Bulan & Tahun' },
+                                { value: 'year', label: 'Tahun Saja' },
+                            ]}
+                            searchable={false}
+                            className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
+                        />
+                    </div>
+
+                    {filterMode === 'month-year' && (
+                        <div className="min-w-52">
+                            <FloatingSelect
+                                label="Bulan & Tahun Masuk"
+                                containerClassName="relative z-[70]"
+                                value={selectedMonthYear}
+                                onChange={(event) =>
+                                    setSelectedMonthYear(event.target.value)
+                                }
+                                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
+                                options={[
+                                    ...monthYearOptions.map((value) => ({
+                                        value,
+                                        label: formatMonthYearLabel(value),
+                                    })),
+                                ]}
+                                searchable={false}
+                            />
+                        </div>
+                    )}
+
+                    {filterMode === 'year' && (
+                        <div className="min-w-52">
+                            <FloatingSelect
+                                label="Tahun Masuk"
+                                containerClassName="relative z-[70]"
+                                value={selectedYear}
+                                onChange={(event) =>
+                                    setSelectedYear(event.target.value)
+                                }
+                                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
+                                searchable={false}
+                                options={[
+                                    ...yearOptions.map((year) => ({
+                                        value: String(year),
+                                        label: String(year),
+                                    })),
+                                ]}
+                            />
+                        </div>
+                    )}
                 </div>
 
-                {filterMode === 'month-year' && (
-                    <div className="min-w-52">
-                        <FloatingSelect
-                            label="Bulan & Tahun Masuk"
-                            value={selectedMonthYear}
-                            onChange={(event) =>
-                                setSelectedMonthYear(event.target.value)
-                            }
-                            className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
-                            options={[
-                                ...monthYearOptions.map((value) => ({
-                                    value,
-                                    label: formatMonthYearLabel(value),
-                                })),
-                            ]}
-                            searchable={false}
-                        />
-                    </div>
-                )}
-
-                {filterMode === 'year' && (
-                    <div className="min-w-52">
-                        <FloatingSelect
-                            label="Tahun Masuk"
-                            value={selectedYear}
-                            onChange={(event) =>
-                                setSelectedYear(event.target.value)
-                            }
-                            className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
-                            searchable={false}
-                            options={[
-                                ...yearOptions.map((year) => ({
-                                    value: String(year),
-                                    label: String(year),
-                                })),
-                            ]}
-                        />
-                    </div>
-                )}
+                <div className="md:self-end">
+                    <Button
+                        variant="success"
+                        styleMode="outline"
+                        onClick={handleExportExcel}
+                    >
+                        Export Excel (.xlsx)
+                    </Button>
+                </div>
             </div>
 
             {activeTab === 'detailed' && (

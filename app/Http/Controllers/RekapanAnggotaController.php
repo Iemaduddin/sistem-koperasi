@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\RekapanAnggota\RekapanAnggotaExport;
 use App\Http\Requests\RekapanAnggota\ImportRekapanAnggotaRequest;
 use App\Models\Anggota;
 use App\Services\RekapanAnggota\ImportRekapanAnggotaService;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Inertia\Inertia;
 use Inertia\Response;
+use Maatwebsite\Excel\Facades\Excel;
 
 class RekapanAnggotaController extends Controller
 {
@@ -18,7 +22,64 @@ class RekapanAnggotaController extends Controller
 
     public function index(): Response
     {
-        // Fetch all anggota with their savings and loans data
+        $data = $this->buildRekapanData();
+
+        return Inertia::render('RekapanAnggota/Index', [
+            'anggota_list' => $data['anggota_list'],
+            'anggota_detail_rows' => $data['anggota_detail_rows'],
+            'month_columns' => $data['month_columns'],
+            'rekening_koperasi' => \App\Models\RekeningKoperasi::orderBy('nama')->get(['id', 'nama', 'jenis', 'nomor_rekening', 'saldo']),
+            'import_summary' => session('rekapan_anggota_import_summary'),
+        ]);
+    }
+
+    public function export(Request $request): BinaryFileResponse
+    {
+        $data = $this->buildRekapanData();
+
+        $filterMode = (string) $request->query('filter_mode', 'month-year');
+        $selectedMonthYear = $request->query('month_year');
+        $selectedYear = $request->query('year');
+        $exportType = (string) $request->query('export_type', 'all');
+
+        $isFiltered = $exportType === 'filtered';
+        $safeSelectedMonthYear = is_string($selectedMonthYear) ? $selectedMonthYear : null;
+        $safeSelectedYear = is_string($selectedYear) ? $selectedYear : null;
+
+        $documentTitle = $this->buildExportDocumentTitle(
+            isFiltered: $isFiltered,
+            filterMode: $filterMode,
+            selectedMonthYear: $safeSelectedMonthYear,
+            selectedYear: $safeSelectedYear,
+        );
+
+        $filename = $this->buildExportFilename(
+            isFiltered: $isFiltered,
+            filterMode: $filterMode,
+            selectedMonthYear: $safeSelectedMonthYear,
+            selectedYear: $safeSelectedYear,
+        );
+
+        return Excel::download(
+            new RekapanAnggotaExport(
+                anggotaDetailRows: $data['anggota_detail_rows'],
+                anggotaList: $data['anggota_list'],
+                monthColumns: $data['month_columns'],
+                isFiltered: $isFiltered,
+                filterMode: $filterMode,
+                selectedMonthYear: $safeSelectedMonthYear,
+                selectedYear: $safeSelectedYear,
+                documentTitle: $documentTitle,
+            ),
+            $filename,
+        );
+    }
+
+    /**
+     * @return array<string, array<int, array<string, mixed>>>
+     */
+    private function buildRekapanData(): array
+    {
         $monthKeys = [];
 
         $anggotaRecords = Anggota::query()
@@ -214,27 +275,77 @@ class RekapanAnggotaController extends Controller
 
             return [
                 'key' => $key,
-                'label' => $month->format('F Y'),
+                'label' => $month->locale('id')->translatedFormat('F Y'),
             ];
         }, array_keys($monthKeys));
 
-        return Inertia::render('RekapanAnggota/Index', [
-            'anggota_list' => $anggotaList,
-            'anggota_detail_rows' => $anggotaDetailRows,
-            'month_columns' => $monthColumns,
-            'rekening_koperasi' => \App\Models\RekeningKoperasi::orderBy('nama')->get(['id', 'nama', 'jenis', 'nomor_rekening', 'saldo']),
-            'import_summary' => session('rekapan_anggota_import_summary'),
-        ]);
+        return [
+            'anggota_list' => $anggotaList->values()->all(),
+            'anggota_detail_rows' => $anggotaDetailRows->values()->all(),
+            'month_columns' => array_values($monthColumns),
+        ];
+    }
+
+    private function buildExportFilename(
+        bool $isFiltered,
+        string $filterMode,
+        ?string $selectedMonthYear,
+        ?string $selectedYear,
+    ): string {
+        $timestamp = now()->format('Ymd_His');
+
+        if (! $isFiltered) {
+            return "Laporan_Rekapan_Anggota_Keseluruhan_{$timestamp}.xlsx";
+        }
+
+        if ($filterMode === 'year' && $selectedYear !== null && $selectedYear !== '') {
+            return "Laporan_Rekapan_Anggota_Tahun_{$selectedYear}_{$timestamp}.xlsx";
+        }
+
+        if ($filterMode === 'month-year' && $selectedMonthYear !== null && preg_match('/^\d{4}-\d{2}$/', $selectedMonthYear) === 1) {
+            [$year, $month] = explode('-', $selectedMonthYear);
+            return "Laporan_Rekapan_Anggota_Bulan_{$year}_{$month}_{$timestamp}.xlsx";
+        }
+
+        return "Laporan_Rekapan_Anggota_Filter_{$timestamp}.xlsx";
+    }
+
+    private function buildExportDocumentTitle(
+        bool $isFiltered,
+        string $filterMode,
+        ?string $selectedMonthYear,
+        ?string $selectedYear,
+    ): string {
+        if (! $isFiltered) {
+            return 'Laporan Rekapan Anggota - Keseluruhan';
+        }
+
+        if ($filterMode === 'year' && $selectedYear !== null && $selectedYear !== '') {
+            return "Laporan Rekapan Anggota - Tahun {$selectedYear}";
+        }
+
+        if ($filterMode === 'month-year' && $selectedMonthYear !== null && preg_match('/^\d{4}-\d{2}$/', $selectedMonthYear) === 1) {
+            try {
+                $monthLabel = Carbon::createFromFormat('Y-m', $selectedMonthYear)
+                    ->locale('id')
+                    ->translatedFormat('F Y');
+
+                return "Laporan Rekapan Anggota - {$monthLabel}";
+            } catch (\Throwable) {
+                return "Laporan Rekapan Anggota - {$selectedMonthYear}";
+            }
+        }
+
+        return 'Laporan Rekapan Anggota - Data Filter';
     }
 
     public function import(ImportRekapanAnggotaRequest $request): RedirectResponse
     {
         try {
-            $mode = (string) ($request->input('mode', 'persist'));
             $summary = $this->importService->parseWorkbook(
                 file: $request->file('file'),
                 userId: $request->user()?->id,
-                persist: $mode !== 'dry-run',
+                persist: true,
                 rekeningKoperasiId: (string) $request->input('rekening_koperasi_id'),
             );
         } catch (\Throwable $exception) {
@@ -245,7 +356,7 @@ class RekapanAnggotaController extends Controller
 
         return redirect()
             ->route('rekapan-anggota.index')
-            ->with('success', 'File berhasil diproses. Silakan review ringkasan hasil import.')
+            ->with('success', 'File berhasil diproses dan disimpan ke database.')
             ->with('rekapan_anggota_import_summary', $summary);
     }
 }

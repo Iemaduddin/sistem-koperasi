@@ -1,5 +1,4 @@
 export type ImportSummary = {
-    mode?: 'dry-run' | 'persist';
     start_row: number;
     total_rows: number;
     valid_rows: number;

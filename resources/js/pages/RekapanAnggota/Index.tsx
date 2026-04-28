@@ -17,9 +17,6 @@ export default function RekapanAnggotaIndex() {
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const [importMode, setImportMode] = useState<'dry-run' | 'persist'>(
-        'persist',
-    );
     const [activeTab, setActiveTab] = useState<'detailed' | 'summary'>(
         'detailed',
     );
@@ -32,14 +29,13 @@ export default function RekapanAnggotaIndex() {
             return;
         }
 
-        if (importMode === 'persist' && !rekeningKoperasiId) {
+        if (!rekeningKoperasiId) {
             toast.error('Silakan pilih Rekening Koperasi terlebih dahulu.');
             return;
         }
 
         const formData = new FormData();
         formData.append('file', selectedFile);
-        formData.append('mode', importMode);
         formData.append('rekening_koperasi_id', rekeningKoperasiId);
 
         setIsSubmitting(true);
@@ -68,13 +64,11 @@ export default function RekapanAnggotaIndex() {
             <section className="space-y-4">
                 <ImportFormCard
                     isSubmitting={isSubmitting}
-                    importMode={importMode}
                     inputRef={inputRef}
                     rekeningKoperasi={pageProps.rekening_koperasi ?? []}
                     selectedRekeningId={rekeningKoperasiId}
                     onImport={handleImport}
                     onFileChange={setSelectedFile}
-                    onModeChange={setImportMode}
                     onRekeningChange={setRekeningKoperasiId}
                 />
 
