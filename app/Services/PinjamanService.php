@@ -43,6 +43,42 @@ class PinjamanService
     }
 
     /**
+     * Ambil data angsuran yang terlambat.
+     *
+     * @return array<string, mixed>
+     */
+    public function getOverdueData(): array
+    {
+        $overdueAngsuran = AngsuranPinjaman::with(['pinjaman.anggota'])
+            ->where('status', '!=', 'lunas')
+            ->whereDate('tanggal_jatuh_tempo', '<', now()->toDateString())
+            ->orderBy('tanggal_jatuh_tempo', 'asc')
+            ->get()
+            ->map(function ($item) {
+                $hariTerlambat = (int) now()->startOfDay()->diffInDays(Carbon::parse($item->tanggal_jatuh_tempo)->startOfDay(), false);
+                $item->hari_terlambat = abs($hariTerlambat);
+                $item->denda_estimasi = $this->hitungDenda($item->pinjaman, $item, now());
+                return $item;
+            });
+
+        $overdueDeposito = \App\Models\SimpananDeposito::with(['anggota'])
+            ->where('status', 'aktif')
+            ->whereDate('tanggal_selesai', '<', now()->toDateString())
+            ->orderBy('tanggal_selesai', 'asc')
+            ->get()
+            ->map(function ($item) {
+                $hariTerlambat = (int) now()->startOfDay()->diffInDays(Carbon::parse($item->tanggal_selesai)->startOfDay(), false);
+                $item->hari_terlambat = abs($hariTerlambat);
+                return $item;
+            });
+
+        return [
+            'overdue_angsuran' => $overdueAngsuran,
+            'overdue_deposito' => $overdueDeposito,
+        ];
+    }
+
+    /**
      * Ambil detail pinjaman beserta jadwal angsuran.
      *
      * @return array<string, mixed>
@@ -439,7 +475,7 @@ class PinjamanService
      * Denda hanya dikenakan jika sudah melewati tanggal jatuh tempo.
      * Jika belum terlambat, kembalikan 0.
      */
-    private function hitungDenda(Pinjaman $pinjaman, AngsuranPinjaman $angsuran, Carbon $sekarang): float
+    private function hitungDenda(Pinjaman $pinjaman, AngsuranPinjaman $angsuran, \Carbon\CarbonInterface $sekarang): float
     {
         $jatuhTempo = Carbon::parse($angsuran->tanggal_jatuh_tempo)->startOfDay();
         $today      = $sekarang->copy()->startOfDay();

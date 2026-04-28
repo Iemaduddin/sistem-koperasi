@@ -34,6 +34,9 @@ export type AngsuranPinjaman = {
     jumlah_dibayar: number | string;
     status: StatusAngsuran;
     transaksi?: TransaksiPinjaman[];
+    pinjaman?: PinjamanRow;
+    hari_terlambat?: number;
+    denda_estimasi?: number;
 };
 
 // ─── Satu baris pinjaman ─────────────────────────────────────────────────────
@@ -78,6 +81,11 @@ export type PinjamanShowProps = {
         success?: string;
         error?: string;
     };
+};
+
+export type OverduePageProps = {
+    overdue_angsuran: (AngsuranPinjaman & { hari_terlambat: number; denda_estimasi: number })[];
+    overdue_deposito: (any & { hari_terlambat: number })[]; // Using any to avoid complex cross-imports for now
 };
 
 // ─── Form tambah pinjaman ─────────────────────────────────────────────────────

@@ -276,7 +276,7 @@ export default function Navbar({
                                             router.get(
                                                 activeTab === 'upcoming'
                                                     ? '/riwayat-transaksi'
-                                                    : '/pinjaman',
+                                                    : '/pinjaman/terlambat',
                                             )
                                         }
                                         className="w-full rounded-lg py-2 text-center text-xs font-semibold text-blue-600 transition hover:bg-blue-50"

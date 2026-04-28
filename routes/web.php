@@ -98,6 +98,8 @@ Route::middleware(['auth', 'active.user'])->group(function (): void {
 			->parameters(['deposito' => 'simpanan_deposito'])
 			->except(['show', 'create', 'edit', 'update', 'destroy']);
 		// Pinjaman management
+		Route::get('/pinjaman/terlambat', [PinjamanController::class, 'terlambat'])
+			->name('pinjaman.terlambat');
 		Route::post('/pinjaman/{pinjaman}/bayar', [PinjamanController::class, 'bayarAngsuran'])
 			->name('pinjaman.bayar');
 		Route::post('/pinjaman/{pinjaman}/pelunasan', [PinjamanController::class, 'pelunasan'])
