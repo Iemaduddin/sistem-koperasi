@@ -157,7 +157,7 @@ export default function SimpananTableCard({
         }
 
         const previewWindow = window.open(
-            `${window.location.origin}/example-link`,
+            'about:blank',
             '_blank',
             'width=1200,height=900',
         );

@@ -12,6 +12,7 @@ import {
 import DepositoDetailBagiHasilSection, {
     type VisibleLogRow,
 } from '@/pages/Deposito/partials/DepositoDetailBagiHasilSection';
+import { LuEye } from 'react-icons/lu';
 
 type Props = {
     rows: SimpananDepositoRow[];
@@ -132,8 +133,9 @@ export default function DepositoTableCard({ rows }: Props) {
                         size="sm"
                         variant="info"
                         onClick={() => setSelectedRow(row)}
+                        leftIcon={<LuEye className="h-4 w-4" />}
                     >
-                        Lihat Detail Deposito
+                        Lihat Rincian Deposito
                     </Button>
                 ),
             },

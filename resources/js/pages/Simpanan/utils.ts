@@ -86,7 +86,6 @@ export async function buildInvoiceHtml(
     };
     const logoPngUrl = `${window.location.origin}/logo-azzahwa.png`;
     const logoHorizontalUrl = `${window.location.origin}/logo-azzahwa-horizontal.png`;
-    const logoIcoUrl = `${window.location.origin}/logo-azzahwa.ico`;
     const qrTargetUrl = `${window.location.origin}/example-link`;
     const kotaTanggal = `Pasuruan, ${formatDateOnly(batch.tanggal_transaksi)}`;
     const qrCodeDataUrl = await QRCode.toDataURL(qrTargetUrl, {
@@ -125,8 +124,6 @@ export async function buildInvoiceHtml(
         <head>
             <meta charset="utf-8" />
             <meta name="viewport" content="width=device-width, initial-scale=1" />
-            <link rel="icon" href="${logoIcoUrl}" type="image/x-icon">
-            <link rel="apple-touch-icon" href="${logoIcoUrl}" type="image/x-icon">
             <title>Invoice Transaksi Simpanan - Mitra Koperasi Azzahwa</title>
             <style>
                 body {
@@ -277,7 +274,7 @@ export async function buildInvoiceHtml(
         </head>
         <body>
             <div class="kop">
-                <img class="logo" src="${escapeHtml(logoHorizontalUrl)}" alt="Logo Koperasi" onerror="this.src='${escapeHtml(logoPngUrl)}'" />
+                <img class="logo" src="${escapeHtml(logoHorizontalUrl)}" alt="Logo Koperasi" decoding="async" />
                 <div class="detail-company">
                     <h3>Koperasi Azzahwa</h3>
                     <p class="desc-kop">Jl. Contoh Koperasi No. 1, Kota Contoh</p>
@@ -326,7 +323,7 @@ export async function buildInvoiceHtml(
                     <div class="barcode-date">${escapeHtml(kotaTanggal)}</div>
                     <div class="barcode-wrap">
                         <img id="invoice-qr" alt="QR / Barcode" src="${escapeHtml(qrCodeDataUrl)}" />
-                        <img class="barcode-logo" alt="Logo" src="${escapeHtml(logoPngUrl)}" onerror="this.src='${escapeHtml(logoIcoUrl)}'" />
+                        <img class="barcode-logo" alt="Logo" src="${escapeHtml(logoPngUrl)}" decoding="async" />
                     </div>
                     <div class="barcode-text">Scan untuk melihat detail dan keaslian invoice</div>
                 </div>

@@ -77,8 +77,8 @@ export default function SimpananTableNominalSection({
                             size="sm"
                             variant="info"
                             onClick={() => onSelectAnggota(row)}
+                            leftIcon={<LuEye className="h-4 w-4" />}
                         >
-                            <LuEye className="h-4 w-4" />
                             Lihat Transaksi
                         </Button>
                         <Button
