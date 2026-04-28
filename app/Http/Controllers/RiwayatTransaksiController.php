@@ -41,6 +41,11 @@ class RiwayatTransaksiController extends Controller
             $query->where('jenis', $request->jenis);
         }
 
+        // Filter by Sumber (simpanan/pinjaman/angsuran_pinjaman/deposito)
+        if ($request->filled('sumber') && $request->sumber !== 'all') {
+            $query->where('sumber_tipe', $request->sumber);
+        }
+
         // Search in Keterangan or Member Name
         if ($request->filled('search')) {
             $search = $request->search;
@@ -74,11 +79,11 @@ class RiwayatTransaksiController extends Controller
             });
         }
 
-        $transactions = $query->latest('created_at')->paginate(20)->withQueryString();
+        $transactions = $query->latest('created_at')->get();
 
         return Inertia::render('RiwayatTransaksi/Index', [
             'transactions' => $transactions,
-            'filters' => $request->only(['start_date', 'end_date', 'jenis', 'search']),
+            'filters' => $request->only(['start_date', 'end_date', 'jenis', 'sumber', 'search']),
             'import_summary' => session('riwayat_transaksi_import_summary'),
         ]);
     }

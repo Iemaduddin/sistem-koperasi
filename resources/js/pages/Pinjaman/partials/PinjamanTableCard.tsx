@@ -35,35 +35,41 @@ export default function PinjamanTableCard({ rows, onRequestDelete }: Props) {
                 searchable: true,
                 searchValue: (row) =>
                     `${row.anggota?.nama ?? ''} ${row.anggota?.no_anggota ?? ''}`,
+                sortable: true,
                 sortValue: (row) => row.anggota?.nama ?? '',
             },
             {
                 id: 'jumlah_pinjaman',
                 header: 'Jumlah Pinjaman',
+                sortable: true,
                 render: (row) => formatRupiah(row.jumlah_pinjaman),
                 sortValue: (row) => row.jumlah_pinjaman,
             },
             {
                 id: 'jumlah_angsuran',
                 header: 'Angsuran/Bulan',
+                sortable: true,
                 render: (row) => formatRupiah(row.jumlah_angsuran),
                 sortValue: (row) => row.jumlah_angsuran,
             },
             {
                 id: 'tenor_bulan',
                 header: 'Tenor',
+                sortable: true,
                 render: (row) => `${row.tenor_bulan} bln`,
                 sortValue: (row) => row.tenor_bulan,
             },
             {
                 id: 'tanggal_mulai',
                 header: 'Tgl. Mulai',
+                sortable: true,
                 render: (row) => formatTanggal(row.tanggal_mulai),
                 sortValue: (row) => row.tanggal_mulai,
             },
             {
                 id: 'progress',
                 header: 'Progress',
+                sortable: true,
                 render: (row) => {
                     const progress = hitungProgressPersen(row);
                     const sisaAngsuran = hitungSisaAngsuran(row);
@@ -82,11 +88,13 @@ export default function PinjamanTableCard({ rows, onRequestDelete }: Props) {
                         </div>
                     );
                 },
+                sortable: true,
                 sortValue: (row) => hitungProgressPersen(row),
             },
             {
                 id: 'status',
                 header: 'Status',
+                sortable: true,
                 render: (row) => {
                     const statusClass =
                         row.status === 'lunas'

@@ -32,17 +32,20 @@ export default function PinjamanTerlambat({ overdue_angsuran, overdue_deposito }
                 searchable: true,
                 searchValue: (row) =>
                     `${row.pinjaman?.anggota?.nama ?? ''} ${row.pinjaman?.anggota?.no_anggota ?? ''}`,
+                sortable: true,
                 sortValue: (row) => row.pinjaman?.anggota?.nama ?? '',
             },
             {
                 id: 'angsuran_ke',
                 header: 'Ke',
+                sortable: true,
                 render: (row) => `Ke-${row.angsuran_ke}`,
                 sortValue: (row) => row.angsuran_ke,
             },
             {
                 id: 'tanggal_jatuh_tempo',
                 header: 'Jatuh Tempo',
+                sortable: true,
                 render: (row) => (
                     <span className="text-red-600 font-medium">
                         {formatTanggal(row.tanggal_jatuh_tempo)}
@@ -53,6 +56,7 @@ export default function PinjamanTerlambat({ overdue_angsuran, overdue_deposito }
             {
                 id: 'hari_terlambat',
                 header: 'Keterlambatan',
+                sortable: true,
                 render: (row) => (
                     <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
                         {row.hari_terlambat} Hari
@@ -63,12 +67,14 @@ export default function PinjamanTerlambat({ overdue_angsuran, overdue_deposito }
             {
                 id: 'tagihan',
                 header: 'Tagihan (P+B)',
+                sortable: true,
                 render: (row) => formatRupiah(row.total_tagihan),
                 sortValue: (row) => row.total_tagihan,
             },
             {
                 id: 'denda',
                 header: 'Denda (Estimasi)',
+                sortable: true,
                 render: (row) => (
                     <span className="text-red-600 font-semibold">
                         {formatRupiah(row.denda_estimasi)}
@@ -113,11 +119,13 @@ export default function PinjamanTerlambat({ overdue_angsuran, overdue_deposito }
                 searchable: true,
                 searchValue: (row) =>
                     `${row.anggota?.nama ?? ''} ${row.anggota?.no_anggota ?? ''}`,
+                sortable: true,
                 sortValue: (row) => row.anggota?.nama ?? '',
             },
             {
                 id: 'tanggal_selesai',
                 header: 'Tgl. Jatuh Tempo',
+                sortable: true,
                 render: (row) => (
                     <span className="text-red-600 font-medium">
                         {formatTanggal(row.tanggal_selesai)}
@@ -128,6 +136,7 @@ export default function PinjamanTerlambat({ overdue_angsuran, overdue_deposito }
             {
                 id: 'hari_terlambat',
                 header: 'Keterlambatan',
+                sortable: true,
                 render: (row) => (
                     <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
                         {row.hari_terlambat} Hari
@@ -138,6 +147,7 @@ export default function PinjamanTerlambat({ overdue_angsuran, overdue_deposito }
             {
                 id: 'saldo',
                 header: 'Saldo Deposito',
+                sortable: true,
                 render: (row) => formatRupiah(row.saldo),
                 sortValue: (row) => row.saldo,
             },
