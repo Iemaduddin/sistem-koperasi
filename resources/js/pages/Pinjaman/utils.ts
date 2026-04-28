@@ -114,7 +114,6 @@ export function getLabelStatusPinjaman(status: string): string {
 export function getLabelStatusAngsuran(status: string): string {
     const labels: Record<string, string> = {
         belum_bayar: 'Belum Bayar',
-        sebagian: 'Sebagian',
         lunas: 'Lunas',
     };
     return labels[status] ?? status;
@@ -124,10 +123,9 @@ export function getLabelStatusAngsuran(status: string): string {
 export function getColorStatusAngsuran(
     status: string,
     terlambat: boolean,
-): 'red' | 'yellow' | 'green' | 'gray' {
+): 'red' | 'green' | 'gray' {
     if (status === 'lunas') return 'green';
     if (terlambat) return 'red';
-    if (status === 'sebagian') return 'yellow';
     return 'gray';
 }
 
@@ -170,13 +168,33 @@ export async function buildInvoiceHtml(
         },
     });
 
+    const totalPokokBungaTerbayar =
+        angsuran.transaksi?.reduce(
+            (sum, t) => sum + Number(t.jumlah_bayar),
+            0,
+        ) ?? 0;
+    const dendaTerbayar =
+        angsuran.transaksi?.reduce(
+            (sum, t) => sum + Number(t.denda_dibayar),
+            0,
+        ) ?? 0;
+
+    const pokokTerbayar = Math.min(
+        totalPokokBungaTerbayar,
+        Number(angsuran.pokok),
+    );
+    const bungaTerbayar = Math.max(
+        0,
+        totalPokokBungaTerbayar - Number(angsuran.pokok),
+    );
+
     const rowsHtml = `
         <tr>
             <td>1</td>
             <td>ANGSURAN KE-${angsuran.angsuran_ke}</td>
-            <td>${escapeHtml(formatRupiah(angsuran.pokok))}</td>
-            <td>${escapeHtml(formatRupiah(angsuran.bunga))}</td>
-            <td>${escapeHtml(formatRupiah(angsuran.denda))}</td>
+            <td>${escapeHtml(formatRupiah(pokokTerbayar))}</td>
+            <td>${escapeHtml(formatRupiah(bungaTerbayar))}</td>
+            <td>${escapeHtml(formatRupiah(dendaTerbayar))}</td>
             <td>${escapeHtml(formatRupiah(angsuran.jumlah_dibayar))}</td>
         </tr>
     `;

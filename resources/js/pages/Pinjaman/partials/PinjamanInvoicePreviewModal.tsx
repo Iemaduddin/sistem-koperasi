@@ -20,6 +20,26 @@ export default function PinjamanInvoicePreviewModal({
 }: Props) {
     if (!selectedAngsuran) return null;
 
+    const totalPokokBungaTerbayar =
+        selectedAngsuran.transaksi?.reduce(
+            (sum, t) => sum + Number(t.jumlah_bayar),
+            0,
+        ) ?? 0;
+    const dendaTerbayar =
+        selectedAngsuran.transaksi?.reduce(
+            (sum, t) => sum + Number(t.denda_dibayar),
+            0,
+        ) ?? 0;
+
+    const pokokTerbayar = Math.min(
+        totalPokokBungaTerbayar,
+        Number(selectedAngsuran.pokok),
+    );
+    const bungaTerbayar = Math.max(
+        0,
+        totalPokokBungaTerbayar - Number(selectedAngsuran.pokok),
+    );
+
     return (
         <Modal
             open={selectedAngsuran !== null}
@@ -116,13 +136,13 @@ export default function PinjamanInvoicePreviewModal({
                                     Angsuran Ke-{selectedAngsuran.angsuran_ke}
                                 </td>
                                 <td className="px-4 py-3 text-right text-slate-700">
-                                    {formatRupiah(selectedAngsuran.pokok)}
+                                    {formatRupiah(pokokTerbayar)}
                                 </td>
                                 <td className="px-4 py-3 text-right text-slate-700">
-                                    {formatRupiah(selectedAngsuran.bunga)}
+                                    {formatRupiah(bungaTerbayar)}
                                 </td>
                                 <td className="px-4 py-3 text-right text-slate-700">
-                                    {formatRupiah(selectedAngsuran.denda)}
+                                    {formatRupiah(dendaTerbayar)}
                                 </td>
                                 <td className="px-4 py-3 text-right font-bold text-slate-900">
                                     {formatRupiah(

@@ -189,14 +189,22 @@ class PinjamanService
             ]);
 
             // ── Update jumlah dibayar & status angsuran ──────────────────────
-            $angsuran->jumlah_dibayar = round((float) $angsuran->jumlah_dibayar + $jumlahBayar, 2);
+            // Sekarang jumlah_dibayar menyimpan total (pokok + bunga + denda)
+            $angsuran->jumlah_dibayar = round((float) $angsuran->jumlah_dibayar + $jumlahBayar + $dendaDibayar, 2);
 
-            // Lunas jika pokok+bunga+denda sudah semua terbayar
-            $totalDibayar = round((float) $angsuran->jumlah_dibayar + $dendaDibayar, 2);
-            if ($totalDibayar >= (float) $angsuran->total_tagihan + (float) $angsuran->denda) {
+            // Lunas jika pokok + bunga sudah terpenuhi (denda opsional)
+            // Kita perlu menghitung total pokok+bunga yang sudah dibayar. 
+            // Karena jumlah_dibayar sekarang gabungan, kita cek dari transaksi atau 
+            // asumsikan jumlahBayar yang diinput user adalah untuk pokok+bunga.
+            
+            // Berdasarkan input: $jumlahBayar adalah pokok+bunga, $dendaDibayar adalah denda.
+            // Kita perlu tahu total pokok+bunga yang sudah dibayar selama ini.
+            $totalPokokBungaDibayar = $angsuran->transaksi()->sum('jumlah_bayar');
+
+            if ($totalPokokBungaDibayar >= (float) $angsuran->pokok + (float) $angsuran->bunga) {
                 $angsuran->status = 'lunas';
-            } elseif ($angsuran->jumlah_dibayar > 0) {
-                $angsuran->status = 'sebagian';
+            } else {
+                $angsuran->status = 'belum_bayar';
             }
 
             $angsuran->save();

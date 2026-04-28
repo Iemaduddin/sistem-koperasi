@@ -50,8 +50,16 @@ export default function PinjamanShow() {
         useState<AngsuranPinjaman | null>(null);
 
     const openBayarModal = (angsuran: AngsuranPinjaman) => {
-        const sisaTagihan =
-            Number(angsuran.total_tagihan) - Number(angsuran.jumlah_dibayar);
+        const totalPokokBungaDibayar =
+            angsuran.transaksi?.reduce(
+                (sum, t) => sum + Number(t.jumlah_bayar),
+                0,
+            ) ?? 0;
+        const sisaPokokBunga =
+            Number(angsuran.pokok) +
+            Number(angsuran.bunga) -
+            totalPokokBungaDibayar;
+
         const estimasiDenda = hitungEstimasiDenda(
             angsuran,
             pinjaman.jumlah_pinjaman,
@@ -59,7 +67,7 @@ export default function PinjamanShow() {
 
         setBayarForm({
             angsuran_id: angsuran.id,
-            jumlah_bayar: String(Math.max(0, sisaTagihan)),
+            jumlah_bayar: String(Math.max(0, sisaPokokBunga)),
             denda_dibayar: String(estimasiDenda),
             tanggal_bayar: new Date().toISOString().substring(0, 10),
         });
@@ -305,13 +313,20 @@ export default function PinjamanShow() {
                                     const statusLabel = getLabelStatusAngsuran(
                                         angsuran.status,
                                     );
+                                    const totalTagihanTampil =
+                                        Number(angsuran.pokok) +
+                                        Number(angsuran.bunga) +
+                                        Number(
+                                            isLunas
+                                                ? angsuran.denda
+                                                : estimasiDenda,
+                                        );
+
                                     const badgeClass = isLunas
                                         ? 'bg-green-100 text-green-700'
                                         : terlambat
                                           ? 'bg-red-100 text-red-700'
-                                          : angsuran.status === 'sebagian'
-                                            ? 'bg-yellow-100 text-yellow-700'
-                                            : 'bg-neutral-100 text-neutral-600';
+                                          : 'bg-neutral-100 text-neutral-600';
 
                                     return (
                                         <tr
@@ -372,7 +387,7 @@ export default function PinjamanShow() {
                                             </td>
                                             <td className="px-4 py-3 text-right font-medium text-neutral-800">
                                                 {formatRupiah(
-                                                    angsuran.total_tagihan,
+                                                    totalTagihanTampil,
                                                 )}
                                             </td>
                                             <td className="px-4 py-3 text-right text-neutral-700">
@@ -452,7 +467,7 @@ export default function PinjamanShow() {
                 title={`Bayar Angsuran ke-${selectedAngsuran?.angsuran_ke ?? ''}`}
                 description={
                     selectedAngsuran
-                        ? `Sisa tagihan: ${formatRupiah(Number(selectedAngsuran.total_tagihan) - Number(selectedAngsuran.jumlah_dibayar))}${isTerlambat(selectedAngsuran) ? ` · Terlambat ${hitungHariTerlambat(selectedAngsuran)} hari` : ''}`
+                        ? `Tagihan (Pokok + Bunga): ${formatRupiah(Number(selectedAngsuran.pokok) + Number(selectedAngsuran.bunga))}${isTerlambat(selectedAngsuran) ? ` · Terlambat ${hitungHariTerlambat(selectedAngsuran)} hari` : ''}`
                         : undefined
                 }
                 onClose={closeBayarModal}

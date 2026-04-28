@@ -51,16 +51,14 @@ export default function PinjamanFormCard({
 
             <form onSubmit={onSubmit}>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    <div className="sm:col-span-2 lg:col-span-3">
-                        <FloatingSelect
-                            label="Anggota"
-                            value={formData.anggota_id}
-                            options={anggotaOptions}
-                            onValueChange={(value) => onChangeField('anggota_id', value)}
-                            searchable
-                            required
-                        />
-                    </div>
+                    <FloatingSelect
+                        label="Anggota"
+                        value={formData.anggota_id}
+                        options={anggotaOptions}
+                        onValueChange={(value) => onChangeField('anggota_id', value)}
+                        searchable
+                        required
+                    />
 
                     <FloatingInput
                         label="Jumlah Pinjaman"
