@@ -20,10 +20,17 @@ export default function PinjamanPelunasanInvoicePreviewModal({
 }: Props) {
     if (!pinjaman) return null;
 
-    const totalPokok = pinjaman.angsuran?.reduce((sum, a) => sum + Number(a.pokok), 0) ?? 0;
-    const totalBunga = pinjaman.angsuran?.reduce((sum, a) => sum + Number(a.bunga), 0) ?? 0;
-    const totalDenda = pinjaman.angsuran?.reduce((sum, a) => sum + Number(a.denda), 0) ?? 0;
-    const totalBayar = pinjaman.angsuran?.reduce((sum, a) => sum + Number(a.jumlah_dibayar), 0) ?? 0;
+    const totalPokok =
+        pinjaman.angsuran?.reduce((sum, a) => sum + Number(a.pokok), 0) ?? 0;
+    const totalBunga =
+        pinjaman.angsuran?.reduce((sum, a) => sum + Number(a.bunga), 0) ?? 0;
+    const totalDenda =
+        pinjaman.angsuran?.reduce((sum, a) => sum + Number(a.denda), 0) ?? 0;
+    const totalBayar =
+        pinjaman.angsuran?.reduce(
+            (sum, a) => sum + Number(a.jumlah_dibayar),
+            0,
+        ) ?? 0;
 
     return (
         <Modal
@@ -59,7 +66,10 @@ export default function PinjamanPelunasanInvoicePreviewModal({
                                 PLN-{pinjaman.id.substring(0, 8).toUpperCase()}
                             </p>
                             <p className="mt-1 text-sm text-slate-600">
-                                {formatDateTimeLong(pinjaman.updated_at || new Date().toISOString())}
+                                {formatDateTimeLong(
+                                    pinjaman.created_at ||
+                                        new Date().toISOString(),
+                                )}
                             </p>
                         </div>
                         <div className="rounded-xl bg-white px-4 py-3 text-sm shadow-sm">

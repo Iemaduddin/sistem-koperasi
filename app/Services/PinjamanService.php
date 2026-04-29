@@ -61,20 +61,19 @@ class PinjamanService
                 return $item;
             });
 
-        $overdueDeposito = \App\Models\SimpananDeposito::with(['anggota'])
-            ->where('status', 'aktif')
-            ->whereDate('tanggal_selesai', '<', now()->toDateString())
-            ->orderBy('tanggal_selesai', 'asc')
-            ->get()
-            ->map(function ($item) {
-                $hariTerlambat = (int) now()->startOfDay()->diffInDays(Carbon::parse($item->tanggal_selesai)->startOfDay(), false);
-                $item->hari_terlambat = abs($hariTerlambat);
-                return $item;
-            });
-
         return [
             'overdue_angsuran' => $overdueAngsuran,
-            'overdue_deposito' => $overdueDeposito,
+            'upcoming_angsuran' => AngsuranPinjaman::with(['pinjaman.anggota'])
+                ->where('status', '!=', 'lunas')
+                ->whereDate('tanggal_jatuh_tempo', '>=', now()->toDateString())
+                ->whereDate('tanggal_jatuh_tempo', '<=', now()->endOfMonth()->toDateString())
+                ->orderBy('tanggal_jatuh_tempo', 'asc')
+                ->get()
+                ->map(function ($item) {
+                    $hariMenujuJatuhTempo = (int) now()->startOfDay()->diffInDays(Carbon::parse($item->tanggal_jatuh_tempo)->startOfDay(), false);
+                    $item->hari_tersisa = max(0, $hariMenujuJatuhTempo);
+                    return $item;
+                }),
         ];
     }
 

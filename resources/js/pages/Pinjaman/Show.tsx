@@ -176,7 +176,9 @@ export default function PinjamanShow() {
         );
 
         if (!previewWindow) {
-            toast.error('Gagal membuka jendela preview. Pastikan popup tidak diblokir.');
+            toast.error(
+                'Gagal membuka jendela preview. Pastikan popup tidak diblokir.',
+            );
             return;
         }
 
@@ -200,7 +202,9 @@ export default function PinjamanShow() {
         );
 
         if (!previewWindow) {
-            toast.error('Gagal membuka jendela preview. Pastikan popup tidak diblokir.');
+            toast.error(
+                'Gagal membuka jendela preview. Pastikan popup tidak diblokir.',
+            );
             return;
         }
 
@@ -507,12 +511,12 @@ export default function PinjamanShow() {
 
                 {/* ── Tombol Invoice Pelunasan (Muncul jika Lunas) ───────────────── */}
                 {pinjaman.status === 'lunas' && (
-                    <div className="flex justify-center mt-8 pb-10">
+                    <div className="mt-8 flex justify-center pb-10">
                         <Button
                             variant="primary"
                             size="lg"
                             onClick={() => setShowPelunasanInvoice(true)}
-                            className="flex items-center gap-2 px-8 py-4 text-lg shadow-lg hover:shadow-xl transition-all"
+                            className="flex items-center gap-2 px-8 py-4 text-lg shadow-lg transition-all hover:shadow-xl"
                         >
                             <LuEye className="h-6 w-6" />
                             Unduh Invoice Pelunasan
@@ -637,7 +641,7 @@ export default function PinjamanShow() {
                         : 'Sedang menghitung rincian pelunasan...'
                 }
                 onClose={() => setPelunasanConfirmOpen(false)}
-                className="max-w-2xl"
+                maxWidthClassName="max-w-2xl"
                 footer={
                     <>
                         <Button
@@ -689,7 +693,7 @@ export default function PinjamanShow() {
                                         pelunasanSummary.total_denda,
                                     )}
                                 />
-                                <div className="border-t border-neutral-200 pt-2 col-span-2">
+                                <div className="col-span-2 border-t border-neutral-200 pt-2">
                                     <div className="mb-4">
                                         <FloatingInput
                                             label="Denda Pelunasan (Opsional/Bisa Diubah)"
@@ -701,7 +705,8 @@ export default function PinjamanShow() {
                                                         Math.max(
                                                             0,
                                                             Math.floor(
-                                                                value.numeric ?? 0,
+                                                                value.numeric ??
+                                                                    0,
                                                             ),
                                                         ),
                                                     ),
@@ -709,7 +714,9 @@ export default function PinjamanShow() {
                                             }
                                         />
                                     </div>
-                                    <p className="text-xs text-neutral-400">Total Pembayaran</p>
+                                    <p className="text-xs text-neutral-400">
+                                        Total Pembayaran
+                                    </p>
                                     <p className="text-xl font-bold text-blue-600">
                                         {formatRupiah(
                                             pelunasanSummary.total_pokok +
@@ -722,10 +729,15 @@ export default function PinjamanShow() {
 
                             <div className="rounded-lg border border-green-100 bg-green-50 p-3">
                                 <p className="text-sm font-medium text-green-800">
-                                    ✨ Anda Menghemat {formatRupiah(pelunasanSummary.potongan_bunga)}
+                                    ✨ Anda Menghemat{' '}
+                                    {formatRupiah(
+                                        pelunasanSummary.potongan_bunga,
+                                    )}
                                 </p>
                                 <p className="mt-0.5 text-xs text-green-700">
-                                    Bagi Hasil untuk {Math.floor(angsuranList.length * 0.2)} bulan terakhir telah dibebaskan.
+                                    Bagi Hasil untuk{' '}
+                                    {Math.floor(angsuranList.length * 0.2)}{' '}
+                                    bulan terakhir telah dibebaskan.
                                 </p>
                             </div>
 
@@ -733,36 +745,77 @@ export default function PinjamanShow() {
                                 <table className="w-full text-xs">
                                     <thead className="bg-neutral-50 font-medium text-neutral-500">
                                         <tr>
-                                            <th className="px-3 py-2 text-left">Bulan</th>
-                                            <th className="px-3 py-2 text-right">Pokok</th>
-                                            <th className="px-3 py-2 text-right">Bagi Hasil</th>
-                                            <th className="px-3 py-2 text-right">Denda</th>
-                                            <th className="px-3 py-2 text-right">Subtotal</th>
+                                            <th className="px-3 py-2 text-left">
+                                                Bulan
+                                            </th>
+                                            <th className="px-3 py-2 text-right">
+                                                Pokok
+                                            </th>
+                                            <th className="px-3 py-2 text-right">
+                                                Bagi Hasil
+                                            </th>
+                                            <th className="px-3 py-2 text-right">
+                                                Denda
+                                            </th>
+                                            <th className="px-3 py-2 text-right">
+                                                Subtotal
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-neutral-100">
-                                        {pelunasanSummary.rincian.map((item) => (
-                                            <tr key={item.angsuran_ke} className={item.is_bebas_bunga ? 'bg-green-50/30' : ''}>
-                                                <td className="px-3 py-2">{item.angsuran_ke}</td>
-                                                <td className="px-3 py-2 text-right">{formatRupiah(item.pokok)}</td>
-                                                <td className="px-3 py-2 text-right">
-                                                    {item.is_bebas_bunga ? (
-                                                        <div className="flex flex-col items-end">
-                                                            <span className="text-[10px] text-neutral-400 line-through decoration-red-400">
-                                                                {formatRupiah(item.bunga_original)}
-                                                            </span>
-                                                            <span className="font-bold text-green-600">
-                                                                {formatRupiah(item.bunga)}
-                                                            </span>
-                                                        </div>
-                                                    ) : (
-                                                        formatRupiah(item.bunga)
-                                                    )}
-                                                </td>
-                                                <td className="px-3 py-2 text-right text-red-600">{item.denda > 0 ? formatRupiah(item.denda) : '-'}</td>
-                                                <td className="px-3 py-2 text-right font-medium">{formatRupiah(item.subtotal)}</td>
-                                            </tr>
-                                        ))}
+                                        {pelunasanSummary.rincian.map(
+                                            (item) => (
+                                                <tr
+                                                    key={item.angsuran_ke}
+                                                    className={
+                                                        item.is_bebas_bunga
+                                                            ? 'bg-green-50/30'
+                                                            : ''
+                                                    }
+                                                >
+                                                    <td className="px-3 py-2">
+                                                        {item.angsuran_ke}
+                                                    </td>
+                                                    <td className="px-3 py-2 text-right">
+                                                        {formatRupiah(
+                                                            item.pokok,
+                                                        )}
+                                                    </td>
+                                                    <td className="px-3 py-2 text-right">
+                                                        {item.is_bebas_bunga ? (
+                                                            <div className="flex flex-col items-end">
+                                                                <span className="text-[10px] text-neutral-400 line-through decoration-red-400">
+                                                                    {formatRupiah(
+                                                                        item.bunga_original,
+                                                                    )}
+                                                                </span>
+                                                                <span className="font-bold text-green-600">
+                                                                    {formatRupiah(
+                                                                        item.bunga,
+                                                                    )}
+                                                                </span>
+                                                            </div>
+                                                        ) : (
+                                                            formatRupiah(
+                                                                item.bunga,
+                                                            )
+                                                        )}
+                                                    </td>
+                                                    <td className="px-3 py-2 text-right text-red-600">
+                                                        {item.denda > 0
+                                                            ? formatRupiah(
+                                                                  item.denda,
+                                                              )
+                                                            : '-'}
+                                                    </td>
+                                                    <td className="px-3 py-2 text-right font-medium">
+                                                        {formatRupiah(
+                                                            item.subtotal,
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ),
+                                        )}
                                     </tbody>
                                 </table>
                             </div>

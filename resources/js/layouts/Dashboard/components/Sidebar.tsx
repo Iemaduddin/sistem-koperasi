@@ -122,7 +122,9 @@ const routeNameToUrl: Record<string, () => string> = {
     'rekening-koperasi.index': () => '/rekening-koperasi',
     'simpanan.index': () => '/simpanan',
     'pinjaman.index': () => '/pinjaman',
+    'pinjaman.angsuran': () => '/pinjaman/angsuran',
     'deposito.index': () => '/deposito',
+    'deposito.bagi-hasil': () => '/deposito/bagi-hasil',
     'riwayat-transaksi.index': () => '/riwayat-transaksi',
     'rekapan-anggota.index': () => '/rekapan-anggota',
 };
@@ -455,16 +457,38 @@ const menuSections: SidebarSection[] = [
             },
             {
                 id: 'pinjaman',
-                label: 'Pinjaman',
+                label: 'Kelola Pinjaman',
                 icon: TbCashBanknoteMove,
-                routeName: 'pinjaman.index',
+                children: [
+                    {
+                        id: 'daftar-pinjaman',
+                        label: 'Daftar Pinjaman',
+                        routeName: 'pinjaman.index',
+                    },
+                    {
+                        id: 'pinjaman-angsuran',
+                        label: 'Angsuran',
+                        routeName: 'pinjaman.angsuran',
+                    },
+                ],
                 roles: ['Master Admin', 'Super Admin', 'Admin'],
             },
             {
                 id: 'deposito',
                 label: 'Deposito',
                 icon: TbCashRegister,
-                routeName: 'deposito.index',
+                children: [
+                    {
+                        id: 'daftar-deposito',
+                        label: 'Daftar Deposito',
+                        routeName: 'deposito.index',
+                    },
+                    {
+                        id: 'deposito-bagi-hasil',
+                        label: 'Bagi Hasil',
+                        routeName: 'deposito.bagi-hasil',
+                    },
+                ],
                 roles: ['Master Admin', 'Super Admin', 'Admin'],
             },
             // {

@@ -88,7 +88,6 @@ export default function PinjamanTableCard({ rows, onRequestDelete }: Props) {
                         </div>
                     );
                 },
-                sortable: true,
                 sortValue: (row) => hitungProgressPersen(row),
             },
             {

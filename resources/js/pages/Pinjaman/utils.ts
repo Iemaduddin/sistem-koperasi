@@ -14,13 +14,38 @@ export function formatRupiah(
 // ─── Format tanggal ───────────────────────────────────────────────────────────
 export function formatTanggal(value: string | null | undefined): string {
     if (!value) return '-';
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return value;
-    return date.toLocaleDateString('id-ID', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-    });
+
+    const text = String(value).trim();
+    const dateMatch = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+
+    if (!dateMatch) {
+        return text;
+    }
+
+    const [, year, monthRaw, dayRaw] = dateMatch;
+    const monthIndex = Number(monthRaw);
+    const day = dayRaw;
+
+    const monthNames = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'Mei',
+        'Jun',
+        'Jul',
+        'Agu',
+        'Sep',
+        'Okt',
+        'Nov',
+        'Des',
+    ];
+
+    if (Number.isNaN(monthIndex) || monthIndex < 1 || monthIndex > 12) {
+        return text;
+    }
+
+    return `${day} ${monthNames[monthIndex - 1]} ${year}`;
 }
 
 // ─── Hitung sisa angsuran yang belum lunas ────────────────────────────────────
@@ -156,7 +181,11 @@ export async function buildInvoiceHtml(
     const logoHorizontalUrl = `${window.location.origin}/logo-azzahwa-horizontal.png`;
     const logoIcoUrl = `${window.location.origin}/logo-azzahwa.ico`;
     const qrTargetUrl = `${window.location.origin}/portal-anggota`;
-    const kotaTanggal = `Pasuruan, ${formatDateOnly(angsuran.updated_at || angsuran.tanggal_bayar || new Date().toISOString())}`;
+    const angsuranAny = angsuran as AngsuranPinjaman & {
+        updated_at?: string;
+        tanggal_bayar?: string;
+    };
+    const kotaTanggal = `Pasuruan, ${formatDateOnly(angsuranAny.updated_at || angsuranAny.tanggal_bayar || new Date().toISOString())}`;
 
     const qrCodeDataUrl = await QRCode.toDataURL(qrTargetUrl, {
         errorCorrectionLevel: 'H',
@@ -245,7 +274,7 @@ export async function buildInvoiceHtml(
                 </div>
                 <div style="text-align:right">
                     <p><strong>LNS-${angsuran.id.substring(0, 8).toUpperCase()}</strong></p>
-                    <p class="muted">${formatDateTimeLong(angsuran.tanggal_bayar || new Date().toISOString())}</p>
+                    <p class="muted">${formatDateTimeLong((angsuran as AngsuranPinjaman & { tanggal_bayar?: string }).tanggal_bayar || new Date().toISOString())}</p>
                 </div>
             </div>
             <div class="meta">
@@ -295,7 +324,10 @@ export async function buildPelunasanInvoiceHtml(
     const logoHorizontalUrl = `${window.location.origin}/logo-azzahwa-horizontal.png`;
     const logoIcoUrl = `${window.location.origin}/logo-azzahwa.ico`;
     const qrTargetUrl = `${window.location.origin}/portal-anggota`;
-    const kotaTanggal = `Pasuruan, ${formatDateOnly(pinjaman.updated_at || new Date().toISOString())}`;
+    const pinjamanAny = pinjaman as PinjamanRow & {
+        updated_at?: string;
+    };
+    const kotaTanggal = `Pasuruan, ${formatDateOnly(pinjamanAny.updated_at || new Date().toISOString())}`;
 
     const qrCodeDataUrl = await QRCode.toDataURL(qrTargetUrl, {
         errorCorrectionLevel: 'H',
@@ -307,10 +339,17 @@ export async function buildPelunasanInvoiceHtml(
         },
     });
 
-    const totalPokok = pinjaman.angsuran?.reduce((sum, a) => sum + Number(a.pokok), 0) ?? 0;
-    const totalBunga = pinjaman.angsuran?.reduce((sum, a) => sum + Number(a.bunga), 0) ?? 0;
-    const totalDenda = pinjaman.angsuran?.reduce((sum, a) => sum + Number(a.denda), 0) ?? 0;
-    const totalBayar = pinjaman.angsuran?.reduce((sum, a) => sum + Number(a.jumlah_dibayar), 0) ?? 0;
+    const totalPokok =
+        pinjaman.angsuran?.reduce((sum, a) => sum + Number(a.pokok), 0) ?? 0;
+    const totalBunga =
+        pinjaman.angsuran?.reduce((sum, a) => sum + Number(a.bunga), 0) ?? 0;
+    const totalDenda =
+        pinjaman.angsuran?.reduce((sum, a) => sum + Number(a.denda), 0) ?? 0;
+    const totalBayar =
+        pinjaman.angsuran?.reduce(
+            (sum, a) => sum + Number(a.jumlah_dibayar),
+            0,
+        ) ?? 0;
 
     const rowsHtml = (pinjaman.angsuran ?? [])
         .map(
@@ -373,7 +412,7 @@ export async function buildPelunasanInvoiceHtml(
                 </div>
                 <div style="text-align:right">
                     <p><strong>PLN-${pinjaman.id.substring(0, 8).toUpperCase()}</strong></p>
-                    <p class="muted">${formatDateTimeLong(pinjaman.updated_at || new Date().toISOString())}</p>
+                    <p class="muted">${formatDateTimeLong((pinjaman as PinjamanRow & { updated_at?: string }).updated_at || new Date().toISOString())}</p>
                 </div>
             </div>
             <div class="meta">

@@ -71,11 +71,15 @@ export default function PinjamanInvoicePreviewModal({
                                 ID Pembayaran
                             </p>
                             <p className="text-xl font-bold text-slate-900">
-                                LNS-{selectedAngsuran.id.substring(0, 8).toUpperCase()}
+                                LNS-
+                                {selectedAngsuran.id
+                                    .substring(0, 8)
+                                    .toUpperCase()}
                             </p>
                             <p className="mt-1 text-sm text-slate-600">
                                 {formatDateTimeLong(
-                                    selectedAngsuran.tanggal_bayar ||
+                                    selectedAngsuran.transaksi?.[0]
+                                        ?.tanggal_bayar ||
                                         new Date().toISOString(),
                                 )}
                             </p>

@@ -29,9 +29,9 @@ class PinjamanController extends Controller
     /**
      * Daftar angsuran yang terlambat.
      */
-    public function terlambat(): Response
+    public function angsuran(): Response
     {
-        return Inertia::render('Pinjaman/Terlambat', $this->pinjamanService->getOverdueData());
+        return Inertia::render('Pinjaman/Angsuran', $this->pinjamanService->getOverdueData());
     }
 
     /**

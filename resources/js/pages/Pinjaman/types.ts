@@ -84,7 +84,10 @@ export type PinjamanShowProps = {
 };
 
 export type OverduePageProps = {
-    overdue_angsuran: (AngsuranPinjaman & { hari_terlambat: number; denda_estimasi: number })[];
+    overdue_angsuran: (AngsuranPinjaman & {
+        hari_terlambat: number;
+        denda_estimasi: number;
+    })[];
     overdue_deposito: (any & { hari_terlambat: number })[]; // Using any to avoid complex cross-imports for now
 };
 
@@ -133,6 +136,7 @@ export type PelunasanSummary = {
         tanggal_jatuh_tempo: string;
         pokok: number;
         bunga: number;
+        bunga_original?: number;
         denda: number;
         is_bebas_bunga: boolean;
         subtotal: number;
