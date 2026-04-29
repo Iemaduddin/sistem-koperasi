@@ -83,13 +83,18 @@ export type DepositoForm = {
 };
 
 export function toDateValue(value: Date): string {
-    const pad = (input: number) => String(input).padStart(2, '0');
+    const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Jakarta',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+    }).formatToParts(value);
 
-    return [
-        value.getFullYear(),
-        pad(value.getMonth() + 1),
-        pad(value.getDate()),
-    ].join('-');
+    const year = parts.find((part) => part.type === 'year')?.value ?? '0000';
+    const month = parts.find((part) => part.type === 'month')?.value ?? '00';
+    const day = parts.find((part) => part.type === 'day')?.value ?? '00';
+
+    return `${year}-${month}-${day}`;
 }
 
 export function normalizeDateOnly(value: string | Date): string {
@@ -111,13 +116,13 @@ export function normalizeDateOnly(value: string | Date): string {
         const year = Number(dateOnlyMatch[1]);
         const month = Number(dateOnlyMatch[2]);
         const day = Number(dateOnlyMatch[3]);
-        const parsed = new Date(Date.UTC(year, month - 1, day));
+        const parsed = new Date(year, month - 1, day);
 
         if (
             !Number.isNaN(parsed.getTime()) &&
-            parsed.getUTCFullYear() === year &&
-            parsed.getUTCMonth() + 1 === month &&
-            parsed.getUTCDate() === day
+            parsed.getFullYear() === year &&
+            parsed.getMonth() + 1 === month &&
+            parsed.getDate() === day
         ) {
             return `${dateOnlyMatch[1]}-${dateOnlyMatch[2]}-${dateOnlyMatch[3]}`;
         }

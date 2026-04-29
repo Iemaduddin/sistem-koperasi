@@ -27,11 +27,46 @@ class SimpananDepositoService
      */
     public function getIndexData(): array
     {
+        $depositoRows = SimpananDeposito::query()
+            ->with(['anggota', 'rekeningKoperasi', 'logBagiHasil'])
+            ->latest('created_at')
+            ->get()
+            ->map(function (SimpananDeposito $deposito) {
+                return [
+                    'id' => (string) $deposito->id,
+                    'anggota_id' => (string) $deposito->anggota_id,
+                    'rekening_koperasi_id' => (string) $deposito->rekening_koperasi_id,
+                    'saldo' => (float) $deposito->saldo,
+                    'persen_bagi_hasil' => (float) $deposito->persen_bagi_hasil,
+                    'tenor_bulan' => (int) $deposito->tenor_bulan,
+                    'tanggal_mulai' => $deposito->tanggal_mulai?->toDateString(),
+                    'tanggal_selesai' => $deposito->tanggal_selesai?->toDateString(),
+                    'status' => $deposito->status,
+                    'anggota' => $deposito->anggota ? [
+                        'no_anggota' => $deposito->anggota->no_anggota,
+                        'nama' => $deposito->anggota->nama,
+                    ] : null,
+                    'rekening_koperasi' => $deposito->rekeningKoperasi ? [
+                        'id' => (string) $deposito->rekeningKoperasi->id,
+                        'nama' => $deposito->rekeningKoperasi->nama,
+                        'jenis' => $deposito->rekeningKoperasi->jenis,
+                        'nomor_rekening' => $deposito->rekeningKoperasi->nomor_rekening,
+                    ] : null,
+                    'log_bagi_hasil' => $deposito->logBagiHasil->map(static function (LogBagiHasilDeposito $log) {
+                        return [
+                            'id' => (int) $log->id,
+                            'nominal_bagi_hasil' => (float) $log->nominal_bagi_hasil,
+                            'tanggal_perhitungan' => $log->tanggal_perhitungan?->toDateString(),
+                            'status_pengambilan' => $log->status_pengambilan,
+                            'tanggal_pengambilan' => $log->tanggal_pengambilan?->toDateTimeString(),
+                        ];
+                    })->values(),
+                ];
+            })
+            ->values();
+
         return [
-            'simpanan_deposito' => SimpananDeposito::query()
-                ->with(['anggota', 'rekeningKoperasi', 'logBagiHasil'])
-                ->latest('created_at')
-                ->get(),
+            'simpanan_deposito' => $depositoRows,
             'rekening_koperasi' => RekeningKoperasi::query()
                 ->orderBy('nama')
                 ->get(['id', 'nama', 'jenis', 'nomor_rekening', 'saldo']),
@@ -102,6 +137,49 @@ class SimpananDepositoService
 
             return $deposito->load(['anggota', 'logBagiHasil']);
         });
+    }
+
+    /**
+     * Ambil data reminder pencairan bagi hasil deposito untuk bulan berjalan.
+     *
+     * @return array<string, mixed>
+     */
+    public function getBagiHasilData(): array
+    {
+        $reminders = LogBagiHasilDeposito::query()
+            ->with(['simpananDeposito.anggota'])
+            ->where('status_pengambilan', 'belum')
+            ->whereDate('tanggal_perhitungan', '>=', now()->toDateString())
+            ->whereDate('tanggal_perhitungan', '<=', now()->addDays(7)->toDateString())
+            ->orderBy('tanggal_perhitungan', 'asc')
+            ->get()
+            ->map(function ($item) {
+                $deposito = $item->simpananDeposito;
+                $anggota = $deposito?->anggota;
+                $tanggalPerhitungan = Carbon::parse((string) $item->tanggal_perhitungan)->startOfDay();
+                $hariTersisa = (int) Carbon::today()->diffInDays($tanggalPerhitungan);
+
+                return [
+                    'id' => (int) $item->id,
+                    'simpanan_deposito_id' => (string) $item->simpanan_deposito_id,
+                    'nominal_bagi_hasil' => (float) $item->nominal_bagi_hasil,
+                    'tanggal_perhitungan' => $tanggalPerhitungan->toDateString(),
+                    'status_pengambilan' => $item->status_pengambilan,
+                    'hari_tersisa' => max(0, $hariTersisa),
+                    'simpanan_deposito' => [
+                        'saldo' => (float) ($deposito?->saldo ?? 0),
+                        'tanggal_mulai' => $deposito?->tanggal_mulai?->toDateString(),
+                        'anggota' => [
+                            'nama' => $anggota?->nama,
+                            'no_anggota' => $anggota?->no_anggota,
+                        ],
+                    ],
+                ];
+            });
+
+        return [
+            'reminder_bagi_hasil' => $reminders,
+        ];
     }
 
     public function tarikBagiHasil(int $logId, ?string $userId = null): LogBagiHasilDeposito

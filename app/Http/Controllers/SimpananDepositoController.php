@@ -132,4 +132,12 @@ class SimpananDepositoController extends Controller
     {
         //
     }
+
+    /**
+     * Halaman deposito bagi hasil.
+     */
+    public function bagiHasil(): Response
+    {
+        return Inertia::render('Deposito/BagiHasil', $this->simpananDepositoService->getBagiHasilData());
+    }
 }
