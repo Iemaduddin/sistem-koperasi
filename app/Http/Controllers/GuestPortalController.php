@@ -32,23 +32,22 @@ class GuestPortalController extends Controller
     public function verify(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'nik' => ['required', 'string', 'size:16'],
-            'no_hp' => ['required', 'string', 'regex:/^08[0-9]{8,13}$/'],
+            'no_anggota' => ['required', 'string'],
+            // 'no_hp' => ['required', 'string', 'regex:/^08[0-9]{8,13}$/'],
         ], [
-            'nik.required' => 'NIK wajib diisi.',
-            'nik.size' => 'NIK harus 16 karakter.',
-            'no_hp.required' => 'No. HP wajib diisi.',
-            'no_hp.regex' => 'Format No. HP tidak valid. Gunakan angka dan awali 08.',
+            'no_anggota.required' => 'No. Anggota wajib diisi.',
+            // 'no_hp.required' => 'No. HP wajib diisi.',
+            // 'no_hp.regex' => 'Format No. HP tidak valid. Gunakan angka dan awali 08.',
         ]);
 
-        $anggota = $this->guestPortalService->findByNikAndPhone(
-            (string) $validated['nik'],
-            (string) $validated['no_hp'],
+        $anggota = $this->guestPortalService->findByNoAnggotaAndPhone(
+            (string) $validated['no_anggota'],
+            // (string) $validated['no_hp'],
         );
 
         if ($anggota === null) {
             throw ValidationException::withMessages([
-                'auth' => 'NIK dan No. HP tidak cocok dengan data anggota.',
+                'auth' => 'No. Anggota dan No. HP tidak cocok dengan data anggota.',
             ]);
         }
 

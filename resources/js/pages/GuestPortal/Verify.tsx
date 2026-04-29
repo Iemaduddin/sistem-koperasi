@@ -4,8 +4,8 @@ import Button from '@/components/button';
 import FloatingInput from '@/components/floating-input/input';
 
 type VerifyForm = {
-    nik: string;
-    no_hp: string;
+    no_anggota: string;
+    // no_hp: string;
 };
 
 type VerifyPageProps = {
@@ -20,8 +20,8 @@ export default function GuestPortalVerify() {
 
     const { data, setData, post, processing, errors, clearErrors } =
         useForm<VerifyForm>({
-            nik: '',
-            no_hp: '',
+            no_anggota: '',
+            // no_hp: '',
         });
 
     const formError =
@@ -47,8 +47,8 @@ export default function GuestPortalVerify() {
                         Cek Riwayat Transaksi
                     </h1>
                     <p className="mt-2 text-sm text-slate-600">
-                        Masukkan NIK dan No. HP terdaftar untuk melihat data
-                        simpanan, pinjaman, dan deposito.
+                        Masukkan Nomor Anggota dan No. HP terdaftar untuk
+                        melihat data Anda.
                     </p>
 
                     <form
@@ -67,19 +67,19 @@ export default function GuestPortalVerify() {
                         ) : null}
 
                         <FloatingInput
-                            id="nik"
-                            label="NIK"
-                            value={data.nik}
+                            id="no_anggota"
+                            label="Nomor Anggota"
+                            value={data.no_anggota}
                             onChange={(event) =>
-                                setData('nik', event.target.value)
+                                setData('no_anggota', event.target.value)
                             }
-                            placeholder="Masukkan NIK"
-                            errorText={errors.nik}
-                            inputMode="numeric"
+                            placeholder="Masukkan Nomor Anggota"
+                            errorText={errors.no_anggota}
+                            type="no_anggota"
                             required
                         />
 
-                        <FloatingInput
+                        {/* <FloatingInput
                             id="no_hp"
                             label="No. HP"
                             value={data.no_hp}
@@ -90,7 +90,7 @@ export default function GuestPortalVerify() {
                             errorText={errors.no_hp}
                             inputMode="tel"
                             required
-                        />
+                        /> */}
 
                         <Button
                             type="submit"

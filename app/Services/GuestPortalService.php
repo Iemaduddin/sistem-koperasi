@@ -10,14 +10,14 @@ use App\Models\TransaksiSimpanan;
 
 class GuestPortalService
 {
-    public function findByNikAndPhone(string $nik, string $noHp): ?Anggota
+    public function findByNoAnggotaAndPhone(string $noAnggota): ?Anggota
     {
         return Anggota::query()
-            ->where('nik', $nik)
-            ->where(function ($query) use ($noHp): void {
-                $query->where('no_hp', $noHp)
-                    ->orWhere('no_hp_cadangan', $noHp);
-            })
+            ->where('no_anggota', $noAnggota)
+            // ->where(function ($query) use ($noHp): void {
+            //     $query->where('no_hp', $noHp)
+            //         ->orWhere('no_hp_cadangan', $noHp);
+            // })
             ->first();
     }
 
