@@ -97,9 +97,11 @@ Route::middleware(['auth', 'active.user'])->group(function (): void {
 		Route::resource('/deposito', SimpananDepositoController::class)
 			->parameters(['deposito' => 'simpanan_deposito'])
 			->except(['show', 'create', 'edit', 'update', 'destroy']);
+		Route::get('/deposito/bagi-hasil', [SimpananDepositoController::class, 'bagiHasil'])
+			->name('deposito.bagi-hasil');
 		// Pinjaman management
-		Route::get('/pinjaman/terlambat', [PinjamanController::class, 'terlambat'])
-			->name('pinjaman.terlambat');
+		Route::get('/pinjaman/angsuran', [PinjamanController::class, 'angsuran'])
+			->name('pinjaman.angsuran');
 		Route::post('/pinjaman/{pinjaman}/bayar', [PinjamanController::class, 'bayarAngsuran'])
 			->name('pinjaman.bayar');
 		Route::get('/pinjaman/{pinjaman}/simulasi-pelunasan', [PinjamanController::class, 'simulasiPelunasan'])
