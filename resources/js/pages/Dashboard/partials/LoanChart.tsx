@@ -5,7 +5,11 @@ interface LoanData {
     y: number;
 }
 
-export default function LoanChart({ data }: { data: LoanData[] }) {
+export default function LoanChart({
+    data,
+}: {
+    data: Array<Record<string, any>>;
+}) {
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat('id-ID', {
             style: 'currency',
@@ -15,9 +19,9 @@ export default function LoanChart({ data }: { data: LoanData[] }) {
     };
 
     return (
-        <div className="h-[300px] w-full">
+        <div className="h-75 w-full">
             <ResponsiveBar
-                data={data}
+                data={data as any}
                 keys={['y']}
                 indexBy="x"
                 margin={{ top: 20, right: 30, bottom: 50, left: 80 }}
@@ -45,24 +49,31 @@ export default function LoanChart({ data }: { data: LoanData[] }) {
                     legendPosition: 'middle',
                     legendOffset: -70,
                     format: (value) => {
-                        if (value >= 1000000) return `${(Number(value) / 1000000).toFixed(1)}jt`;
-                        if (value >= 1000) return `${(Number(value) / 1000).toFixed(0)}rb`;
+                        if (value >= 1000000)
+                            return `${(Number(value) / 1000000).toFixed(1)}jt`;
+                        if (value >= 1000)
+                            return `${(Number(value) / 1000).toFixed(0)}rb`;
                         return value;
                     },
                 }}
                 labelSkipWidth={12}
                 labelSkipHeight={12}
                 labelTextColor={{ from: 'color', modifiers: [['darker', 1.6]] }}
-                label={ (d) => {
+                label={(d) => {
                     const val = Number(d.value);
-                    if (val >= 1000000) return `${(val / 1000000).toFixed(1)}jt`;
+                    if (val >= 1000000)
+                        return `${(val / 1000000).toFixed(1)}jt`;
                     if (val >= 1000) return `${(val / 1000).toFixed(0)}rb`;
-                    return val;
-                } }
+                    return String(val);
+                }}
                 tooltip={({ value, indexValue }) => (
                     <div className="rounded-lg border border-slate-200 bg-white p-2 shadow-lg ring-1 ring-black/5">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{indexValue}</p>
-                        <p className="text-sm font-bold text-slate-900">{formatCurrency(Number(value))}</p>
+                        <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                            {indexValue}
+                        </p>
+                        <p className="text-sm font-bold text-slate-900">
+                            {formatCurrency(Number(value))}
+                        </p>
                     </div>
                 )}
                 role="application"

@@ -6,6 +6,7 @@ export function formatDateTime(value: string): string {
     }
 
     return new Intl.DateTimeFormat('id-ID', {
+        timeZone: 'Asia/Jakarta',
         day: '2-digit',
         month: 'short',
         year: 'numeric',
@@ -23,6 +24,7 @@ export function formatDateTimeLong(value: string): string {
     }
 
     return new Intl.DateTimeFormat('id-ID', {
+        timeZone: 'Asia/Jakarta',
         weekday: 'long',
         day: '2-digit',
         month: 'long',
@@ -41,6 +43,7 @@ export function formatDateOnly(value: string): string {
     }
 
     return new Intl.DateTimeFormat('id-ID', {
+        timeZone: 'Asia/Jakarta',
         day: '2-digit',
         month: 'long',
         year: 'numeric',

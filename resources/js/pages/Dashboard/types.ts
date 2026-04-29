@@ -33,7 +33,7 @@ export interface ChartData {
     filters: {
         start_date: string;
         end_date: string;
-        group_by: 'day' | 'week' | 'month' | 'year';
+        group_by: 'day' | 'week' | 'month' | 'year' | 'all';
     };
 }
 

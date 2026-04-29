@@ -15,13 +15,14 @@ type DashboardProps = {
     recent_transactions: any[];
 };
 
-export default function Dashboard({ stats, charts, recent_transactions }: DashboardProps) {
+export default function Dashboard({
+    stats,
+    charts,
+    recent_transactions,
+}: DashboardProps) {
     const filters = charts.filters;
 
-    const handleFilterChange = (
-        key: keyof typeof filters,
-        value: string,
-    ) => {
+    const handleFilterChange = (key: keyof typeof filters, value: string) => {
         const nextFilters = { ...filters, [key]: value };
 
         router.reload({
@@ -32,7 +33,6 @@ export default function Dashboard({ stats, charts, recent_transactions }: Dashbo
             },
             only: ['stats', 'charts'],
             preserveUrl: true,
-            preserveState: true,
         });
     };
 
@@ -47,7 +47,8 @@ export default function Dashboard({ stats, charts, recent_transactions }: Dashbo
     const getSourceLabel = (tx: any) => {
         const type = tx.sumber_tipe;
         const sumber = tx.sumber;
-        if (type === 'simpanan') return `Simpanan ${sumber?.rekening_simpanan?.jenis_simpanan?.nama || ''}`;
+        if (type === 'simpanan')
+            return `Simpanan ${sumber?.rekening_simpanan?.jenis_simpanan?.nama || ''}`;
         if (type === 'pinjaman') return 'Pinjaman';
         if (type === 'angsuran_pinjaman') return 'Angsuran Pinjaman';
         if (type === 'deposito') return 'Simpanan Deposito';
@@ -57,9 +58,11 @@ export default function Dashboard({ stats, charts, recent_transactions }: Dashbo
     const getMemberName = (tx: any) => {
         const type = tx.sumber_tipe;
         const sumber = tx.sumber;
-        if (type === 'simpanan') return sumber?.rekening_simpanan?.anggota?.nama || '-';
+        if (type === 'simpanan')
+            return sumber?.rekening_simpanan?.anggota?.nama || '-';
         if (type === 'pinjaman') return sumber?.anggota?.nama || '-';
-        if (type === 'angsuran_pinjaman') return sumber?.angsuran?.pinjaman?.anggota?.nama || '-';
+        if (type === 'angsuran_pinjaman')
+            return sumber?.angsuran?.pinjaman?.anggota?.nama || '-';
         if (type === 'deposito') return sumber?.anggota?.nama || '-';
         return '-';
     };
@@ -76,26 +79,38 @@ export default function Dashboard({ stats, charts, recent_transactions }: Dashbo
                             label="Lihat Berdasarkan"
                             value={filters.group_by}
                             options={groupByOptions}
-                            onValueChange={(value) => handleFilterChange('group_by', value)}
+                            onValueChange={(value) =>
+                                handleFilterChange('group_by', value)
+                            }
                             searchable={false}
                         />
                     </div>
                     {filters.group_by !== 'all' && (
                         <>
-                            <div className="flex-1 min-w-[200px]">
+                            <div className="min-w-[200px] flex-1">
                                 <FloatingInput
                                     label="Tanggal Mulai"
                                     type="date"
                                     value={filters.start_date}
-                                    onChange={(e) => handleFilterChange('start_date', e.target.value)}
+                                    onChange={(e) =>
+                                        handleFilterChange(
+                                            'start_date',
+                                            e.target.value,
+                                        )
+                                    }
                                 />
                             </div>
-                            <div className="flex-1 min-w-[200px]">
+                            <div className="min-w-[200px] flex-1">
                                 <FloatingInput
                                     label="Tanggal Selesai"
                                     type="date"
                                     value={filters.end_date}
-                                    onChange={(e) => handleFilterChange('end_date', e.target.value)}
+                                    onChange={(e) =>
+                                        handleFilterChange(
+                                            'end_date',
+                                            e.target.value,
+                                        )
+                                    }
                                 />
                             </div>
                         </>
@@ -153,28 +168,53 @@ export default function Dashboard({ stats, charts, recent_transactions }: Dashbo
                         <table className="w-full text-left text-sm">
                             <thead className="bg-slate-50 text-slate-600">
                                 <tr>
-                                    <th className="px-4 py-3 font-semibold">Tanggal</th>
-                                    <th className="px-4 py-3 font-semibold">Member</th>
-                                    <th className="px-4 py-3 font-semibold">Sumber</th>
-                                    <th className="px-4 py-3 font-semibold text-right">Jumlah</th>
+                                    <th className="px-4 py-3 font-semibold">
+                                        Tanggal
+                                    </th>
+                                    <th className="px-4 py-3 font-semibold">
+                                        Member
+                                    </th>
+                                    <th className="px-4 py-3 font-semibold">
+                                        Sumber
+                                    </th>
+                                    <th className="px-4 py-3 text-right font-semibold">
+                                        Jumlah
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
                                 {recent_transactions.map((tx) => (
-                                    <tr key={tx.id} className="hover:bg-slate-50/50">
+                                    <tr
+                                        key={tx.id}
+                                        className="hover:bg-slate-50/50"
+                                    >
                                         <td className="px-4 py-3 whitespace-nowrap">
-                                            {new Date(tx.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                            {new Date(
+                                                tx.created_at,
+                                            ).toLocaleDateString('id-ID', {
+                                                day: '2-digit',
+                                                month: 'short',
+                                                year: 'numeric',
+                                            })}
                                         </td>
-                                        <td className="px-4 py-3 font-medium text-slate-700 truncate max-w-[150px]">
+                                        <td className="max-w-[150px] truncate px-4 py-3 font-medium text-slate-700">
                                             {getMemberName(tx)}
                                         </td>
                                         <td className="px-4 py-3 text-slate-500">
                                             {getSourceLabel(tx)}
                                         </td>
-                                        <td className={`px-4 py-3 text-right font-semibold flex items-center justify-end gap-1 ${tx.jenis === 'masuk' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                            {tx.jenis === 'masuk' ? <LuArrowUp size={16} /> : <LuArrowDown size={16} />}
+                                        <td
+                                            className={`flex items-center justify-end gap-1 px-4 py-3 text-right font-semibold ${tx.jenis === 'masuk' ? 'text-emerald-600' : 'text-rose-600'}`}
+                                        >
+                                            {tx.jenis === 'masuk' ? (
+                                                <LuArrowUp size={16} />
+                                            ) : (
+                                                <LuArrowDown size={16} />
+                                            )}
                                             {tx.jenis === 'keluar' ? '-' : ''}
-                                            {formatCurrency(parseFloat(tx.jumlah))}
+                                            {formatCurrency(
+                                                parseFloat(tx.jumlah),
+                                            )}
                                         </td>
                                     </tr>
                                 ))}

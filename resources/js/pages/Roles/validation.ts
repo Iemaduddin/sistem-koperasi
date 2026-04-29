@@ -6,8 +6,8 @@ export const roleSchema = z.object({
     permissions: z.array(z.string()).optional(),
 });
 
-export const getFirstValidationError = (error: z.ZodError): string => {
-    return error.errors[0]?.message ?? 'Terjadi kesalahan validasi.';
+export const getFirstValidationError = (error: z.ZodError<any>): string => {
+    return error.issues?.[0]?.message ?? 'Terjadi kesalahan validasi.';
 };
 
 export const buildPayload = (data: RoleForm) => {
