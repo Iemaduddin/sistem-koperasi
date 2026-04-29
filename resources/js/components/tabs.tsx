@@ -115,13 +115,18 @@ export default function Tabs({
     }
 
     return (
-        <section className={cn('space-y-4', className)}>
+        <section
+            className={cn(
+                'rounded-xl border border-slate-200 bg-white p-4 shadow-sm',
+                className,
+            )}
+        >
             <div
                 role="tablist"
                 aria-orientation="horizontal"
                 onKeyDown={onKeyDown}
                 className={cn(
-                    'inline-flex w-full gap-2 overflow-x-auto rounded-xl border border-blue-100 bg-blue-50/60 p-1',
+                    'flex gap-2 border-b border-slate-200',
                     listClassName,
                 )}
             >
@@ -142,21 +147,21 @@ export default function Tabs({
                             tabIndex={isActive ? 0 : -1}
                             onClick={() => selectTab(item.id)}
                             className={cn(
-                                'inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors',
+                                'px-4 py-2 text-sm font-medium transition-colors',
                                 isActive
-                                    ? 'bg-white text-blue-700 shadow-sm'
-                                    : 'text-slate-600 hover:bg-white/70 hover:text-slate-800',
+                                    ? 'border-b-2 border-emerald-600 text-emerald-700'
+                                    : 'text-slate-600 hover:text-slate-900',
                                 item.disabled &&
-                                    'cursor-not-allowed opacity-50 hover:bg-transparent hover:text-slate-600',
+                                    'cursor-not-allowed opacity-50 hover:text-slate-600',
                             )}
                         >
                             <span>{item.label}</span>
                             {item.badge !== undefined ? (
                                 <span
                                     className={cn(
-                                        'rounded-full px-2 py-0.5 text-xs',
+                                        'ml-2 rounded-full px-2 py-0.5 text-xs',
                                         isActive
-                                            ? 'bg-blue-100 text-blue-700'
+                                            ? 'bg-emerald-100 text-emerald-700'
                                             : 'bg-slate-200 text-slate-600',
                                     )}
                                 >
@@ -181,10 +186,7 @@ export default function Tabs({
                               role="tabpanel"
                               aria-labelledby={tabId}
                               hidden={!isActive}
-                              className={cn(
-                                  'rounded-xl border border-blue-100 bg-white p-4',
-                                  panelClassName,
-                              )}
+                              className={cn('pt-4', panelClassName)}
                           >
                               {item.content}
                           </div>
@@ -207,10 +209,7 @@ export default function Tabs({
                               id={panelId}
                               role="tabpanel"
                               aria-labelledby={tabId}
-                              className={cn(
-                                  'rounded-xl border border-blue-100 bg-white p-4',
-                                  panelClassName,
-                              )}
+                              className={cn('pt-4', panelClassName)}
                           >
                               {current.content}
                           </div>
