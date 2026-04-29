@@ -96,9 +96,8 @@ export default function SimpananFormCard({
                         Detail Setoran Simpanan
                     </h3>
                     <p className="mt-1 text-xs text-slate-500">
-                        Kolom disusun per baris: jenis simpanan, jumlah setoran,
-                        dan keterangan. Jika simpanan wajib penuh, setoran bisa
-                        dialihkan ke simpanan sukarela.
+                        Jika simpanan wajib penuh, setoran bisa dialihkan ke
+                        simpanan sukarela.
                     </p>
 
                     <div className="mt-3 hidden grid-cols-12 gap-3 px-1 text-xs font-semibold tracking-wide text-slate-500 uppercase lg:grid">

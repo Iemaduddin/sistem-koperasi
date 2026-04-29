@@ -27,21 +27,41 @@ type SharedPageProps = {
     };
     notifications: {
         count: number;
-        upcoming: Array<{
-            id: string;
-            anggota_nama: string;
-            tanggal_jatuh_tempo: string;
-            total_tagihan: number;
-            label: string;
-        }>;
-        overdue: Array<{
-            id: string;
-            anggota_nama: string;
-            tanggal_jatuh_tempo: string;
-            total_tagihan: number;
-            label: string;
-        }>;
-        overdue_count: number;
+        angsuran: {
+            count: number;
+            overdue_count: number;
+            upcoming_count: number;
+            overdue: Array<{
+                id: string;
+                type: string;
+                anggota_nama: string;
+                tanggal: string;
+                nominal: number;
+                label: string;
+                url: string;
+            }>;
+            upcoming: Array<{
+                id: string;
+                type: string;
+                anggota_nama: string;
+                tanggal: string;
+                nominal: number;
+                label: string;
+                url: string;
+            }>;
+        };
+        deposito: {
+            count: number;
+            reminders: Array<{
+                id: string;
+                type: string;
+                anggota_nama: string;
+                tanggal: string;
+                nominal: number;
+                label: string;
+                url: string;
+            }>;
+        };
     };
 };
 

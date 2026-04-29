@@ -388,7 +388,7 @@ export default function PinjamanTerlambat({
 
     return (
         <>
-            <Head title="Data Angsuran" />
+            <Head title="Angsuran Pinjaman" />
 
             <div className="space-y-4">
                 <header className="flex flex-col gap-2 rounded-lg bg-white p-6 shadow">
@@ -408,5 +408,5 @@ export default function PinjamanTerlambat({
 }
 
 PinjamanTerlambat.layout = (page: ReactElement) => (
-    <DashboardLayout title="Data Terlambat">{page}</DashboardLayout>
+    <DashboardLayout title="Angsuran Pinjaman">{page}</DashboardLayout>
 );
