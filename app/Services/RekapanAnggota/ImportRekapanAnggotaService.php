@@ -204,6 +204,27 @@ class ImportRekapanAnggotaService
 
     /**
      * @param  array<int, array<int, mixed>>  $rows
+     */
+    private function isMonthlyHeaderBlockValid(array $rows, int $startColumnIndex): bool
+    {
+        $expectedPatterns = [
+            0 => '/angsuran/i',
+            1 => '/wajib/i',
+            2 => '/sukarela/i',
+        ];
+
+        foreach ($expectedPatterns as $offset => $pattern) {
+            $headerValue = $this->normalizeText($rows[self::HEADER_ROW - 1][$startColumnIndex + $offset] ?? null);
+            if ($headerValue === null || preg_match($pattern, $headerValue) !== 1) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @param  array<int, array<int, mixed>>  $rows
      * @return array<string, mixed>
      */
     private function parseSheet(string $sheetName, array $rows, int $tableRowLimit): array
@@ -258,9 +279,18 @@ class ImportRekapanAnggotaService
             }
 
             $bulanan = [];
+            $bulanKe = 1;
 
-            for ($bulanKe = 1; $bulanKe <= $tenorBulan; $bulanKe++) {
+            while (true) {
                 $startColumnIndex = 9 + (($bulanKe - 1) * 3);
+
+                if ($startColumnIndex >= count($row)) {
+                    break;
+                }
+
+                if (!$this->isMonthlyHeaderBlockValid($rows, $startColumnIndex)) {
+                    break;
+                }
 
                 $angsuranDibayar = $this->normalizeAmount($row[$startColumnIndex] ?? null);
                 $simpananWajibDibayar = $this->normalizeAmount($row[$startColumnIndex + 1] ?? null);
@@ -271,6 +301,7 @@ class ImportRekapanAnggotaService
                     && $simpananWajibDibayar === null
                     && $simpananSukarelaDibayar === null
                 ) {
+                    $bulanKe++;
                     continue;
                 }
 
@@ -284,6 +315,8 @@ class ImportRekapanAnggotaService
                     'simpanan_wajib_dibayar' => $simpananWajibDibayar,
                     'simpanan_sukarela_dibayar' => $simpananSukarelaDibayar,
                 ];
+
+                $bulanKe++;
             }
 
             $rowsValid++;
