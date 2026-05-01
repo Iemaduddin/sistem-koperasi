@@ -5,10 +5,14 @@ namespace App\Http\Controllers;
 use App\Exports\RekapanAnggota\RekapanAnggotaExport;
 use App\Http\Requests\RekapanAnggota\ImportRekapanAnggotaRequest;
 use App\Models\Anggota;
+use App\Models\AngsuranPinjaman;
+use App\Models\Pinjaman;
+use App\Models\RekeningSimpanan;
 use App\Services\RekapanAnggota\ImportRekapanAnggotaService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -80,89 +84,115 @@ class RekapanAnggotaController extends Controller
      */
     private function buildRekapanData(): array
     {
-        $monthKeys = [];
-
         $anggotaRecords = Anggota::query()
-            ->select(
-                'anggota.id',
-                'anggota.no_anggota',
-                'anggota.nama',
-                'anggota.tanggal_bergabung'
-            )
-            ->with([
-                'rekeningSimpanan' => function ($query) {
-                    $query->select('id', 'anggota_id', 'jenis_simpanan_id', 'saldo')
-                        ->with([
-                            'transaksi' => function ($transaksiQuery) {
-                                $transaksiQuery->select(
-                                    'id',
-                                    'rekening_simpanan_id',
-                                    'batch_id',
-                                    'jenis_transaksi',
-                                    'jumlah',
-                                    'created_at'
-                                )->with([
-                                    'batch:id,tanggal_transaksi',
-                                ]);
-                            },
-                        ]);
-                },
-                'pinjaman' => function ($query) {
-                    $query->select(
-                        'id',
-                        'anggota_id',
-                        'jumlah_pinjaman',
-                        'jumlah_angsuran',
-                        'tenor_bulan',
-                        'status'
-                    )->with([
-                        'angsuran:id,pinjaman_id,jumlah_dibayar',
-                        'transaksi:id,pinjaman_id,jumlah_bayar,tanggal_bayar',
-                    ]);
-                },
-            ])
-            ->orderBy('anggota.no_anggota')
+            ->select('id', 'no_anggota', 'nama', 'tanggal_bergabung')
+            ->orderBy('no_anggota')
             ->get();
 
-        $anggotaList = $anggotaRecords->map(function ($anggota) {
-                // Get savings by type from rekening_simpanan
-                $simpananPokok = $anggota->rekeningSimpanan
-                    ->where('jenis_simpanan_id', 1)
-                    ->sum('saldo');
-                $simpananWajib = $anggota->rekeningSimpanan
-                    ->where('jenis_simpanan_id', 2)
-                    ->sum('saldo');
-                $simpananSukarela = $anggota->rekeningSimpanan
-                    ->where('jenis_simpanan_id', 3)
-                    ->sum('saldo');
+        $rekeningSimpananByAnggota = RekeningSimpanan::query()
+            ->select('id', 'anggota_id', 'jenis_simpanan_id', 'saldo')
+            ->orderBy('anggota_id')
+            ->get()
+            ->groupBy('anggota_id');
 
-                // Get loan data
-                $pinjamanTotal = $anggota->pinjaman->sum('jumlah_pinjaman');
-                $totalAngsuran = $anggota->pinjaman
-                    ->flatMap(fn ($pinjaman) => $pinjaman->angsuran)
-                    ->sum('jumlah_dibayar');
+        $pinjamanByAnggota = Pinjaman::query()
+            ->select(
+                'id',
+                'anggota_id',
+                'jumlah_pinjaman',
+                'jumlah_angsuran',
+                'tenor_bulan',
+                'status',
+                'tanggal_mulai',
+            )
+            ->orderBy('anggota_id')
+            ->orderBy('tanggal_mulai')
+            ->orderBy('created_at')
+            ->get()
+            ->groupBy('anggota_id');
 
-                $hasActiveLoan = $anggota->pinjaman
-                    ->contains(fn ($pinjaman) => $pinjaman->status === 'aktif');
+        $totalAngsuranByAnggota = AngsuranPinjaman::query()
+            ->join('pinjaman', 'pinjaman.id', '=', 'angsuran_pinjaman.pinjaman_id')
+            ->select('pinjaman.anggota_id as anggota_id', DB::raw('SUM(angsuran_pinjaman.jumlah_dibayar) as total_angsuran'))
+            ->groupBy('pinjaman.anggota_id')
+            ->pluck('total_angsuran', 'anggota_id');
 
-                return [
-                    'id' => $anggota->id,
-                    'no_anggota' => $anggota->no_anggota,
-                    'nama' => $anggota->nama,
-                    'tanggal_masuk' => $anggota->tanggal_bergabung?->format('d-m-Y'),
-                    'simpanan_pokok' => (int) $simpananPokok,
-                    'simpanan_wajib' => (int) $simpananWajib,
-                    'simpanan_sukarela' => (int) $simpananSukarela,
-                    'pinjaman_pokok' => (int) ($anggota->pinjaman->first()?->jumlah_pinjaman ?? 0),
-                    'pinjaman_total' => (int) $pinjamanTotal,
-                    'angsuran_terbayar' => (int) $totalAngsuran,
-                    'sisa_pinjaman' => max(0, (int) $pinjamanTotal - (int) $totalAngsuran),
-                    'status' => $hasActiveLoan ? 'AKTIF' : 'LUNAS',
-                ];
-            });
+        $transaksiPinjamanByAnggota = Pinjaman::query()
+            ->join('transaksi_pinjaman', 'transaksi_pinjaman.pinjaman_id', '=', 'pinjaman.id')
+            ->select(
+                'pinjaman.anggota_id as anggota_id',
+                'transaksi_pinjaman.jumlah_bayar as jumlah_bayar',
+                'transaksi_pinjaman.tanggal_bayar as tanggal_bayar',
+            )
+            ->orderBy('pinjaman.anggota_id')
+            ->orderBy('transaksi_pinjaman.tanggal_bayar')
+            ->get()
+            ->groupBy('anggota_id');
 
-        $anggotaDetailRows = $anggotaRecords->map(function ($anggota) use (&$monthKeys) {
-            $pinjamanPertama = $anggota->pinjaman->first();
+        $transaksiSimpananByAnggota = RekeningSimpanan::query()
+            ->join('transaksi_simpanan', 'transaksi_simpanan.rekening_simpanan_id', '=', 'rekening_simpanan.id')
+            ->leftJoin('transaksi_simpanan_batch as batch', 'batch.id', '=', 'transaksi_simpanan.batch_id')
+            ->select(
+                'rekening_simpanan.anggota_id as anggota_id',
+                'rekening_simpanan.jenis_simpanan_id as jenis_simpanan_id',
+                'transaksi_simpanan.jumlah as jumlah',
+                DB::raw('COALESCE(batch.tanggal_transaksi, transaksi_simpanan.created_at) as tanggal_transaksi'),
+            )
+            ->orderBy('rekening_simpanan.anggota_id')
+            ->orderBy('transaksi_simpanan.created_at')
+            ->get()
+            ->groupBy('anggota_id');
+
+        $anggotaList = $anggotaRecords->map(function ($anggota) use (
+            $rekeningSimpananByAnggota,
+            $pinjamanByAnggota,
+            $totalAngsuranByAnggota,
+        ) {
+            $rekeningSimpanan = $rekeningSimpananByAnggota->get($anggota->id, collect());
+            $pinjaman = $pinjamanByAnggota->get($anggota->id, collect());
+
+            $simpananPokok = $rekeningSimpanan
+                ->where('jenis_simpanan_id', 1)
+                ->sum(fn ($item) => (float) $item->saldo);
+            $simpananWajib = $rekeningSimpanan
+                ->where('jenis_simpanan_id', 2)
+                ->sum(fn ($item) => (float) $item->saldo);
+            $simpananSukarela = $rekeningSimpanan
+                ->where('jenis_simpanan_id', 3)
+                ->sum(fn ($item) => (float) $item->saldo);
+
+            $pinjamanTotal = $pinjaman->sum(fn ($item) => (float) $item->jumlah_pinjaman);
+            $totalAngsuran = (float) ($totalAngsuranByAnggota[$anggota->id] ?? 0);
+            $hasActiveLoan = $pinjaman->contains(fn ($item) => $item->status === 'aktif');
+            $pinjamanPertama = $pinjaman->first();
+
+            return [
+                'id' => $anggota->id,
+                'no_anggota' => $anggota->no_anggota,
+                'nama' => $anggota->nama,
+                'tanggal_masuk' => $anggota->tanggal_bergabung?->format('d-m-Y'),
+                'simpanan_pokok' => (int) $simpananPokok,
+                'simpanan_wajib' => (int) $simpananWajib,
+                'simpanan_sukarela' => (int) $simpananSukarela,
+                'pinjaman_pokok' => (int) ($pinjamanPertama?->jumlah_pinjaman ?? 0),
+                'pinjaman_total' => (int) $pinjamanTotal,
+                'angsuran_terbayar' => (int) $totalAngsuran,
+                'sisa_pinjaman' => max(0, (int) $pinjamanTotal - (int) $totalAngsuran),
+                'status' => $hasActiveLoan ? 'AKTIF' : 'LUNAS',
+            ];
+        });
+
+        $monthKeys = [];
+
+        $anggotaDetailRows = $anggotaRecords->map(function ($anggota) use (
+            $rekeningSimpananByAnggota,
+            $pinjamanByAnggota,
+            $transaksiPinjamanByAnggota,
+            $transaksiSimpananByAnggota,
+            &$monthKeys,
+        ) {
+            $pinjaman = $pinjamanByAnggota->get($anggota->id, collect());
+            $pinjamanPertama = $pinjaman->first();
             $monthlyMap = [];
             $tanggalMasukKey = $anggota->tanggal_bergabung?->toDateString();
             $tanggalMasukMonthKey = $anggota->tanggal_bergabung?->format('Y-m');
@@ -172,81 +202,73 @@ class RekapanAnggotaController extends Controller
                 3 => 0.0,
             ];
 
-            foreach ($anggota->pinjaman as $pinjaman) {
-                foreach ($pinjaman->transaksi as $transaksiPinjaman) {
-                    if (! $transaksiPinjaman->tanggal_bayar) {
-                        continue;
-                    }
-
-                    $key = Carbon::parse($transaksiPinjaman->tanggal_bayar)->format('Y-m');
-
-                    if ($tanggalMasukMonthKey !== null && $key === $tanggalMasukMonthKey) {
-                        continue;
-                    }
-
-                    $monthKeys[$key] = true;
-
-                    if (! isset($monthlyMap[$key])) {
-                        $monthlyMap[$key] = [
-                            'month_key' => $key,
-                            'angsuran' => 0,
-                            'wajib' => 0,
-                            'sukarela' => 0,
-                        ];
-                    }
-
-                    $monthlyMap[$key]['angsuran'] += (float) $transaksiPinjaman->jumlah_bayar;
+            foreach ($transaksiPinjamanByAnggota->get($anggota->id, collect()) as $transaksiPinjaman) {
+                if (! $transaksiPinjaman->tanggal_bayar) {
+                    continue;
                 }
+
+                $key = Carbon::parse($transaksiPinjaman->tanggal_bayar)->format('Y-m');
+
+                if ($tanggalMasukMonthKey !== null && $key === $tanggalMasukMonthKey) {
+                    continue;
+                }
+
+                $monthKeys[$key] = true;
+
+                if (! isset($monthlyMap[$key])) {
+                    $monthlyMap[$key] = [
+                        'month_key' => $key,
+                        'angsuran' => 0,
+                        'wajib' => 0,
+                        'sukarela' => 0,
+                    ];
+                }
+
+                $monthlyMap[$key]['angsuran'] += (float) $transaksiPinjaman->jumlah_bayar;
             }
 
-            foreach ($anggota->rekeningSimpanan as $rekening) {
-                foreach ($rekening->transaksi as $transaksiSimpanan) {
-                    $tanggalTransaksi = $transaksiSimpanan->batch?->tanggal_transaksi
-                        ?? $transaksiSimpanan->created_at;
+            foreach ($transaksiSimpananByAnggota->get($anggota->id, collect()) as $transaksiSimpanan) {
+                $tanggalTransaksi = $transaksiSimpanan->tanggal_transaksi;
 
-                    if (! $tanggalTransaksi) {
-                        continue;
-                    }
+                if (! $tanggalTransaksi) {
+                    continue;
+                }
 
-                    $key = Carbon::parse($tanggalTransaksi)->format('Y-m');
-                    $tanggalTransaksiDate = Carbon::parse($tanggalTransaksi)->toDateString();
+                $key = Carbon::parse($tanggalTransaksi)->format('Y-m');
+                $tanggalTransaksiDate = Carbon::parse($tanggalTransaksi)->toDateString();
 
-                    $signedJumlah = (float) $transaksiSimpanan->jumlah;
-                    if ($transaksiSimpanan->jenis_transaksi === 'tarik') {
-                        $signedJumlah *= -1;
-                    }
+                $signedJumlah = (float) $transaksiSimpanan->jumlah;
 
-                    $jenisId = (int) $rekening->jenis_simpanan_id;
-                    if (
-                        $tanggalMasukKey !== null
-                        && $tanggalTransaksiDate === $tanggalMasukKey
-                        && array_key_exists($jenisId, $simpananAwalByJenis)
-                    ) {
-                        $simpananAwalByJenis[$jenisId] += $signedJumlah;
-                    }
+                $jenisId = (int) $transaksiSimpanan->jenis_simpanan_id;
+                if (
+                    $tanggalMasukKey !== null
+                    && $tanggalTransaksiDate === $tanggalMasukKey
+                    && array_key_exists($jenisId, $simpananAwalByJenis)
+                ) {
+                    $simpananAwalByJenis[$jenisId] += $signedJumlah;
+                }
 
-                    if ($tanggalMasukMonthKey !== null && $key === $tanggalMasukMonthKey) {
-                        continue;
-                    }
+                if ($tanggalMasukMonthKey !== null && $key === $tanggalMasukMonthKey) {
+                    continue;
+                }
 
-                    $monthKeys[$key] = true;
+                $monthKeys[$key] = true;
 
-                    if (! isset($monthlyMap[$key])) {
-                        $monthlyMap[$key] = [
-                            'month_key' => $key,
-                            'angsuran' => 0,
-                            'wajib' => 0,
-                            'sukarela' => 0,
-                        ];
-                    }
+                if (! isset($monthlyMap[$key])) {
+                    $monthlyMap[$key] = [
+                        'month_key' => $key,
+                        'angsuran' => 0,
+                        'wajib' => 0,
+                        'sukarela' => 0,
+                    ];
+                }
 
-                    if ($jenisId === 2) {
-                        $monthlyMap[$key]['wajib'] += $signedJumlah;
-                    }
+                if ($jenisId === 2) {
+                    $monthlyMap[$key]['wajib'] += $signedJumlah;
+                }
 
-                    if ($jenisId === 3) {
-                        $monthlyMap[$key]['sukarela'] += $signedJumlah;
-                    }
+                if ($jenisId === 3) {
+                    $monthlyMap[$key]['sukarela'] += $signedJumlah;
                 }
             }
 
@@ -270,6 +292,7 @@ class RekapanAnggotaController extends Controller
         });
 
         ksort($monthKeys);
+
         $monthColumns = array_map(function (string $key) {
             $month = Carbon::createFromFormat('Y-m', $key);
 

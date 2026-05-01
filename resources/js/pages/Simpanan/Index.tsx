@@ -14,6 +14,7 @@ import {
     initialSimpananForm,
     type AnggotaOption,
     type RekeningSimpananOption,
+    type PaginatedSimpanan,
     type SimpananForm,
     type SimpananPageProps,
 } from './types';
@@ -66,7 +67,21 @@ function formatIdr(value: number): string {
 export default function SimpananIndex() {
     const { props } = usePage<{ props: SimpananPageProps }>();
     const pageProps = props as unknown as SimpananPageProps;
-    const rows = pageProps.simpanan ?? [];
+    const rawSimpanan = pageProps.simpanan ?? [];
+    const isPaginatedSimpanan = (
+        value: SimpananPageProps['simpanan'],
+    ): value is PaginatedSimpanan => {
+        return !Array.isArray(value) && value !== null && 'data' in value;
+    };
+
+    const rows = Array.isArray(rawSimpanan)
+        ? rawSimpanan
+        : isPaginatedSimpanan(rawSimpanan)
+          ? rawSimpanan.data
+          : [];
+    const simpananMeta = isPaginatedSimpanan(rawSimpanan)
+        ? rawSimpanan.meta
+        : null;
     const rekeningKoperasiData = pageProps.rekening_koperasi ?? [];
 
     const [anggotaData, setAnggotaData] = useState<AnggotaOption[]>([]);
@@ -444,6 +459,14 @@ export default function SimpananIndex() {
         );
     };
 
+    const goToPage = (page: number) => {
+        router.get(
+            '/simpanan',
+            { page },
+            { preserveState: true, preserveScroll: true },
+        );
+    };
+
     return (
         <>
             <Head title="Simpanan" />
@@ -469,6 +492,44 @@ export default function SimpananIndex() {
                     rekeningSimpananData={rekeningSimpananData}
                     onRequestTarik={openTarikModal}
                 />
+                {simpananMeta && (
+                    <div className="mt-4 flex items-center justify-between">
+                        <div className="flex gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                disabled={!simpananMeta.prev_page_url}
+                                onClick={() =>
+                                    goToPage(
+                                        Math.max(
+                                            1,
+                                            (simpananMeta.current_page ?? 1) -
+                                                1,
+                                        ),
+                                    )
+                                }
+                            >
+                                Sebelumnya
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                disabled={!simpananMeta.next_page_url}
+                                onClick={() =>
+                                    goToPage(
+                                        (simpananMeta.current_page ?? 1) + 1,
+                                    )
+                                }
+                            >
+                                Berikutnya
+                            </Button>
+                        </div>
+                        <div className="text-sm text-gray-600">
+                            Halaman {simpananMeta.current_page ?? 1} dari{' '}
+                            {simpananMeta.last_page ?? 1}
+                        </div>
+                    </div>
+                )}
             </section>
 
             <Modal

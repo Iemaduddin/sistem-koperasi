@@ -23,14 +23,23 @@ class SimpananService
     public function getIndexData(): array
     {
         return [
+            // Use pagination to avoid loading all rows at once and limit eager-loaded fields
             'simpanan' => Simpanan::with([
-                'rekeningSimpanan.anggota',
-                'rekeningSimpanan.jenisSimpanan',
-                'batch.anggota',
-                'batch.user',
+                'rekeningSimpanan' => function ($q) {
+                    $q->with([
+                        'anggota' => fn($q2) => $q2->select('id', 'no_anggota', 'nama'),
+                        'jenisSimpanan' => fn($q2) => $q2->select('id', 'kode', 'nama', 'jumlah_maksimum'),
+                    ])->select('id', 'anggota_id', 'jenis_simpanan_id', 'saldo');
+                },
+                'batch' => function ($q) {
+                    $q->with([
+                        'anggota' => fn($q2) => $q2->select('id', 'no_anggota', 'nama'),
+                        'user' => fn($q2) => $q2->select('id', 'name'),
+                    ])->select('id', 'anggota_id', 'user_id');
+                },
             ])
                 ->latest('created_at')
-                ->get(),
+                ->paginate(25),
             'rekening_koperasi' => RekeningKoperasi::query()
                 ->orderBy('nama')
                 ->get(['id', 'nama', 'jenis', 'nomor_rekening', 'saldo']),
@@ -55,10 +64,14 @@ class SimpananService
      */
     public function getRekeningSimpananForForm(): Collection
     {
+        // Limit returned fields and eager-load only necessary columns for the form
         return RekeningSimpanan::query()
-            ->with(['anggota', 'jenisSimpanan'])
+            ->with([
+                'anggota' => fn($q) => $q->select('id', 'no_anggota', 'nama'),
+                'jenisSimpanan' => fn($q) => $q->select('id', 'kode', 'nama', 'jumlah_maksimum'),
+            ])
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get(['id', 'anggota_id', 'jenis_simpanan_id', 'saldo', 'created_at']);
     }
 
     public function create(array $data): Simpanan
