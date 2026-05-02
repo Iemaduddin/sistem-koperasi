@@ -139,7 +139,7 @@ class ImportRekapanAnggotaService
     private function validateSheetHeader(string $sheetName, array $rows): array
     {
         $expectedColumns = [
-            ['index' => 0, 'expected' => 'No Anggota', 'pattern' => '/no\s*anggota|anggota\s*no/i'],
+            ['index' => 0, 'expected' => 'Nomor', 'pattern' => '/nomor/i'],
             ['index' => 1, 'expected' => 'Nama', 'pattern' => '/nama/i'],
             ['index' => 2, 'expected' => 'Tanggal Masuk', 'pattern' => '/tanggal\s*masuk|tgl\s*masuk/i'],
             ['index' => 3, 'expected' => 'Pinjaman', 'pattern' => '/pinjaman/i'],
@@ -484,11 +484,9 @@ class ImportRekapanAnggotaService
                 );
 
                 $pinjaman = $this->upsertPinjaman($anggota, $row);
-                if ($pinjaman === null) {
-                    continue;
-                }
 
-                if ($pinjaman->wasRecentlyCreated) {
+
+                if ($pinjaman !== null && $pinjaman->wasRecentlyCreated) {
                     $summary['pinjaman_created']++;
                     
                     // Record Cash Out for Loan Disbursement
@@ -510,20 +508,32 @@ class ImportRekapanAnggotaService
                     }
                 }
 
-                $angsuranByKe = $this->syncAngsuranPinjaman($pinjaman, $row, $summary);
+                $angsuranByKe = $pinjaman !== null ? $this->syncAngsuranPinjaman($pinjaman, $row, $summary) : [];
 
                 $entryBulanan = (array) ($row['entry_bulanan_detail'] ?? []);
                 foreach ($entryBulanan as $entry) {
                     $bulanKe = (int) ($entry['bulan_ke'] ?? 0);
-                    if ($bulanKe <= 0 || !isset($angsuranByKe[$bulanKe])) {
+                    if ($bulanKe <= 0) {
                         continue;
                     }
 
                     $tanggalBayar = Carbon::parse((string) ($entry['tanggal'] ?? $tanggalMasuk->copy()->addMonths($bulanKe)->toDateString()));
-                    $angsuran = $angsuranByKe[$bulanKe];
+                    $angsuran = $angsuranByKe[$bulanKe] ?? null;
                     $jumlahBayar = $this->toAmount($entry['angsuran_dibayar'] ?? null);
 
-                    if ($jumlahBayar > 0) {
+                    if ($jumlahBayar > 0 && $pinjaman !== null) {
+                        if ($angsuran === null || $angsuran->status === 'lunas') {
+                            $angsuran = null;
+                            foreach ($angsuranByKe as $a) {
+                                if ($a->status !== 'lunas') {
+                                    $angsuran = $a;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if ($jumlahBayar > 0 && $angsuran !== null && $pinjaman !== null) {
                         $transaksiPinjaman = TransaksiPinjaman::query()->firstOrCreate(
                             [
                                 'pinjaman_id' => $pinjaman->id,
@@ -575,7 +585,9 @@ class ImportRekapanAnggotaService
                     );
                 }
 
-                $this->refreshPinjamanStatus($pinjaman);
+                if ($pinjaman !== null) {
+                    $this->refreshPinjamanStatus($pinjaman);
+                }
             }
 
             return $summary;
