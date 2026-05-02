@@ -530,6 +530,10 @@ class ImportRekapanAnggotaService
                                     break;
                                 }
                             }
+
+                            if ($angsuran === null && count($angsuranByKe) > 0) {
+                                $angsuran = end($angsuranByKe) ?: null;
+                            }
                         }
                     }
 

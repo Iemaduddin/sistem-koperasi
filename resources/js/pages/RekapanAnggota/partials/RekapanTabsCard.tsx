@@ -48,14 +48,23 @@ export default function RekapanTabsCard({
             return null;
         }
 
-        const parts = value.split('-');
+        const dateStr = value.split('T')[0].split(' ')[0];
+        const parts = dateStr.split('-');
         if (parts.length !== 3) {
             return null;
         }
 
-        const day = Number(parts[0]);
-        const month = Number(parts[1]);
-        const year = Number(parts[2]);
+        let year, month, day;
+
+        if (parts[0].length === 4) {
+            year = Number(parts[0]);
+            month = Number(parts[1]);
+            day = Number(parts[2]);
+        } else {
+            day = Number(parts[0]);
+            month = Number(parts[1]);
+            year = Number(parts[2]);
+        }
 
         if (
             Number.isNaN(day) ||

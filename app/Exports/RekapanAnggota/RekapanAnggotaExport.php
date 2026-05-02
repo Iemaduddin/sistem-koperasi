@@ -43,32 +43,19 @@ class RekapanAnggotaExport implements WithMultipleSheets, WithProperties
         ];
     }
 
-    /**
-     * @return array<int, object>
-     */
     public function sheets(): array
     {
         $sheets = [];
 
         if (! $this->isFiltered) {
-            $years = $this->extractYearsFromRows($this->anggotaDetailRows);
-
-            foreach ($years as $year) {
-                $rowsByYear = array_values(array_filter(
-                    $this->anggotaDetailRows,
-                    fn (array $row): bool => $this->getYearFromTanggalMasuk((string) ($row['tanggal_masuk'] ?? '')) === (string) $year,
-                ));
-
-                $monthsByYear = array_values(array_filter(
-                    $this->monthColumns,
-                    fn (array $month): bool => str_starts_with((string) $month['key'], $year . '-'),
-                ));
-
-                $sheets[] = new RekapanAnggotaDetailSheetExport((string) $year, $rowsByYear, $monthsByYear);
-            }
+            $sheets[] = new RekapanAnggotaDetailSheetExport(
+                'Rekapan Rincian',
+                $this->anggotaDetailRows,
+                $this->monthColumns,
+            );
 
             $sheets[] = new RekapanAnggotaSummarySheetExport(
-                'Rekapan Data Keseluruhan',
+                'Rekapan Keseluruhan',
                 $this->anggotaList,
             );
 
@@ -76,36 +63,25 @@ class RekapanAnggotaExport implements WithMultipleSheets, WithProperties
         }
 
         if ($this->filterMode === 'year' && $this->selectedYear !== null && $this->selectedYear !== '') {
-            $monthsInYear = array_values(array_filter(
-                $this->monthColumns,
-                fn (array $month): bool => str_starts_with((string) $month['key'], $this->selectedYear . '-'),
+            $filteredDetailRows = array_values(array_filter(
+                $this->anggotaDetailRows,
+                fn (array $row): bool => $this->getYearFromTanggalMasuk((string) ($row['tanggal_masuk'] ?? '')) === $this->selectedYear,
             ));
 
-            foreach ($monthsInYear as $month) {
-                $rowsByMonth = array_values(array_filter(
-                    $this->anggotaDetailRows,
-                    fn (array $row): bool => $this->getMonthYearFromTanggalMasuk((string) ($row['tanggal_masuk'] ?? '')) === (string) $month['key'],
-                ));
+            $sheets[] = new RekapanAnggotaDetailSheetExport(
+                'Rincian Tahun ' . $this->selectedYear,
+                $filteredDetailRows,
+                $this->monthColumns,
+            );
 
-                if (count($rowsByMonth) === 0) {
-                    continue;
-                }
-
-                $sheets[] = new RekapanAnggotaDetailSheetExport(
-                    (string) $month['label'],
-                    $rowsByMonth,
-                    [$month],
-                );
-            }
-
-            $summaryRows = array_values(array_filter(
+            $filteredSummaryRows = array_values(array_filter(
                 $this->anggotaList,
                 fn (array $row): bool => $this->getYearFromTanggalMasuk((string) ($row['tanggal_masuk'] ?? '')) === $this->selectedYear,
             ));
 
             $sheets[] = new RekapanAnggotaSummarySheetExport(
-                'Rekapan Tahun ' . $this->selectedYear,
-                $summaryRows,
+                'Keseluruhan Tahun ' . $this->selectedYear,
+                $filteredSummaryRows,
             );
 
             return $sheets;
@@ -114,28 +90,25 @@ class RekapanAnggotaExport implements WithMultipleSheets, WithProperties
         $monthKey = $this->selectedMonthYear;
         $monthLabel = $this->resolveMonthLabel($monthKey);
 
-        $detailRows = array_values(array_filter(
+        $filteredDetailRows = array_values(array_filter(
             $this->anggotaDetailRows,
             fn (array $row): bool => $this->getMonthYearFromTanggalMasuk((string) ($row['tanggal_masuk'] ?? '')) === $monthKey,
         ));
 
-        $monthColumn = $this->findMonthColumn($monthKey);
-        $monthColumns = $monthColumn !== null ? [$monthColumn] : [];
-
         $sheets[] = new RekapanAnggotaDetailSheetExport(
-            $monthLabel,
-            $detailRows,
-            $monthColumns,
+            'Rincian ' . $monthLabel,
+            $filteredDetailRows,
+            $this->monthColumns,
         );
 
-        $summaryRows = array_values(array_filter(
+        $filteredSummaryRows = array_values(array_filter(
             $this->anggotaList,
             fn (array $row): bool => $this->getMonthYearFromTanggalMasuk((string) ($row['tanggal_masuk'] ?? '')) === $monthKey,
         ));
 
         $sheets[] = new RekapanAnggotaSummarySheetExport(
-            'Rekapan ' . $monthLabel,
-            $summaryRows,
+            'Keseluruhan ' . $monthLabel,
+            $filteredSummaryRows,
         );
 
         return $sheets;
