@@ -274,7 +274,7 @@ class ImportRekapanAnggotaService
             if ($jumlahPinjaman !== null && $jumlahPinjaman > 0 && $angsuranBulanan !== null) {
                 $pokokPerBulan = round($jumlahPinjaman / $tenorBulan, 2);
                 $bungaPerBulan = round($angsuranBulanan - $pokokPerBulan, 2);
-                $bungaTotal = round($bungaPerBulan * $tenorBulan, 2);
+                $bungaTotal = round($bungaPerBulan * 10, 2);
                 $bungaPersen = $this->normalizeBungaPersen(($bungaTotal / $jumlahPinjaman) * 100);
             }
 

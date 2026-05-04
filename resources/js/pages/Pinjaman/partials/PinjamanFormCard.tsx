@@ -39,9 +39,9 @@ export default function PinjamanFormCard({
     const bunga = Number(formData.bunga_persen) || 0;
     const tenor = Number(formData.tenor_bulan) || 1;
     const bungaTotal = (jumlah * bunga) / 100;
-    const bungaPerBulan = bungaTotal / tenor;
+    const bungaPerBulan = bungaTotal / 10;
     const pokokPerBulan = jumlah / tenor;
-    const angsuranPerBulan = (jumlah + bungaTotal) / tenor;
+    const angsuranPerBulan = (jumlah + (bungaPerBulan * tenor)) / tenor;
 
     return (
         <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">

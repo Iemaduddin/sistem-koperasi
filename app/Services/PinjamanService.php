@@ -127,11 +127,11 @@ class PinjamanService
                 throw new RuntimeException('Saldo rekening koperasi tidak mencukupi untuk pencairan pinjaman.');
             }
 
-            // Hitung angsuran per bulan flat
+            // Hitung angsuran per bulan sesuai rumus: total_bunga / 10
             $bungaTotal       = round($jumlah * ($bungaPersen / 100), 2);
-            $bungaPerBulan    = round($bungaTotal / $tenorBulan, 2);
+            $bungaPerBulan    = round($bungaTotal / 10, 2);
             $pokokPerBulan    = round($jumlah / $tenorBulan, 2);
-            $angsuranPerBulan = round(($jumlah + $bungaTotal) / $tenorBulan, 2);
+            $angsuranPerBulan = round(($jumlah + ($bungaPerBulan * $tenorBulan)) / $tenorBulan, 2);
 
             $pinjaman = Pinjaman::query()->create([
                 'anggota_id'      => $data['anggota_id'],
