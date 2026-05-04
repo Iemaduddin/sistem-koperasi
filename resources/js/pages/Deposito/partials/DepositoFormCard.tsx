@@ -31,7 +31,7 @@ export default function DepositoFormCard({
     return (
         <article className="rounded-xl border border-slate-200 bg-white p-4">
             <h2 className="text-base font-semibold text-slate-900">
-                Tambah Simpanan Deposito
+                Tambah Tabungan Berjangka
             </h2>
             <p className="mt-1 text-sm text-slate-600">
                 Alur: pilih rekening koperasi, pilih anggota, isi saldo, pilih
@@ -64,7 +64,7 @@ export default function DepositoFormCard({
                             searchable
                             helperText={
                                 isBlockedBySimpananRequirement
-                                    ? 'Anggota dapat diganti, namun transaksi deposito dikunci sampai simpanan pokok/wajib terpenuhi.'
+                                    ? 'Anggota dapat diganti, namun transaksi tabungan berjangka dikunci sampai simpanan pokok/wajib terpenuhi.'
                                     : undefined
                             }
                             required
@@ -72,7 +72,7 @@ export default function DepositoFormCard({
                     </div>
 
                     <FloatingInput
-                        label="Saldo Deposito"
+                        label="Saldo Tabungan Berjangka"
                         type="rupiah"
                         value={formData.saldo}
                         onCurrencyValueChange={(value) =>
@@ -139,7 +139,7 @@ export default function DepositoFormCard({
                             isSubmitting || isBlockedBySimpananRequirement
                         }
                     >
-                        Simpan Deposito
+                        Simpan Tabungan Berjangka
                     </Button>
                 </div>
             </form>

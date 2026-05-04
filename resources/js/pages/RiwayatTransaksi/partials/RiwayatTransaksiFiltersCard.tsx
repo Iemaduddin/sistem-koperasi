@@ -63,7 +63,7 @@ export default function RiwayatTransaksiFiltersCard({
                             },
                             {
                                 value: 'deposito',
-                                label: 'Simpanan Deposito',
+                                label: 'Tabungan Berjangka',
                             },
                         ]}
                     />

@@ -27,7 +27,7 @@ export default function GuestPortalHistory() {
             },
             {
                 id: 'deposito',
-                label: 'Deposito',
+                label: 'Tabungan Berjangka',
                 badge: pageProps.summary.total_deposito,
                 content: <DepositoTab items={pageProps.deposito} />,
             },

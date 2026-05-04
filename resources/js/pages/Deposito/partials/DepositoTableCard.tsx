@@ -135,7 +135,7 @@ export default function DepositoTableCard({ rows }: Props) {
                         onClick={() => setSelectedRow(row)}
                         leftIcon={<LuEye className="h-4 w-4" />}
                     >
-                        Lihat Rincian Deposito
+                        Lihat Rincian Tabungan Berjangka
                     </Button>
                 ),
             },
@@ -256,7 +256,7 @@ export default function DepositoTableCard({ rows }: Props) {
         <>
             <article className="rounded-xl border border-slate-200 bg-white p-4">
                 <h2 className="text-base font-semibold text-slate-900">
-                    Daftar Simpanan Deposito
+                    Daftar Tabungan Berjangka
                 </h2>
 
                 <div className="mt-4">
@@ -266,7 +266,7 @@ export default function DepositoTableCard({ rows }: Props) {
                         getRowId={(row) => row.id}
                         selectable={false}
                         searchPlaceholder="Cari no. anggota atau nama..."
-                        emptyMessage="Belum ada data simpanan deposito."
+                        emptyMessage="Belum ada data tabungan berjangka."
                     />
                 </div>
             </article>

@@ -475,12 +475,12 @@ const menuSections: SidebarSection[] = [
             },
             {
                 id: 'deposito',
-                label: 'Deposito',
+                label: 'Tabungan Berjangka',
                 icon: TbCashRegister,
                 children: [
                     {
                         id: 'daftar-deposito',
-                        label: 'Daftar Deposito',
+                        label: 'Daftar Tabungan Berjangka',
                         routeName: 'deposito.index',
                     },
                     {

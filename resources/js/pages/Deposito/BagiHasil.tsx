@@ -146,7 +146,7 @@ export default function JatuhTempoDeposito({ reminder_bagi_hasil }: Props) {
                         size="sm"
                         onClick={() => router.visit('/deposito')}
                     >
-                        Detail Deposito
+                        Detail Tabungan Berjangka
                     </Button>
                 ),
                 sortable: false,
@@ -157,7 +157,7 @@ export default function JatuhTempoDeposito({ reminder_bagi_hasil }: Props) {
 
     return (
         <>
-            <Head title="Reminder Pencairan Deposito" />
+            <Head title="Reminder Pencairan Tabungan Berjangka" />
 
             <div className="space-y-4">
                 <header className="rounded-lg bg-white p-6 shadow">
@@ -167,10 +167,10 @@ export default function JatuhTempoDeposito({ reminder_bagi_hasil }: Props) {
                                 Reminder Koperasi
                             </p>
                             <h1 className="text-2xl font-bold text-slate-900">
-                                Pencairan Bagi Hasil Deposito Bulanan
+                                Pencairan Bagi Hasil Tabungan Berjangka Bulanan
                             </h1>
                             <p className="max-w-3xl text-sm text-slate-500">
-                                Menampilkan deposito yang jatuh tempo pada bulan
+                                Menampilkan tabungan berjangka yang jatuh tempo pada bulan
                                 ini, beserta sisa hari menuju pencairan dan
                                 total dana yang harus dipersiapkan koperasi.
                             </p>
@@ -210,7 +210,7 @@ export default function JatuhTempoDeposito({ reminder_bagi_hasil }: Props) {
                             getRowId={(row) => `deposito-reminder-${row.id}`}
                             selectable={false}
                             searchPlaceholder="Cari nama/no anggota..."
-                            emptyMessage="Tidak ada pencairan deposito yang perlu diingat pada periode ini."
+                            emptyMessage="Tidak ada pencairan tabungan berjangka yang perlu diingat pada periode ini."
                         />
                     </div>
                 </section>
@@ -220,7 +220,7 @@ export default function JatuhTempoDeposito({ reminder_bagi_hasil }: Props) {
 }
 
 JatuhTempoDeposito.layout = (page: ReactElement) => (
-    <DashboardLayout title="Reminder Pencairan Deposito">
+    <DashboardLayout title="Reminder Pencairan Tabungan Berjangka">
         {page}
     </DashboardLayout>
 );

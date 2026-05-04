@@ -138,12 +138,12 @@ export default function DepositoTab({ items }: DepositoTabProps) {
                 ))}
             </div>
         ) : (
-            <EmptyState message="Deposito ini belum memiliki log bagi hasil." />
+            <EmptyState message="Tabungan berjangka ini belum memiliki log bagi hasil." />
         )
     ) : null;
 
     if (items.length === 0) {
-        return <EmptyState message="Belum ada transaksi deposito." />;
+        return <EmptyState message="Belum ada transaksi tabungan berjangka." />;
     }
 
     return (
@@ -153,8 +153,8 @@ export default function DepositoTab({ items }: DepositoTabProps) {
                 columns={columns}
                 getRowId={(row) => row.id}
                 selectable={false}
-                searchPlaceholder="Cari status deposito..."
-                emptyMessage="Tidak ada transaksi deposito."
+                searchPlaceholder="Cari status tabungan berjangka..."
+                emptyMessage="Tidak ada transaksi tabungan berjangka."
             />
 
             {selectedDeposito ? (
@@ -165,12 +165,12 @@ export default function DepositoTab({ items }: DepositoTabProps) {
                     <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
                             <p className="text-xs font-semibold tracking-wide text-violet-700 uppercase">
-                                Detail Log Deposito
+                                Detail Log Tabungan Berjangka
                             </p>
                             <h3 className="mt-1 text-lg font-semibold text-slate-900">
                                 {selectedDeposito.tanggal_mulai
                                     ? `${formatDateOnly(selectedDeposito.tanggal_mulai)} - ${formatDateOnly(selectedDeposito.tanggal_selesai)}`
-                                    : 'Periode Deposito'}
+                                    : 'Periode Tabungan Berjangka'}
                             </h3>
                             <p className="mt-1 text-sm text-slate-600">
                                 Saldo {formatCurrency(selectedDeposito.saldo)} ·{' '}

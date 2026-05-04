@@ -268,7 +268,7 @@ export default function DepositoIndex() {
 
     return (
         <>
-            <Head title="Deposito" />
+            <Head title="Tabungan Berjangka" />
 
             <section className="space-y-4">
                 <DepositoFormCard
@@ -286,7 +286,7 @@ export default function DepositoIndex() {
 
                 <section className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
                     <h2 className="text-base font-semibold">
-                        Ringkasan Bagi Hasil Deposito
+                        Ringkasan Bagi Hasil Tabungan Berjangka
                     </h2>
                     <div className="mt-3 grid gap-3 sm:grid-cols-2">
                         <div className="rounded-lg border border-emerald-200 bg-white p-3">
@@ -314,7 +314,7 @@ export default function DepositoIndex() {
             <Modal
                 open={isRequirementModalOpen}
                 title="Simpanan Pokok/Wajib Belum Terpenuhi"
-                description="Transaksi deposito dinonaktifkan sementara untuk anggota ini."
+                description="Transaksi tabungan berjangka dinonaktifkan sementara untuk anggota ini."
                 onClose={() => setIsRequirementModalOpen(false)}
                 footer={
                     <div className="flex justify-end gap-3">
@@ -354,5 +354,5 @@ export default function DepositoIndex() {
 }
 
 DepositoIndex.layout = (page: ReactElement) => (
-    <DashboardLayout title="Deposito">{page}</DashboardLayout>
+    <DashboardLayout title="Tabungan Berjangka">{page}</DashboardLayout>
 );

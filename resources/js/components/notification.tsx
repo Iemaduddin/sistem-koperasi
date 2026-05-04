@@ -132,7 +132,7 @@ export function NotificationMenu({
                         Notifikasi Koperasi
                     </h3>
                     <p className="px-2 text-xs text-slate-500 md:text-sm">
-                        Angsuran pinjaman dan reminder deposito
+                        Angsuran pinjaman dan reminder tabungan berjangka
                     </p>
                 </div>
             </div>
@@ -158,7 +158,7 @@ export function NotificationMenu({
                             : 'text-slate-600 hover:text-slate-900'
                     }`}
                 >
-                    Deposito
+                    Tabungan Berjangka
                 </button>
             </div>
 
@@ -280,10 +280,10 @@ export function NotificationMenu({
                         <div className="mb-2 flex items-start justify-between gap-2 px-1">
                             <div>
                                 <p className="text-sm font-semibold tracking-wide text-emerald-700 sm:text-lg">
-                                    Deposito
+                                    Tabungan Berjangka
                                 </p>
                                 <p className="text-xs text-slate-500 md:text-sm">
-                                    Pencairan bagi hasil deposito 1-2 hari lagi
+                                    Pencairan bagi hasil tabungan berjangka 1-2 hari lagi
                                 </p>
                             </div>
                             <span className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100 md:text-sm">
@@ -372,7 +372,7 @@ export function NotificationMenu({
                                 }
                                 className="w-full rounded-lg py-2 text-center text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 sm:text-sm"
                             >
-                                Lihat Reminder Deposito
+                                Lihat Reminder Tabungan Berjangka
                             </button>
                         </div>
                     </section>
