@@ -8,6 +8,7 @@ export interface Stats {
     arus_kas: {
         masuk: number;
         keluar: number;
+        aset_mengendap: number;
     };
     aset: {
         total: number;

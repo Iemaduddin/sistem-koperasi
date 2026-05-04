@@ -42,6 +42,16 @@ class DashboardController extends Controller
         $totalRekeningKoperasiAll = (float) \App\Models\RekeningKoperasi::sum('saldo');
         $asetTotal = $totalSimpananAll + $totalRekeningKoperasiAll;
 
+        // --- Metric: Aset Mengendap ---
+        $totalPokokBungaAngsuranBelumLunas = (float) AngsuranPinjaman::where('status', '!=', 'lunas')
+            ->sum(\Illuminate\Support\Facades\DB::raw('pokok + bunga'));
+            
+        $totalDibayarPadaAngsuranBelumLunas = (float) \App\Models\TransaksiPinjaman::whereHas('angsuran', function($q) {
+            $q->where('status', '!=', 'lunas');
+        })->sum('jumlah_bayar');
+        
+        $asetMengendapValue = $totalPokokBungaAngsuranBelumLunas - $totalDibayarPadaAngsuranBelumLunas;
+
         // --- Metric: Kas Masuk & Keluar (Arus Kas) ---
         $kasMasukQuery = \App\Models\TransaksiKasKoperasi::where('jenis', 'masuk');
         $this->applyDateFilter($kasMasukQuery, $startDate, $endDate);
@@ -113,6 +123,7 @@ class DashboardController extends Controller
                 'arus_kas' => [
                     'masuk' => $kasMasukValue,
                     'keluar' => $kasKeluarValue,
+                    'aset_mengendap' => max(0, $asetMengendapValue),
                 ],
                 'aset' => [
                     'total' => $asetTotal,

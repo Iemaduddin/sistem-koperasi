@@ -35,28 +35,38 @@ export default function StatisticCard({ stats }: Props) {
                     <div className="h-4 w-1 rounded-full bg-blue-600"></div>
                     <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Ringkasan Arus Kas</h3>
                 </div>
-                <div className="grid grid-cols-2 gap-6 divide-x divide-slate-100">
+                <div className="grid grid-cols-3 gap-4 divide-x divide-slate-100">
                     <div className="space-y-2">
                         <div className="flex items-center gap-2 text-slate-500">
                             <LuTrendingUp className="text-emerald-500" size={14} />
                             <span className="text-xs font-medium">Pemasukan</span>
                         </div>
                         <div className="flex items-baseline gap-1 text-emerald-600">
-                            <LuArrowUp size={18} className="translate-y-0.5" />
-                            <span className="text-2xl font-bold truncate">{formatCurrency(stats.arus_kas.masuk)}</span>
+                            <LuArrowUp size={16} className="translate-y-0.5 shrink-0" />
+                            <span className="text-xl font-bold truncate" title={formatCurrency(stats.arus_kas.masuk)}>{formatCurrency(stats.arus_kas.masuk)}</span>
                         </div>
-                        <p className="text-[12px] text-slate-400">Total Pemasukan Kas</p>
+                        <p className="text-[11px] text-slate-400">Total Pemasukan Kas</p>
                     </div>
-                    <div className="pl-6 space-y-2">
+                    <div className="pl-4 space-y-2">
+                        <div className="flex items-center gap-2 text-slate-500">
+                            <LuClock className="text-yellow-500" size={14} />
+                            <span className="text-xs font-medium truncate">Aset Mengendap</span>
+                        </div>
+                        <div className="flex items-baseline gap-1 text-yellow-500">
+                            <span className="text-xl font-bold truncate" title={formatCurrency(stats.arus_kas.aset_mengendap)}>{formatCurrency(stats.arus_kas.aset_mengendap)}</span>
+                        </div>
+                        <p className="text-[11px] text-slate-400">Angsuran Belum Lunas</p>
+                    </div>
+                    <div className="pl-4 space-y-2">
                         <div className="flex items-center gap-2 text-slate-500">
                             <LuTrendingDown className="text-rose-500" size={14} />
                             <span className="text-xs font-medium">Pengeluaran</span>
                         </div>
                         <div className="flex items-baseline gap-1 text-rose-600">
-                            <LuArrowDown size={18} className="translate-y-0.5" />
-                            <span className="text-2xl font-bold truncate">{formatCurrency(stats.arus_kas.keluar)}</span>
+                            <LuArrowDown size={16} className="translate-y-0.5 shrink-0" />
+                            <span className="text-xl font-bold truncate" title={formatCurrency(stats.arus_kas.keluar)}>{formatCurrency(stats.arus_kas.keluar)}</span>
                         </div>
-                        <p className="text-[12px] text-slate-400">Total Pengeluaran Kas</p>
+                        <p className="text-[11px] text-slate-400">Total Pengeluaran Kas</p>
                     </div>
                 </div>
             </div>
