@@ -52,6 +52,8 @@ export type PinjamanRow = {
     created_at: string;
     anggota?: AnggotaOption;
     angsuran?: AngsuranPinjaman[];
+    angsuran_count?: number;
+    angsuran_lunas_count?: number;
 };
 
 // ─── Tipe data Rekening Koperasi ────────────────────────────────────────────────

@@ -382,4 +382,15 @@ class RekapanAnggotaController extends Controller
             ->with('success', 'File berhasil diproses dan disimpan ke database.')
             ->with('rekapan_anggota_import_summary', $summary);
     }
+
+    public function downloadTemplate(): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    {
+        $path = public_path('templates/template-import-rekapan.xlsx');
+        
+        if (!file_exists($path)) {
+            abort(404, 'File template tidak ditemukan. Pastikan file ada di public/templates/template-import-rekapan.xlsx');
+        }
+
+        return response()->download($path);
+    }
 }

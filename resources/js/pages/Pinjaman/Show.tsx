@@ -367,6 +367,18 @@ export default function PinjamanShow() {
                             <h2 className="text-lg font-semibold text-neutral-800">
                                 Jadwal Angsuran
                             </h2>
+                            {/* ── Tombol Invoice Pelunasan (Muncul jika Lunas) ───────────────── */}
+                            {pinjaman.status === 'lunas' && (
+                                <Button
+                                    variant="primary"
+                                    onClick={() =>
+                                        setShowPelunasanInvoice(true)
+                                    }
+                                >
+                                    <LuEye className="h-6 w-6" />
+                                    Unduh Invoice Pelunasan
+                                </Button>
+                            )}
                         </div>
                         {(() => {
                             const breakdown = computeInterestBreakdown(
@@ -509,39 +521,65 @@ export default function PinjamanShow() {
                                                 {(() => {
                                                     const dendaTerbayar =
                                                         angsuran.transaksi?.reduce(
-                                                            (sum, t) => sum + Number(t.denda_dibayar ?? 0),
+                                                            (sum, t) =>
+                                                                sum +
+                                                                Number(
+                                                                    t.denda_dibayar ??
+                                                                        0,
+                                                                ),
                                                             0,
                                                         ) ?? 0;
 
-                                                    const dendaEstimasiTampil = isLunas 
-                                                        ? Number(angsuran.denda) 
-                                                        : (terlambat ? estimasiDenda : 0);
+                                                    const dendaEstimasiTampil =
+                                                        isLunas
+                                                            ? Number(
+                                                                  angsuran.denda,
+                                                              )
+                                                            : terlambat
+                                                              ? estimasiDenda
+                                                              : 0;
 
-                                                    if (dendaEstimasiTampil <= 0 && dendaTerbayar <= 0) {
-                                                        return <span className="text-neutral-400">–</span>;
+                                                    if (
+                                                        dendaEstimasiTampil <=
+                                                            0 &&
+                                                        dendaTerbayar <= 0
+                                                    ) {
+                                                        return (
+                                                            <span className="text-neutral-400">
+                                                                –
+                                                            </span>
+                                                        );
                                                     }
 
                                                     return (
                                                         <div className="flex flex-col items-end gap-0.5">
                                                             {/* Bagian Atas: Estimasi Denda (Warna Merah jika belum lunas, abu jika sudah) */}
-                                                            {dendaEstimasiTampil > 0 && (
+                                                            {dendaEstimasiTampil >
+                                                                0 && (
                                                                 <div className="flex flex-col items-end leading-tight">
-                                                                    <span className={`font-semibold ${isLunas ? 'text-neutral-500' : 'text-red-600'}`}>
-                                                                        {formatRupiah(dendaEstimasiTampil)}
+                                                                    <span
+                                                                        className={`font-semibold ${isLunas ? 'text-neutral-500' : 'text-red-600'}`}
+                                                                    >
+                                                                        {formatRupiah(
+                                                                            dendaEstimasiTampil,
+                                                                        )}
                                                                     </span>
-                                                                    <span className="text-[10px] text-neutral-400 uppercase tracking-tighter">
+                                                                    <span className="text-[10px] tracking-tighter text-neutral-400 uppercase">
                                                                         Estimasi
                                                                     </span>
                                                                 </div>
                                                             )}
-                                                            
+
                                                             {/* Bagian Bawah: Realita Denda yang Dibayar (Warna Hijau) */}
-                                                            {dendaTerbayar > 0 && (
-                                                                <div className="mt-1 flex flex-col items-end leading-tight border-t border-neutral-100 pt-1 w-full">
+                                                            {dendaTerbayar >
+                                                                0 && (
+                                                                <div className="mt-1 flex w-full flex-col items-end border-t border-neutral-100 pt-1 leading-tight">
                                                                     <span className="font-bold text-green-600">
-                                                                        {formatRupiah(dendaTerbayar)}
+                                                                        {formatRupiah(
+                                                                            dendaTerbayar,
+                                                                        )}
                                                                     </span>
-                                                                    <span className="text-[10px] text-green-500 uppercase tracking-tighter">
+                                                                    <span className="text-[10px] tracking-tighter text-green-500 uppercase">
                                                                         Terbayar
                                                                     </span>
                                                                 </div>
@@ -555,13 +593,19 @@ export default function PinjamanShow() {
                                                     totalTagihanTampil,
                                                 )}
                                             </td>
-                                            <td className="px-4 py-3 text-right text-neutral-700 font-medium">
+                                            <td className="px-4 py-3 text-right font-medium text-neutral-700">
                                                 {formatRupiah(
                                                     angsuran.transaksi?.reduce(
                                                         (sum, t) =>
                                                             sum +
-                                                            Number(t.jumlah_bayar ?? 0) +
-                                                            Number(t.denda_dibayar ?? 0),
+                                                            Number(
+                                                                t.jumlah_bayar ??
+                                                                    0,
+                                                            ) +
+                                                            Number(
+                                                                t.denda_dibayar ??
+                                                                    0,
+                                                            ),
                                                         0,
                                                     ) ?? 0,
                                                 )}
@@ -620,22 +664,6 @@ export default function PinjamanShow() {
                         )}
                     </div>
                 </div>
-
-                {/* ── Tombol Invoice Pelunasan (Muncul jika Lunas) ───────────────── */}
-                {pinjaman.status === 'lunas' && (
-                    <div className="mt-8 flex justify-center pb-10">
-                        <Button
-                            variant="primary"
-                            size="lg"
-                            onClick={() => setShowPelunasanInvoice(true)}
-                            className="flex items-center gap-2 px-8 py-4 text-lg shadow-lg transition-all hover:shadow-xl"
-                        >
-                            <LuEye className="h-6 w-6" />
-                            Unduh Invoice Pelunasan
-                        </Button>
-                    </div>
-                )}
-
                 {/* ── Kembali ───────────────────────────────────────────────── */}
                 <div>
                     <Button

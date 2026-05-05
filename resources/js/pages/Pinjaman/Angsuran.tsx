@@ -70,8 +70,7 @@ export default function PinjamanTerlambat({
 
             if (
                 !row.tanggal_jatuh_tempo_terlama ||
-                new Date(tanggalJatuhTempo).getTime() <
-                    new Date(row.tanggal_jatuh_tempo_terlama).getTime()
+                tanggalJatuhTempo < row.tanggal_jatuh_tempo_terlama
             ) {
                 row.tanggal_jatuh_tempo_terlama = tanggalJatuhTempo;
             }
@@ -240,8 +239,7 @@ export default function PinjamanTerlambat({
 
             if (
                 !row.tanggal_jatuh_tempo_terdekat ||
-                new Date(tanggalJatuhTempo).getTime() <
-                    new Date(row.tanggal_jatuh_tempo_terdekat).getTime()
+                tanggalJatuhTempo < row.tanggal_jatuh_tempo_terdekat
             ) {
                 row.tanggal_jatuh_tempo_terdekat = tanggalJatuhTempo;
             }

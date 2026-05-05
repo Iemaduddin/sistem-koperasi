@@ -1,6 +1,7 @@
 export type TransactionRow = {
     id: string;
     created_at: string;
+    created_at_date: string;
     jenis: 'masuk' | 'keluar';
     sumber_tipe:
         | 'simpanan'

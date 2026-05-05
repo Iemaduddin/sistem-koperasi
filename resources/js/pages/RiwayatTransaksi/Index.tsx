@@ -18,14 +18,11 @@ export default function RiwayatTransaksiIndex({ transactions }: Props) {
     });
 
     const filteredTransactions = useMemo(() => {
-        const normalizedStart = filters.startDate
-            ? new Date(`${filters.startDate}T00:00:00`)
-            : null;
-        const normalizedEnd = filters.endDate
-            ? new Date(`${filters.endDate}T23:59:59.999`)
-            : null;
+        const start = filters.startDate;
+        const end = filters.endDate;
 
         return transactions.filter((transaction) => {
+            // Filter Jenis
             if (
                 filters.jenis !== 'all' &&
                 transaction.jenis !== filters.jenis
@@ -33,6 +30,7 @@ export default function RiwayatTransaksiIndex({ transactions }: Props) {
                 return false;
             }
 
+            // Filter Sumber
             if (filters.sumber !== 'all') {
                 const sourceLabel = transaction.source_label.toLowerCase();
 
@@ -55,25 +53,18 @@ export default function RiwayatTransaksiIndex({ transactions }: Props) {
                 }
             }
 
-            const transactionDate = new Date(transaction.created_at);
-
-            if (normalizedStart && transactionDate < normalizedStart) {
+            // Filter Tanggal (String Comparison YYYY-MM-DD)
+            if (start && transaction.created_at_date < start) {
                 return false;
             }
 
-            if (normalizedEnd && transactionDate > normalizedEnd) {
+            if (end && transaction.created_at_date > end) {
                 return false;
             }
 
             return true;
         });
-    }, [
-        filters.endDate,
-        filters.jenis,
-        filters.sumber,
-        filters.startDate,
-        transactions,
-    ]);
+    }, [filters, transactions]);
 
     return (
         <div className="space-y-6">

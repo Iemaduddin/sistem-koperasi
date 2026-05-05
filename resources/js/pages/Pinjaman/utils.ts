@@ -64,6 +64,9 @@ export function formatTanggal(value: string | null | undefined): string {
 
 // ─── Hitung sisa angsuran yang belum lunas ────────────────────────────────────
 export function hitungSisaAngsuran(pinjaman: PinjamanRow): number {
+    if (pinjaman.angsuran_count !== undefined && pinjaman.angsuran_lunas_count !== undefined) {
+        return pinjaman.angsuran_count - pinjaman.angsuran_lunas_count;
+    }
     if (!pinjaman.angsuran) return pinjaman.tenor_bulan;
     return pinjaman.angsuran.filter((a) => a.status !== 'lunas').length;
 }
@@ -130,6 +133,10 @@ export function hitungEstimasiDenda(
 
 // ─── Hitung progress pembayaran (persen) ─────────────────────────────────────
 export function hitungProgressPersen(pinjaman: PinjamanRow): number {
+    if (pinjaman.angsuran_count !== undefined && pinjaman.angsuran_lunas_count !== undefined) {
+        if (pinjaman.angsuran_count === 0) return 0;
+        return Math.round((pinjaman.angsuran_lunas_count / pinjaman.angsuran_count) * 100);
+    }
     if (!pinjaman.angsuran || pinjaman.angsuran.length === 0) return 0;
     const lunas = pinjaman.angsuran.filter((a) => a.status === 'lunas').length;
     return Math.round((lunas / pinjaman.angsuran.length) * 100);

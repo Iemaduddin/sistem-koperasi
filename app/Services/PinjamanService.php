@@ -29,15 +29,18 @@ class PinjamanService
     {
         return [
             'pinjaman' => Pinjaman::with([
-                'anggota',
-                'angsuran' => fn ($q) => $q->orderBy('angsuran_ke'),
+                'anggota:id,no_anggota,nama',
             ])
+                ->withCount([
+                    'angsuran',
+                    'angsuran as angsuran_lunas_count' => fn($q) => $q->where('status', 'lunas')
+                ])
                 ->latest('created_at')
                 ->get(),
             'anggota' => Anggota::query()
                 ->where('status', 'aktif')
                 ->orderBy('nama')
-                ->get(['id', 'no_anggota', 'nama', 'alamat']),
+                ->get(['id', 'no_anggota', 'nama']),
             'rekening_koperasi' => \App\Models\RekeningKoperasi::query()
                 ->orderBy('nama')
                 ->get(['id', 'nama', 'jenis', 'nomor_rekening', 'saldo']),
@@ -51,7 +54,10 @@ class PinjamanService
      */
     public function getOverdueData(): array
     {
-        $overdueAngsuran = AngsuranPinjaman::with(['pinjaman.anggota'])
+        $overdueAngsuran = AngsuranPinjaman::with([
+                'pinjaman:id,anggota_id,jumlah_pinjaman',
+                'pinjaman.anggota:id,no_anggota,nama'
+            ])
             ->where('status', '!=', 'lunas')
             ->whereDate('tanggal_jatuh_tempo', '<', now()->toDateString())
             ->orderBy('tanggal_jatuh_tempo', 'asc')
@@ -65,7 +71,10 @@ class PinjamanService
 
         return [
             'overdue_angsuran' => $overdueAngsuran,
-            'upcoming_angsuran' => AngsuranPinjaman::with(['pinjaman.anggota'])
+            'upcoming_angsuran' => AngsuranPinjaman::with([
+                    'pinjaman:id,anggota_id,jumlah_pinjaman',
+                    'pinjaman.anggota:id,no_anggota,nama'
+                ])
                 ->where('status', '!=', 'lunas')
                 ->whereDate('tanggal_jatuh_tempo', '>=', now()->toDateString())
                 ->whereDate('tanggal_jatuh_tempo', '<=', now()->endOfMonth()->toDateString())

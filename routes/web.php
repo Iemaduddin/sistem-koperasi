@@ -131,6 +131,8 @@ Route::middleware(['auth', 'active.user'])->group(function (): void {
 				->name('rekapan-anggota.index');
 			Route::get('/export', [RekapanAnggotaController::class, 'export'])
 				->name('rekapan-anggota.export');
+			Route::get('/template', [RekapanAnggotaController::class, 'downloadTemplate'])
+				->name('rekapan-anggota.template');
 			Route::post('/import', [RekapanAnggotaController::class, 'import'])
 				->name('rekapan-anggota.import');
 		});

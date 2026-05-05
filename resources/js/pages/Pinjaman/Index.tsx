@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import { toast } from 'react-toastify';
 import DashboardLayout from '@/layouts/Dashboard/DasboardLayout';
@@ -20,6 +20,24 @@ export default function PinjamanIndex() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<PinjamanRow | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+
+    const anggotaOptions = useMemo(
+        () =>
+            anggotaData.map((a) => ({
+                value: a.id,
+                label: `${a.no_anggota} - ${a.nama}`,
+            })),
+        [anggotaData],
+    );
+
+    const rekeningOptions = useMemo(
+        () =>
+            rekeningKoperasiData.map((r) => ({
+                value: r.id,
+                label: `${r.nama} - ${r.nomor_rekening || r.jenis}`,
+            })),
+        [rekeningKoperasiData],
+    );
 
     const onChangeField = <K extends keyof typeof formData>(
         field: K,
@@ -103,14 +121,8 @@ export default function PinjamanIndex() {
             <section className="space-y-4">
                 <PinjamanFormCard
                     formData={formData}
-                    anggotaOptions={anggotaData.map((a) => ({
-                        value: a.id,
-                        label: `${a.no_anggota} - ${a.nama}`,
-                    }))}
-                    rekeningOptions={rekeningKoperasiData.map((r) => ({
-                        value: r.id,
-                        label: `${r.nama} - ${r.nomor_rekening || r.jenis}`,
-                    }))}
+                    anggotaOptions={anggotaOptions}
+                    rekeningOptions={rekeningOptions}
                     isSubmitting={isSubmitting}
                     onChangeField={onChangeField}
                     onSubmit={handleSubmit}

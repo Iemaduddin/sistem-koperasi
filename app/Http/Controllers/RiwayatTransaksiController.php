@@ -35,6 +35,7 @@ class RiwayatTransaksiController extends Controller
                 },
             ])
             ->latest('created_at')
+            ->limit(2000)
             ->get()
             ->map(function (TransaksiKasKoperasi $transaction): array {
                 $sourceLabel = $transaction->sumber_tipe;
@@ -59,6 +60,7 @@ class RiwayatTransaksiController extends Controller
                 return [
                     'id' => $transaction->id,
                     'created_at' => $transaction->created_at?->toISOString() ?? '',
+                    'created_at_date' => $transaction->created_at?->toDateString() ?? '',
                     'jenis' => $transaction->jenis,
                     'sumber_tipe' => $transaction->sumber_tipe,
                     'source_label' => $sourceLabel,

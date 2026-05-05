@@ -1,6 +1,9 @@
 import Button from '@/components/button';
 import FloatingSelect from '@/components/floating-input/select';
 import { RefObject } from 'react';
+import Tooltip from '@/components/tooltip';
+import { HiOutlineInformationCircle, HiOutlineDownload } from 'react-icons/hi';
+import { router } from '@inertiajs/react';
 
 type Props = {
     isSubmitting: boolean;
@@ -27,15 +30,66 @@ export default function ImportFormCard({
 }: Props) {
     return (
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h2 className="text-sm font-semibold text-slate-800">
-                Import Data Excel
-            </h2>
-            <p className="mt-1 text-xs text-slate-500">
-                Parser membaca semua sheet kecuali nama sheet dengan awalan
-                rekap, mulai dari baris ke-4.
-            </p>
+            <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center justify-between gap-3">
+                    <h1 className="text-xl font-semibold text-slate-900">
+                        Import Data Excel
+                    </h1>
+                    <Tooltip
+                        content={
+                            <div className="space-y-2 p-1">
+                                <p className="mb-1 border-b border-slate-700 pb-1 font-bold">
+                                    Panduan Format Excel:
+                                </p>
+                                <ul className="list-disc space-y-1 pl-4">
+                                    <li>
+                                        Struktur Header wajib ada di{' '}
+                                        <b>Baris 3</b>.
+                                    </li>
+                                    <li>
+                                        Data dimulai dari <b>Baris 4</b>.
+                                    </li>
+                                    <li>
+                                        Kolom wajib: Nomor(A), Nama(B), Tgl
+                                        Masuk(C), Tenor(F).
+                                    </li>
+                                    <li>
+                                        Semua sheet diproses kecuali yang
+                                        diawali kata <b>"rekap"</b>.
+                                    </li>
+                                    <li>
+                                        Gunakan template untuk memastikan urutan
+                                        kolom benar.
+                                    </li>
+                                </ul>
+                            </div>
+                        }
+                        side="right"
+                    >
+                        <HiOutlineInformationCircle className="h-4 w-4 cursor-help text-slate-400" />
+                    </Tooltip>
+                </div>
+                <Button
+                    variant="warning"
+                    styleMode="outline"
+                    size="sm"
+                    onClick={() => {
+                        window.location.href = '/rekapan-anggota/template';
+                    }}
+                >
+                    <HiOutlineDownload className="h-4 w-4" />
+                    Download Template
+                </Button>
+            </div>
 
-            <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-center">
+            <div className="mt-2 flex items-center justify-between border-b border-slate-100 pb-3">
+                <p className="mt-1 text-sm text-slate-600">
+                    Halaman ini untuk mengimport data rekapan anggota koperasi.
+                    Pastikan anda menggunakan template yang sudah disediakan.
+                </p>
+            </div>
+
+            <div className="mt-2 flex flex-col gap-3 md:flex-row md:items-center">
                 <input
                     ref={inputRef}
                     type="file"
