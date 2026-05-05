@@ -283,8 +283,7 @@ export function NotificationMenu({
                                     Tabungan Berjangka
                                 </p>
                                 <p className="text-xs text-slate-500 md:text-sm">
-                                    Pencairan bagi hasil tabungan berjangka 1-2
-                                    hari lagi
+                                    Pencairan bagi hasil 1-2 hari lagi
                                 </p>
                             </div>
                             <span className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100 md:text-sm">
@@ -415,7 +414,7 @@ export function NotificationBell({
             >
                 <LuBell className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 {(notifications?.count ?? 0) > 0 && (
-                    <span className="absolute -top-1 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 px-3 text-[8px] font-bold text-white shadow-sm ring-1 ring-white md:-right-4 md:px-4 md:text-xs">
+                    <span className="absolute -top-1 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[8px] font-bold text-white shadow-sm ring-1 ring-white md:-right-4 md:px-4 md:text-xs">
                         {formatBadgeCount(notifications?.count ?? 0)}
                     </span>
                 )}

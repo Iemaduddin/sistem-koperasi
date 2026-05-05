@@ -15,6 +15,7 @@ import FloatingInput from './floating-input/input';
 type SortDirection = 'asc' | 'desc';
 
 type Primitive = string | number | boolean | Date | null | undefined;
+type PaginationItem = number | 'ellipsis';
 
 export type DataTableColumn<TData> = {
     id: string;
@@ -97,6 +98,34 @@ function sortRows<TData>(
         if (aValue > bValue) return direction === 'asc' ? 1 : -1;
         return 0;
     });
+}
+
+function getPaginationItems(
+    page: number,
+    totalPages: number,
+): PaginationItem[] {
+    if (totalPages <= 7) {
+        return Array.from({ length: totalPages }, (_, index) => index + 1);
+    }
+
+    const items: PaginationItem[] = [1];
+    const start = Math.max(2, page - 1);
+    const end = Math.min(totalPages - 1, page + 1);
+
+    if (start > 2) {
+        items.push('ellipsis');
+    }
+
+    for (let current = start; current <= end; current += 1) {
+        items.push(current);
+    }
+
+    if (end < totalPages - 1) {
+        items.push('ellipsis');
+    }
+
+    items.push(totalPages);
+    return items;
 }
 
 export default function DataTable<TData>({
@@ -324,6 +353,10 @@ export default function DataTable<TData>({
     const allPageSelected =
         pageRowIds.length > 0 && pageRowIds.every((id) => selectedIds.has(id));
     const somePageSelected = pageRowIds.some((id) => selectedIds.has(id));
+    const paginationItems = useMemo(
+        () => getPaginationItems(page, totalPages),
+        [page, totalPages],
+    );
 
     const toggleSort = (columnId: string) => {
         if (!sortable) return;
@@ -766,7 +799,15 @@ export default function DataTable<TData>({
                     {sortedRows.length}
                 </p>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage(1)}
+                        disabled={page === 1}
+                    >
+                        First
+                    </Button>
                     <Button
                         variant="outline"
                         size="sm"
@@ -778,6 +819,30 @@ export default function DataTable<TData>({
                     <span className="text-sm text-slate-600">
                         Page {page} / {totalPages}
                     </span>
+
+                    {paginationItems.map((item, index) =>
+                        item === 'ellipsis' ? (
+                            <span
+                                key={`ellipsis-${index}`}
+                                className="px-1 text-sm text-slate-400"
+                            >
+                                ...
+                            </span>
+                        ) : (
+                            <Button
+                                key={item}
+                                variant={item === page ? 'primary' : 'outline'}
+                                size="sm"
+                                onClick={() => setPage(item)}
+                                aria-current={
+                                    item === page ? 'page' : undefined
+                                }
+                            >
+                                {item}
+                            </Button>
+                        ),
+                    )}
+
                     <Button
                         variant="outline"
                         size="sm"
@@ -787,6 +852,14 @@ export default function DataTable<TData>({
                         disabled={page === totalPages}
                     >
                         Next
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage(totalPages)}
+                        disabled={page === totalPages}
+                    >
+                        Last
                     </Button>
                 </div>
             </div>
