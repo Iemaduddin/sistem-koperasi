@@ -125,9 +125,8 @@ class PinjamanService
                 ->lockForUpdate()
                 ->findOrFail($rekeningKoperasiId);
 
-            // if ((float) $rekeningKoperasi->saldo < $jumlah) {
-            //     throw new RuntimeException('Saldo rekening koperasi tidak mencukupi untuk pencairan pinjaman.');
-            // }
+            // Note: Saldo rekening koperasi diperbolehkan minus sesuai kebutuhan operasional.
+            // Pengecekan saldo dicopot agar pinjaman tetap bisa dicairkan kapan saja.
 
             // Hitung angsuran per bulan sesuai rumus: total_bunga / 10
             $bungaTotal       = round($jumlah * ($bungaPersen / 100), 2);
