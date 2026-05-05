@@ -7,6 +7,7 @@ use App\Http\Controllers\JenisSimpananController;
 use App\Http\Controllers\RekeningKoperasiController;
 use App\Http\Controllers\SimpananDepositoController;
 use App\Http\Controllers\SimpananController;
+use App\Http\Controllers\TabunganController;
 use App\Http\Controllers\PinjamanController;
 use App\Http\Controllers\AuditController;
 use App\Http\Controllers\GuestPortalController;
@@ -110,6 +111,16 @@ Route::middleware(['auth', 'active.user'])->group(function (): void {
 			->name('pinjaman.pelunasan');
 		Route::resource('/pinjaman', PinjamanController::class)
 			->parameters(['pinjaman' => 'pinjaman'])
+			->except(['create', 'edit', 'update']);
+		// Tabungan management
+		Route::get('/tabungan/options/anggota', [TabunganController::class, 'getAnggotaOptions'])
+			->name('tabungan.options.anggota');
+		Route::get('/tabungan/options/rekening-koperasi', [TabunganController::class, 'getRekeningKoperasiOptions'])
+			->name('tabungan.options.rekening-koperasi');
+		Route::post('/tabungan/tarik', [TabunganController::class, 'tarikTabungan'])
+			->name('tabungan.tarik');
+		Route::resource('/tabungan', TabunganController::class)
+			->parameters(['tabungan' => 'tabungan'])
 			->except(['create', 'edit', 'update']);
 		// Riwayat Transaksi
 		Route::get('/riwayat-transaksi', [RiwayatTransaksiController::class, 'index'])

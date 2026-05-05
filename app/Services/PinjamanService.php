@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\Anggota;
 use App\Models\AngsuranPinjaman;
 use App\Models\Pinjaman;
+use App\Models\TransaksiSimpanan;
+use App\Models\TransaksiSimpananBatch;
 use App\Models\TransaksiPinjaman;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -123,9 +125,9 @@ class PinjamanService
                 ->lockForUpdate()
                 ->findOrFail($rekeningKoperasiId);
 
-            if ((float) $rekeningKoperasi->saldo < $jumlah) {
-                throw new RuntimeException('Saldo rekening koperasi tidak mencukupi untuk pencairan pinjaman.');
-            }
+            // if ((float) $rekeningKoperasi->saldo < $jumlah) {
+            //     throw new RuntimeException('Saldo rekening koperasi tidak mencukupi untuk pencairan pinjaman.');
+            // }
 
             // Hitung angsuran per bulan sesuai rumus: total_bunga / 10
             $bungaTotal       = round($jumlah * ($bungaPersen / 100), 2);
@@ -213,11 +215,34 @@ class PinjamanService
                 throw new RuntimeException('Jumlah bayar melebihi total tagihan angsuran (pokok + bunga + denda).');
             }
 
-            // ── Catat transaksi pembayaran ───────────────────────────────────
+            // ── Split bagi hasil jika > 30% ────────────────────────────────────
+            $persenBunga = (float) $pinjaman->bunga_persen;
+            $jumlahPinjaman = (float) $pinjaman->jumlah_pinjaman;
+            $tenorBulan = max((int) $pinjaman->tenor_bulan, 1);
+            $bunga = round((float) $angsuran->bunga, 2);
+            $pokok = round((float) $angsuran->pokok, 2);
+            
+            $bungaKeKas = 0.0;
+            $bungaKeOperasional = 0.0;
+            
+            if ($persenBunga > 30) {
+                // Nominal per angsuran dari porsi kontrak 30% dan sisanya
+                $bungaKeKas = round(($jumlahPinjaman * 0.30) / $tenorBulan, 2);
+                $bungaKeOperasional = round(
+                    ($jumlahPinjaman * (($persenBunga - 30) / 100)) / $tenorBulan,
+                    2,
+                );
+            } else {
+                // Jika ≤ 30%, semua bagi hasil masuk kas
+                $bungaKeKas = $bunga;
+            }
+
+            // ── Catat transaksi pembayaran (jumlah_bayar = pokok + bagi hasil yang masuk kas) ───────────────────────────────────
+            $jumlahBayarKeKas = round($pokok + $bungaKeKas, 2);
             $transaksi = TransaksiPinjaman::query()->create([
                 'pinjaman_id'   => $pinjaman->id,
                 'angsuran_id'   => $angsuran->id,
-                'jumlah_bayar'  => $jumlahBayar,
+                'jumlah_bayar'  => $jumlahBayarKeKas,
                 'denda_dibayar' => $dendaDibayar,
                 'tanggal_bayar' => $tanggalBayar,
                 'created_at'    => now(),
@@ -236,16 +261,18 @@ class PinjamanService
             // Kita perlu tahu total pokok+bunga yang sudah dibayar selama ini.
             $totalPokokBungaDibayar = $angsuran->transaksi()->sum('jumlah_bayar');
 
-            if ($totalPokokBungaDibayar >= (float) $angsuran->pokok + (float) $angsuran->bunga) {
+            if ($totalPokokBungaDibayar <= 0) {
+                $angsuran->status = 'belum_bayar';
+            } elseif ($totalPokokBungaDibayar >= (float) $angsuran->pokok + (float) $angsuran->bunga) {
                 $angsuran->status = 'lunas';
             } else {
-                $angsuran->status = 'belum_bayar';
+                $angsuran->status = 'sebagian';
             }
 
             $angsuran->save();
 
             // Tambahkan saldo rekening koperasi (kas masuk dari pembayaran angsuran)
-            $totalMasuk = round($jumlahBayar + $dendaDibayar, 2);
+            $totalMasukKas = round($jumlahBayarKeKas + $dendaDibayar, 2);
             $rekeningKoperasi = \App\Models\TransaksiKasKoperasi::query()
                 ->where('sumber_tipe', 'pinjaman')
                 ->where('sumber_id', $pinjaman->id)
@@ -256,19 +283,30 @@ class PinjamanService
                 ->first();
 
             if ($rekeningKoperasi) {
-                $rekeningKoperasi->saldo = round((float) $rekeningKoperasi->saldo + $totalMasuk, 2);
+                $rekeningKoperasi->saldo = round((float) $rekeningKoperasi->saldo + $totalMasukKas, 2);
                 $rekeningKoperasi->save();
 
                 \App\Models\TransaksiKasKoperasi::query()->create([
                     'rekening_koperasi_id' => $rekeningKoperasi->id,
                     'jenis'                => 'masuk',
-                    'jumlah'               => $totalMasuk,
+                    'jumlah'               => $totalMasukKas,
                     'sumber_tipe'          => 'angsuran_pinjaman',
                     'sumber_id'            => $transaksi->id,
                     'user_id'              => $data['user_id'] ?? '',
-                    'keterangan'           => "Pembayaran angsuran ke-{$angsuran->angsuran_ke} pinjaman",
+                    'keterangan'           => "Pembayaran angsuran ke-{$angsuran->angsuran_ke} pinjaman (Pokok + bagi hasil kas per bulan {$persenBunga}%)",
                     'created_at'           => now(),
                 ]);
+            }
+
+            // ── Tambah ke simpanan OPERASIONAL jika ada sisa bagi hasil ────────
+            if ($bungaKeOperasional > 0 && $pinjaman->anggota_id) {
+                $sisaPersenBunga = $persenBunga - 30;
+                $this->tambahSimpananOperasional(
+                    $pinjaman->anggota_id,
+                    $bungaKeOperasional,
+                    "Sisa Bagi Hasil ({$sisaPersenBunga}% dari {$persenBunga}%) dari Angsuran ke-{$angsuran->angsuran_ke}",
+                    $data['user_id'] ?? ''
+                );
             }
 
             // Cek apakah semua angsuran sudah lunas → update status pinjaman
@@ -576,5 +614,88 @@ class PinjamanService
         $denda = round((float) $pinjaman->jumlah_pinjaman * DENDA_PERSEN_PER_HARI * $hariTerlambat, 2);
 
         return $denda;
+    }
+
+    /**
+     * Tambahkan saldo ke simpanan OPERASIONAL anggota.
+     * Jika belum ada, buat jenis simpanan OPERASIONAL terlebih dahulu.
+     */
+    private function tambahSimpananOperasional(
+        string $anggotaId,
+        float $jumlah,
+        string $keterangan,
+        string $userId
+    ): void {
+        DB::transaction(function () use ($anggotaId, $jumlah, $keterangan, $userId): void {
+            $timestamp = now();
+
+            // Dapatkan atau buat jenis simpanan OPERASIONAL
+            $jenisSimpanan = \App\Models\JenisSimpanan::query()
+                ->where('kode', 'OPERASIONAL')
+                ->first();
+
+            if (!$jenisSimpanan) {
+                $jenisSimpanan = \App\Models\JenisSimpanan::query()->create([
+                    'nama' => 'Operasional',
+                    'kode' => 'OPERASIONAL',
+                    'jumlah_maksimum' => null,
+                ]);
+            }
+
+            // Dapatkan atau buat rekening simpanan OPERASIONAL untuk anggota
+            $rekeningOperasional = \App\Models\RekeningSimpanan::query()
+                ->where('anggota_id', $anggotaId)
+                ->where('jenis_simpanan_id', $jenisSimpanan->id)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$rekeningOperasional) {
+                $rekeningOperasional = \App\Models\RekeningSimpanan::query()->create([
+                    'anggota_id' => $anggotaId,
+                    'jenis_simpanan_id' => $jenisSimpanan->id,
+                    'saldo' => $jumlah,
+                ]);
+            } else {
+                // Update saldo jika sudah ada
+                $rekeningOperasional->saldo = round((float) $rekeningOperasional->saldo + $jumlah, 2);
+                $rekeningOperasional->save();
+            }
+
+            $batch = TransaksiSimpananBatch::query()->create([
+                'kode_transaksi' => $this->generateKodeBatchOperasional($timestamp),
+                'anggota_id' => $anggotaId,
+                'tanggal_transaksi' => $timestamp,
+                'user_id' => $userId,
+                'total' => round($jumlah, 2),
+            ]);
+
+            // Catat transaksi simpanan
+            TransaksiSimpanan::query()->create([
+                'rekening_simpanan_id' => $rekeningOperasional->id,
+                'batch_id' => $batch->id,
+                'jenis_transaksi' => 'setor',
+                'jumlah' => $jumlah,
+                'keterangan' => $keterangan,
+                'created_at' => $timestamp,
+            ]);
+        });
+    }
+
+    private function generateKodeBatchOperasional(\DateTimeInterface $tanggalTransaksi): string
+    {
+        $prefix = 'OPS-'.$tanggalTransaksi->format('Ymd').'-';
+
+        $lastKode = TransaksiSimpananBatch::query()
+            ->where('kode_transaksi', 'like', $prefix.'%')
+            ->lockForUpdate()
+            ->orderByDesc('kode_transaksi')
+            ->value('kode_transaksi');
+
+        $lastSequence = 0;
+        if (is_string($lastKode) && str_starts_with($lastKode, $prefix)) {
+            $lastSequence = (int) substr($lastKode, -6);
+        }
+
+        return $prefix.str_pad((string) ($lastSequence + 1), 6, '0', STR_PAD_LEFT);
     }
 }

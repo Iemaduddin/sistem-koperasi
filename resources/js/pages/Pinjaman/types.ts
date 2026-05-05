@@ -107,7 +107,13 @@ export const initialPinjamanForm: PinjamanForm = {
     jumlah_pinjaman: '',
     bunga_persen: '25',
     tenor_bulan: '12',
-    tanggal_mulai: new Date().toISOString().substring(0, 10),
+    tanggal_mulai: (() => {
+        const d = new Date();
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+    })(),
 };
 
 // ─── Form bayar angsuran ──────────────────────────────────────────────────────
@@ -122,7 +128,13 @@ export const initialBayarAngsuranForm = (): BayarAngsuranForm => ({
     angsuran_id: '',
     jumlah_bayar: '',
     denda_dibayar: '0',
-    tanggal_bayar: new Date().toISOString().substring(0, 10),
+    tanggal_bayar: (() => {
+        const d = new Date();
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+    })(),
 });
 
 export type PelunasanSummary = {

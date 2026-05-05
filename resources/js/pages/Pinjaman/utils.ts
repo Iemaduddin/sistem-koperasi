@@ -45,6 +45,20 @@ export function formatTanggal(value: string | null | undefined): string {
         return text;
     }
 
+    // If incoming value contains a time or timezone (ISO datetime), prefer
+    // parsing it as a Date and using the browser-local date components.
+    // This avoids off-by-one day when server serialized a midnight-local
+    // date into a UTC timestamp.
+    if (/[T\s].*[:Z+]/.test(text)) {
+        const dt = new Date(text);
+        if (!Number.isNaN(dt.getTime())) {
+            const d = String(dt.getDate()).padStart(2, '0');
+            const m = dt.getMonth();
+            const y = dt.getFullYear();
+            return `${d} ${monthNames[m]} ${y}`;
+        }
+    }
+
     return `${day} ${monthNames[monthIndex - 1]} ${year}`;
 }
 
@@ -139,6 +153,7 @@ export function getLabelStatusPinjaman(status: string): string {
 export function getLabelStatusAngsuran(status: string): string {
     const labels: Record<string, string> = {
         belum_bayar: 'Belum Bayar',
+        sebagian: 'Sebagian Bayar',
         lunas: 'Lunas',
     };
     return labels[status] ?? status;

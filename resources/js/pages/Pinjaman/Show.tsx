@@ -227,6 +227,50 @@ export default function PinjamanShow() {
             ? 'bg-green-100 text-green-800'
             : 'bg-blue-100 text-blue-800';
 
+    // Hitung breakdown bagi hasil untuk modal bayar
+    const computeInterestBreakdown = (angsuran: AngsuranPinjaman) => {
+        const persenBunga = Number(pinjaman.bunga_persen);
+        const jumlahPinjaman = Number(pinjaman.jumlah_pinjaman);
+        const tenor = Number(pinjaman.tenor_bulan);
+        const totalBagiHasil = Number(angsuran.bunga);
+        const totalBagiHasilPerAngsuran = totalBagiHasil;
+
+        let bungaKeKas = 0;
+        let bungaKeOperasional = 0;
+        let bungaKeOperasionalPerAngsuran = 0;
+        let bungaKeKasPerAngsuran = 0;
+
+        if (persenBunga > 30) {
+            // Total kontrak
+            bungaKeKas = Math.round(jumlahPinjaman * 0.3 * 100) / 100;
+            bungaKeOperasional =
+                Math.round(jumlahPinjaman * ((persenBunga - 30) / 100) * 100) /
+                100;
+
+            // Per angsuran
+            bungaKeKasPerAngsuran =
+                tenor > 0 ? Math.round((bungaKeKas / tenor) * 100) / 100 : 0;
+            bungaKeOperasionalPerAngsuran =
+                tenor > 0
+                    ? Math.round((bungaKeOperasional / tenor) * 100) / 100
+                    : 0;
+        } else {
+            // Jika ≤ 30%, semua masuk kas
+            bungaKeKas = totalBagiHasil;
+            bungaKeKasPerAngsuran = totalBagiHasilPerAngsuran;
+        }
+
+        return {
+            persenBunga: Math.round(persenBunga * 100) / 100,
+            totalBagiHasil,
+            totalBagiHasilPerAngsuran,
+            bungaKeKas,
+            bungaKeKasPerAngsuran,
+            bungaKeOperasional,
+            bungaKeOperasionalPerAngsuran,
+        };
+    };
+
     return (
         <>
             <Head
@@ -319,9 +363,34 @@ export default function PinjamanShow() {
                 {/* ── Jadwal angsuran ───────────────────────────────────────── */}
                 <div className="rounded-xl border border-neutral-200 bg-white shadow-sm">
                     <div className="border-b border-neutral-100 px-6 py-4">
-                        <h2 className="text-lg font-semibold text-neutral-800">
-                            Jadwal Angsuran
-                        </h2>
+                        <div className="mb-3 flex items-center justify-between">
+                            <h2 className="text-lg font-semibold text-neutral-800">
+                                Jadwal Angsuran
+                            </h2>
+                        </div>
+                        {(() => {
+                            const breakdown = computeInterestBreakdown(
+                                angsuranList[0] || { pokok: '0', bunga: '0' },
+                            );
+                            return breakdown.persenBunga > 30 ? (
+                                <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">
+                                    Total Bagi Hasil untuk{' '}
+                                    {pinjaman.tenor_bulan} bulan:
+                                    <span className="ml-1 font-semibold text-blue-900">
+                                        {formatRupiah(breakdown.totalBagiHasil)}
+                                    </span>
+                                    <span className="ml-2 text-xs text-blue-600">
+                                        (Kas:{' '}
+                                        {formatRupiah(breakdown.bungaKeKas)} +
+                                        OPERASIONAL:{' '}
+                                        {formatRupiah(
+                                            breakdown.bungaKeOperasional,
+                                        )}
+                                        )
+                                    </span>
+                                </div>
+                            ) : null;
+                        })()}
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
@@ -337,6 +406,11 @@ export default function PinjamanShow() {
                                     <th className="px-4 py-3 text-right">
                                         Bagi Hasil
                                     </th>
+                                    {Number(pinjaman.bunga_persen) > 30 && (
+                                        <th className="px-4 py-3 text-right">
+                                            Biaya OPERASIONAL
+                                        </th>
+                                    )}
                                     <th className="px-4 py-3 text-right">
                                         Denda
                                     </th>
@@ -420,6 +494,17 @@ export default function PinjamanShow() {
                                             <td className="px-4 py-3 text-right text-neutral-700">
                                                 {formatRupiah(angsuran.bunga)}
                                             </td>
+                                            {Number(pinjaman.bunga_persen) >
+                                                30 && (
+                                                <td className="px-4 py-3 text-right font-medium text-amber-700">
+                                                    {formatRupiah(
+                                                        computeInterestBreakdown(
+                                                            angsuran,
+                                                        )
+                                                            .bungaKeOperasionalPerAngsuran,
+                                                    )}
+                                                </td>
+                                            )}
                                             <td className="px-4 py-3 text-right">
                                                 {terlambat && !isLunas ? (
                                                     <div className="flex flex-col items-end gap-0.5">
@@ -589,20 +674,73 @@ export default function PinjamanShow() {
                             </p>
                         </div>
                     )}
-                    <FloatingInput
-                        label="Jumlah Bayar (Pokok + Bagi Hasil)"
-                        type="rupiah"
-                        value={bayarForm.jumlah_bayar}
-                        onCurrencyValueChange={(value) =>
-                            setBayarForm((prev) => ({
-                                ...prev,
-                                jumlah_bayar: String(
-                                    Math.max(0, Math.floor(value.numeric ?? 0)),
-                                ),
-                            }))
-                        }
-                        required
-                    />
+
+                    {selectedAngsuran &&
+                        (() => {
+                            const breakdown =
+                                computeInterestBreakdown(selectedAngsuran);
+                            return breakdown.persenBunga > 30 ? (
+                                <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm">
+                                    <p className="font-semibold text-blue-900">
+                                        Rincian Bagi Hasil per Angsuran
+                                    </p>
+                                    <div className="mt-2 space-y-1 text-blue-800">
+                                        <div className="flex justify-between">
+                                            <span>Bagi Hasil per Bulan:</span>
+                                            <span className="font-medium">
+                                                {formatRupiah(
+                                                    breakdown.totalBagiHasilPerAngsuran,
+                                                )}
+                                            </span>
+                                        </div>
+                                        <div className="border-t border-blue-200 pt-1" />
+                                        <ul className="list-outside space-y-1">
+                                            <li className="flex justify-between">
+                                                <span>
+                                                    Kas Koperasi per Bulan:
+                                                </span>
+                                                <span className="font-medium text-green-700">
+                                                    {formatRupiah(
+                                                        breakdown.bungaKeKasPerAngsuran,
+                                                    )}
+                                                </span>
+                                            </li>
+                                            <li className="flex justify-between">
+                                                <span>
+                                                    Simpanan OPERASIONAL per
+                                                    Bulan:
+                                                </span>
+                                                <span className="font-medium text-amber-700">
+                                                    {formatRupiah(
+                                                        breakdown.bungaKeOperasionalPerAngsuran,
+                                                    )}
+                                                </span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            ) : null;
+                        })()}
+
+                    <div className="mt-3">
+                        <FloatingInput
+                            label="Jumlah Bayar (Pokok + Bagi Hasil)"
+                            type="rupiah"
+                            value={bayarForm.jumlah_bayar}
+                            onCurrencyValueChange={(value) =>
+                                setBayarForm((prev) => ({
+                                    ...prev,
+                                    jumlah_bayar: String(
+                                        Math.max(
+                                            0,
+                                            Math.floor(value.numeric ?? 0),
+                                        ),
+                                    ),
+                                }))
+                            }
+                            required
+                        />
+                    </div>
                     <FloatingInput
                         label="Denda Dibayar (dapat diubah)"
                         type="rupiah"

@@ -9,6 +9,7 @@ use App\Services\PinjamanService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Carbon;
+use Throwable;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -43,7 +44,7 @@ class PinjamanController extends Controller
             $validated = $request->validated();
             $validated['user_id'] = $request->user()?->id;
             $this->pinjamanService->create($validated);
-        } catch (QueryException|\RuntimeException $exception) {
+        } catch (Throwable $exception) {
             return redirect()
                 ->route('pinjaman.index')
                 ->with('error', $exception->getMessage());
@@ -71,7 +72,7 @@ class PinjamanController extends Controller
             $validated = $request->validated();
             $validated['user_id'] = $request->user()?->id ?? '';
             $this->pinjamanService->bayarAngsuran($pinjaman, $validated);
-        } catch (QueryException|\RuntimeException $exception) {
+        } catch (Throwable $exception) {
             return redirect()
                 ->route('pinjaman.show', $pinjaman)
                 ->with('error', $exception->getMessage());
@@ -101,7 +102,7 @@ class PinjamanController extends Controller
             $customDenda = $request->has('denda_pelunasan') ? (float) $request->input('denda_pelunasan') : null;
             
             $this->pinjamanService->pelunasan($pinjaman, $userId, $tanggalPelunasan, $customDenda);
-        } catch (QueryException|\RuntimeException $exception) {
+        } catch (Throwable $exception) {
             return redirect()
                 ->route('pinjaman.show', $pinjaman)
                 ->with('error', $exception->getMessage());
@@ -119,7 +120,7 @@ class PinjamanController extends Controller
     {
         try {
             $this->pinjamanService->delete($pinjaman);
-        } catch (QueryException|\RuntimeException $exception) {
+        } catch (Throwable $exception) {
             return redirect()
                 ->route('pinjaman.index')
                 ->with('error', $exception->getMessage());
