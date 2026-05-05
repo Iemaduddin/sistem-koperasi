@@ -33,11 +33,26 @@ export default function RiwayatTransaksiIndex({ transactions }: Props) {
                 return false;
             }
 
-            if (
-                filters.sumber !== 'all' &&
-                transaction.sumber_tipe !== filters.sumber
-            ) {
-                return false;
+            if (filters.sumber !== 'all') {
+                const sourceLabel = transaction.source_label.toLowerCase();
+
+                if (filters.sumber === 'tabungan') {
+                    if (
+                        transaction.sumber_tipe !== 'simpanan' ||
+                        !sourceLabel.includes('tabungan')
+                    ) {
+                        return false;
+                    }
+                } else if (filters.sumber === 'simpanan_lainnya') {
+                    if (
+                        transaction.sumber_tipe !== 'simpanan' ||
+                        sourceLabel.includes('tabungan')
+                    ) {
+                        return false;
+                    }
+                } else if (transaction.sumber_tipe !== filters.sumber) {
+                    return false;
+                }
             }
 
             const transactionDate = new Date(transaction.created_at);

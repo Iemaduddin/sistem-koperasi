@@ -20,3 +20,11 @@ export type FilterState = {
     startDate: string;
     endDate: string;
 };
+
+export type TransactionSourceFilter =
+    | 'all'
+    | 'simpanan_lainnya'
+    | 'tabungan'
+    | 'pinjaman'
+    | 'angsuran_pinjaman'
+    | 'deposito';

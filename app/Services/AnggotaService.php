@@ -378,9 +378,9 @@ class AnggotaService
         Carbon $createdAt,
     ): void {
         $saldoKasSaatIni = (float) $rekeningKoperasi->saldo;
-        if ($saldoKasSaatIni < $jumlah) {
-            throw new RuntimeException('Saldo rekening koperasi tidak mencukupi untuk penarikan otomatis simpanan anggota keluar.');
-        }
+        // if ($saldoKasSaatIni < $jumlah) {
+        //     throw new RuntimeException('Saldo rekening koperasi tidak mencukupi untuk penarikan otomatis simpanan anggota keluar.');
+        // }
 
         $rekeningSimpanan->saldo = round((float) $rekeningSimpanan->saldo - $jumlah, 2);
         $rekeningSimpanan->save();

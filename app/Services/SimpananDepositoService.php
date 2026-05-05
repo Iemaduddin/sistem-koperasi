@@ -306,9 +306,9 @@ class SimpananDepositoService
             ->findOrFail($rekeningKoperasiId);
 
         $saldoSaatIni = (float) $rekeningKoperasi->saldo;
-        if ($saldoSaatIni < $jumlah) {
-            throw new RuntimeException('Saldo rekening koperasi tidak mencukupi untuk penarikan bagi hasil.');
-        }
+        // if ($saldoSaatIni < $jumlah) {
+        //     throw new RuntimeException('Saldo rekening koperasi tidak mencukupi untuk penarikan bagi hasil.');
+        // }
 
         $rekeningKoperasi->saldo = round($saldoSaatIni - $jumlah, 2);
         $rekeningKoperasi->save();

@@ -283,7 +283,8 @@ export function NotificationMenu({
                                     Tabungan Berjangka
                                 </p>
                                 <p className="text-xs text-slate-500 md:text-sm">
-                                    Pencairan bagi hasil tabungan berjangka 1-2 hari lagi
+                                    Pencairan bagi hasil tabungan berjangka 1-2
+                                    hari lagi
                                 </p>
                             </div>
                             <span className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100 md:text-sm">

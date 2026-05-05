@@ -12,7 +12,7 @@ export type RekeningKoperasiForm = {
     nama: string;
     jenis: string;
     nomor_rekening: string;
-    saldo: string;
+    saldo: number | string;
 };
 
 export type RekeningKoperasiPageProps = {
@@ -27,5 +27,5 @@ export const initialRekeningKoperasiForm: RekeningKoperasiForm = {
     nama: '',
     jenis: 'bank',
     nomor_rekening: '',
-    saldo: '',
+    saldo: 0,
 };

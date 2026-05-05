@@ -27,6 +27,7 @@ import {
     TbCashBanknoteMove,
     TbCashRegister,
     TbBuildingBank,
+    TbCashPlus,
 } from 'react-icons/tb';
 import type { IconType } from 'react-icons';
 import Button from '../../../components/button';
@@ -121,6 +122,7 @@ const routeNameToUrl: Record<string, () => string> = {
     'jenis-simpanan.index': () => '/jenis-simpanan',
     'rekening-koperasi.index': () => '/rekening-koperasi',
     'simpanan.index': () => '/simpanan',
+    'tabungan.index': () => '/tabungan',
     'pinjaman.index': () => '/pinjaman',
     'pinjaman.angsuran': () => '/pinjaman/angsuran',
     'deposito.index': () => '/deposito',
@@ -489,6 +491,13 @@ const menuSections: SidebarSection[] = [
                         routeName: 'deposito.bagi-hasil',
                     },
                 ],
+                roles: ['Master Admin', 'Super Admin', 'Admin'],
+            },
+            {
+                id: 'tabungan',
+                label: 'Tabungan',
+                icon: TbCashPlus,
+                routeName: 'tabungan.index',
                 roles: ['Master Admin', 'Super Admin', 'Admin'],
             },
             // {

@@ -11,7 +11,6 @@ type Props = {
     onEndDateChange: (value: string) => void;
     onReset: () => void;
 };
-
 export default function RiwayatTransaksiFiltersCard({
     filters,
     onJenisChange,
@@ -55,7 +54,11 @@ export default function RiwayatTransaksiFiltersCard({
                         onChange={(event) => onSumberChange(event.target.value)}
                         options={[
                             { value: 'all', label: 'Semua Sumber' },
-                            { value: 'simpanan', label: 'Simpanan' },
+                            {
+                                value: 'simpanan_lainnya',
+                                label: 'Simpanan',
+                            },
+                            { value: 'tabungan', label: 'Tabungan' },
                             { value: 'pinjaman', label: 'Pinjaman' },
                             {
                                 value: 'angsuran_pinjaman',

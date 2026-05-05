@@ -285,9 +285,9 @@ class SimpananService
                 ->findOrFail($data['rekening_koperasi_id']);
 
             $saldoKasSaatIni = (float) $rekeningKoperasi->saldo;
-            if ($saldoKasSaatIni < $jumlah) {
-                throw new RuntimeException('Saldo rekening koperasi tidak mencukupi untuk transaksi tarik.');
-            }
+            // if ($saldoKasSaatIni < $jumlah) {
+            //     throw new RuntimeException('Saldo rekening koperasi tidak mencukupi untuk transaksi tarik.');
+            // }
 
             $sukarelaJenis = $this->getJenisSimpananByKode()['SUKARELA'];
             $rekeningSukarela = RekeningSimpanan::query()
@@ -395,9 +395,9 @@ class SimpananService
     {
         $nextSaldo = round((float) $rekening->saldo + $delta, 2);
 
-        if ($nextSaldo < 0) {
-            throw new RuntimeException('Saldo rekening simpanan tidak mencukupi untuk transaksi tarik.');
-        }
+        // if ($nextSaldo < 0) {
+        //     throw new RuntimeException('Saldo rekening simpanan tidak mencukupi untuk transaksi tarik.');
+        // }
 
         $rekening->saldo = $nextSaldo;
         $rekening->save();

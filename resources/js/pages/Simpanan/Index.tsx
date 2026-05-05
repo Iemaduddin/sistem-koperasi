@@ -443,6 +443,7 @@ export default function SimpananIndex() {
                 preserveScroll: true,
                 onSuccess: () => {
                     closeTarikModal();
+                    router.get('/simpanan', {}, { preserveScroll: true });
                 },
                 onError: (errors) => {
                     const firstError = Object.values(errors)[0];

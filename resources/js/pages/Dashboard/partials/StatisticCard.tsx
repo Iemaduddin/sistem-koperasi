@@ -8,7 +8,7 @@ import {
     LuArrowUp,
     LuArrowDown,
     LuTrendingUp,
-    LuTrendingDown
+    LuTrendingDown,
 } from 'react-icons/lu';
 
 type Props = {
@@ -33,40 +33,83 @@ export default function StatisticCard({ stats }: Props) {
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="mb-4 flex items-center gap-2">
                     <div className="h-4 w-1 rounded-full bg-blue-600"></div>
-                    <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Ringkasan Arus Kas</h3>
+                    <h3 className="text-sm font-bold tracking-wider text-slate-800 uppercase">
+                        Ringkasan Arus Kas
+                    </h3>
                 </div>
                 <div className="grid grid-cols-3 gap-4 divide-x divide-slate-100">
                     <div className="space-y-2">
                         <div className="flex items-center gap-2 text-slate-500">
-                            <LuTrendingUp className="text-emerald-500" size={14} />
-                            <span className="text-xs font-medium">Pemasukan</span>
+                            <LuTrendingUp
+                                className="text-emerald-500"
+                                size={14}
+                            />
+                            <span className="text-xs font-medium">
+                                Pemasukan
+                            </span>
                         </div>
                         <div className="flex items-baseline gap-1 text-emerald-600">
-                            <LuArrowUp size={16} className="translate-y-0.5 shrink-0" />
-                            <span className="text-xl font-bold truncate" title={formatCurrency(stats.arus_kas.masuk)}>{formatCurrency(stats.arus_kas.masuk)}</span>
+                            <LuArrowUp
+                                size={16}
+                                className="shrink-0 translate-y-0.5"
+                            />
+                            <span
+                                className="truncate text-xl font-bold"
+                                title={formatCurrency(stats.arus_kas.masuk)}
+                            >
+                                {formatCurrency(stats.arus_kas.masuk)}
+                            </span>
                         </div>
-                        <p className="text-[11px] text-slate-400">Total Pemasukan Kas</p>
+                        <p className="text-[11px] text-slate-400">
+                            Total Pemasukan Kas
+                        </p>
                     </div>
-                    <div className="pl-4 space-y-2">
+                    <div className="space-y-2 pl-4">
                         <div className="flex items-center gap-2 text-slate-500">
                             <LuClock className="text-yellow-500" size={14} />
-                            <span className="text-xs font-medium truncate">Aset Mengendap</span>
+                            <span className="truncate text-xs font-medium">
+                                Aset Mengendap
+                            </span>
                         </div>
                         <div className="flex items-baseline gap-1 text-yellow-500">
-                            <span className="text-xl font-bold truncate" title={formatCurrency(stats.arus_kas.aset_mengendap)}>{formatCurrency(stats.arus_kas.aset_mengendap)}</span>
+                            <span
+                                className="truncate text-xl font-bold"
+                                title={formatCurrency(
+                                    stats.arus_kas.aset_mengendap,
+                                )}
+                            >
+                                {formatCurrency(stats.arus_kas.aset_mengendap)}
+                            </span>
                         </div>
-                        <p className="text-[11px] text-slate-400">Angsuran Belum Lunas</p>
+                        <p className="text-[11px] text-slate-400">
+                            Angsuran Belum Lunas
+                        </p>
                     </div>
-                    <div className="pl-4 space-y-2">
+                    <div className="space-y-2 pl-4">
                         <div className="flex items-center gap-2 text-slate-500">
-                            <LuTrendingDown className="text-rose-500" size={14} />
-                            <span className="text-xs font-medium">Pengeluaran</span>
+                            <LuTrendingDown
+                                className="text-rose-500"
+                                size={14}
+                            />
+                            <span className="text-xs font-medium">
+                                Pengeluaran
+                            </span>
                         </div>
                         <div className="flex items-baseline gap-1 text-rose-600">
-                            <LuArrowDown size={16} className="translate-y-0.5 shrink-0" />
-                            <span className="text-xl font-bold truncate" title={formatCurrency(stats.arus_kas.keluar)}>{formatCurrency(stats.arus_kas.keluar)}</span>
+                            <LuArrowDown
+                                size={16}
+                                className="shrink-0 translate-y-0.5"
+                            />
+                            <span
+                                className="truncate text-xl font-bold"
+                                title={formatCurrency(stats.arus_kas.keluar)}
+                            >
+                                {formatCurrency(stats.arus_kas.keluar)}
+                            </span>
                         </div>
-                        <p className="text-[11px] text-slate-400">Total Pengeluaran Kas</p>
+                        <p className="text-[11px] text-slate-400">
+                            Total Pengeluaran Kas
+                        </p>
                     </div>
                 </div>
             </div>
@@ -75,21 +118,27 @@ export default function StatisticCard({ stats }: Props) {
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="mb-4 flex items-center gap-2">
                     <div className="h-4 w-1 rounded-full bg-emerald-600"></div>
-                    <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Anggota & Pinjaman</h3>
+                    <h3 className="text-sm font-bold tracking-wider text-slate-800 uppercase">
+                        Anggota & Pinjaman
+                    </h3>
                 </div>
                 <div className="grid grid-cols-2 gap-6 divide-x divide-slate-100">
                     <div className="space-y-3">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 text-slate-500">
                                 <LuUsers className="text-blue-500" size={14} />
-                                <span className="text-xs font-medium">Total Anggota</span>
+                                <span className="text-xs font-medium">
+                                    Total Anggota
+                                </span>
                             </div>
                             <FloatingSelect
                                 label="Status"
                                 value={anggotaFilter}
                                 options={anggotaOptions}
                                 onValueChange={(value) =>
-                                    setAnggotaFilter(value as keyof Stats['anggota'])
+                                    setAnggotaFilter(
+                                        value as keyof Stats['anggota'],
+                                    )
                                 }
                                 searchable={false}
                                 containerClassName="max-w-24"
@@ -97,18 +146,32 @@ export default function StatisticCard({ stats }: Props) {
                                 className="!h-7 text-[10px]"
                             />
                         </div>
-                        <div className="text-2xl font-bold text-slate-900">{stats.anggota[anggotaFilter]}</div>
+                        <div className="text-2xl font-bold text-slate-900">
+                            {stats.anggota[anggotaFilter]}
+                        </div>
                         <p className="text-[12px] text-slate-400 capitalize">
-                            Status: {anggotaFilter === 'total' ? 'Semua' : anggotaFilter}
+                            Status:{' '}
+                            {anggotaFilter === 'total'
+                                ? 'Semua'
+                                : anggotaFilter}
                         </p>
                     </div>
-                    <div className="pl-6 space-y-3">
+                    <div className="space-y-3 pl-6">
                         <div className="flex items-center gap-2 text-slate-500">
-                            <LuHandshake className="text-emerald-500" size={14} />
-                            <span className="text-xs font-medium">Pinjaman Aktif</span>
+                            <LuHandshake
+                                className="text-emerald-500"
+                                size={14}
+                            />
+                            <span className="text-xs font-medium">
+                                Pinjaman Aktif
+                            </span>
                         </div>
-                        <div className="text-2xl font-bold text-slate-900">{stats.pinjaman_aktif.value}</div>
-                        <p className="text-[12px] text-slate-400">Anggota meminjam</p>
+                        <div className="text-2xl font-bold text-slate-900">
+                            {stats.pinjaman_aktif.value}
+                        </div>
+                        <p className="text-[12px] text-slate-400">
+                            Anggota meminjam
+                        </p>
                     </div>
                 </div>
             </div>

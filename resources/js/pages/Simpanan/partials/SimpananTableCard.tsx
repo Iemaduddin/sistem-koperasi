@@ -55,6 +55,11 @@ export default function SimpananTableCard({
             const jenisKode = (
                 rekening.jenis_simpanan?.kode ?? ''
             ).toUpperCase();
+            // Skip Tabungan - it has its own page
+            if (jenisKode === 'TABUNGAN') {
+                continue;
+            }
+
             const saldo = toNumber(rekening.saldo);
 
             const current = grouped.get(anggotaId) ?? {
@@ -81,9 +86,10 @@ export default function SimpananTableCard({
             grouped.set(anggotaId, current);
         }
 
-        return Array.from(grouped.values()).sort((a, b) =>
-            a.nama.localeCompare(b.nama, 'id-ID'),
-        );
+        // Filter out rows where all nominal are 0
+        return Array.from(grouped.values())
+            .filter((row) => row.total > 0)
+            .sort((a, b) => a.nama.localeCompare(b.nama, 'id-ID'));
     }, [rekeningSimpananData]);
 
     const transaksiAnggotaTerpilih = useMemo(() => {

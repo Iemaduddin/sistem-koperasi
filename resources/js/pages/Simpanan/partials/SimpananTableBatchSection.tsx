@@ -171,7 +171,12 @@ export default function SimpananTableBatchSection({
                     </p>
                 </div>
 
-                <Button size="sm" variant="outline" onClick={onClose}>
+                <Button
+                    size="sm"
+                    variant="warning"
+                    styleMode="outline"
+                    onClick={onClose}
+                >
                     <LuX className="h-4 w-4" />
                     Tutup
                 </Button>

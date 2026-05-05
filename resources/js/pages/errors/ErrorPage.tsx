@@ -2,7 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import { LuArrowLeft, LuHouse, LuLogIn, LuLock } from 'react-icons/lu';
 
 type ErrorPageProps = {
-    status: 401 | 403 | 404 | 500;
+    status?: 401 | 403 | 404 | 500;
 };
 
 const errorConfigs = {
@@ -63,14 +63,14 @@ const errorConfigs = {
     },
 };
 
-export default function ErrorPage({ status }: ErrorPageProps) {
-    const config = errorConfigs[status];
+export default function ErrorPage({ status = 500 }: ErrorPageProps) {
+    const config = errorConfigs[status] ?? errorConfigs[500];
     const Icon = config.icon;
 
     return (
         <>
             <Head title={`${config.title} - ${config.heading}`} />
-            <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 px-4">
+            <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-slate-50 to-slate-100 px-4">
                 <div className="max-w-md text-center">
                     <div className="mb-8 flex justify-center">
                         <div className="rounded-full bg-slate-100 p-6">

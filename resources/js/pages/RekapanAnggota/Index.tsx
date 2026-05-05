@@ -80,7 +80,7 @@ export default function RekapanAnggotaIndex() {
                     setActiveTab={setActiveTab}
                 />
 
-                {summary && <ImportSummaryCard summary={summary} />}
+                {/* {summary && <ImportSummaryCard summary={summary} />} */}
             </section>
         </>
     );

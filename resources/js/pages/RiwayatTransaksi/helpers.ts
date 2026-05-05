@@ -15,9 +15,18 @@ export function getFilterSummary(filters: {
     startDate: string;
     endDate: string;
 }): string {
+    const sumberLabel =
+        filters.sumber === 'simpanan_lainnya'
+            ? 'simpanan lainnya'
+            : filters.sumber === 'tabungan'
+              ? 'tabungan'
+              : filters.sumber !== 'all'
+                ? 'sumber'
+                : null;
+
     const activeFilters = [
         filters.jenis !== 'all' ? 'jenis' : null,
-        filters.sumber !== 'all' ? 'sumber' : null,
+        sumberLabel,
         filters.startDate ? 'dari tanggal' : null,
         filters.endDate ? 'sampai tanggal' : null,
     ].filter(Boolean);
