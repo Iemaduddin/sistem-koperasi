@@ -24,8 +24,17 @@ export default function PinjamanPelunasanInvoicePreviewModal({
         pinjaman.angsuran?.reduce((sum, a) => sum + Number(a.pokok), 0) ?? 0;
     const totalBunga =
         pinjaman.angsuran?.reduce((sum, a) => sum + Number(a.bunga), 0) ?? 0;
+    // Denda terbayar = sum dari transaksi.denda_dibayar (nominal dari form, bukan estimasi)
     const totalDenda =
-        pinjaman.angsuran?.reduce((sum, a) => sum + Number(a.denda), 0) ?? 0;
+        pinjaman.angsuran?.reduce(
+            (sum, a) =>
+                sum +
+                (a.transaksi?.reduce(
+                    (ds, t) => ds + Number(t.denda_dibayar ?? 0),
+                    0,
+                ) ?? 0),
+            0,
+        ) ?? 0;
     const totalBayar =
         pinjaman.angsuran?.reduce(
             (sum, a) => sum + Number(a.jumlah_dibayar),
@@ -115,7 +124,7 @@ export default function PinjamanPelunasanInvoicePreviewModal({
                                     Total Bagi Hasil
                                 </th>
                                 <th className="px-4 py-3 text-right font-semibold">
-                                    Total Denda
+                                    Denda Terbayar
                                 </th>
                                 <th className="px-4 py-3 text-right font-semibold">
                                     Subtotal
@@ -135,10 +144,23 @@ export default function PinjamanPelunasanInvoicePreviewModal({
                                         {formatRupiah(a.bunga)}
                                     </td>
                                     <td className="px-4 py-3 text-right text-slate-700">
-                                        {formatRupiah(a.denda)}
+                                        {formatRupiah(
+                                            a.transaksi?.reduce(
+                                                (ds, t) => ds + Number(t.denda_dibayar ?? 0),
+                                                0,
+                                            ) ?? 0,
+                                        )}
                                     </td>
                                     <td className="px-4 py-3 text-right font-medium text-slate-900">
-                                        {formatRupiah(a.jumlah_dibayar)}
+                                        {formatRupiah(
+                                            a.transaksi?.reduce(
+                                                (as, t) =>
+                                                    as +
+                                                    Number(t.jumlah_bayar ?? 0) +
+                                                    Number(t.denda_dibayar ?? 0),
+                                                0,
+                                            ) ?? 0,
+                                        )}
                                     </td>
                                 </tr>
                             ))}

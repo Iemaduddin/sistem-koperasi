@@ -237,12 +237,11 @@ class PinjamanService
                 $bungaKeKas = $bunga;
             }
 
-            // ── Catat transaksi pembayaran (jumlah_bayar = pokok + bagi hasil yang masuk kas) ───────────────────────────────────
-            $jumlahBayarKeKas = round($pokok + $bungaKeKas, 2);
+            // ── Catat transaksi pembayaran (jumlah_bayar = pokok + bagi hasil penuh dari form) ───────────────────────────────────
             $transaksi = TransaksiPinjaman::query()->create([
                 'pinjaman_id'   => $pinjaman->id,
                 'angsuran_id'   => $angsuran->id,
-                'jumlah_bayar'  => $jumlahBayarKeKas,
+                'jumlah_bayar'  => $jumlahBayar,
                 'denda_dibayar' => $dendaDibayar,
                 'tanggal_bayar' => $tanggalBayar,
                 'created_at'    => now(),
@@ -261,17 +260,16 @@ class PinjamanService
             // Kita perlu tahu total pokok+bunga yang sudah dibayar selama ini.
             $totalPokokBungaDibayar = $angsuran->transaksi()->sum('jumlah_bayar');
 
-            if ($totalPokokBungaDibayar <= 0) {
-                $angsuran->status = 'belum_bayar';
-            } elseif ($totalPokokBungaDibayar >= (float) $angsuran->pokok + (float) $angsuran->bunga) {
+            if ($totalPokokBungaDibayar >= (float) $angsuran->pokok + (float) $angsuran->bunga) {
                 $angsuran->status = 'lunas';
             } else {
-                $angsuran->status = 'sebagian';
+                $angsuran->status = 'belum_bayar';
             }
 
             $angsuran->save();
 
             // Tambahkan saldo rekening koperasi (kas masuk dari pembayaran angsuran)
+            $jumlahBayarKeKas = round($pokok + $bungaKeKas, 2);
             $totalMasukKas = round($jumlahBayarKeKas + $dendaDibayar, 2);
             $rekeningKoperasi = \App\Models\TransaksiKasKoperasi::query()
                 ->where('sumber_tipe', 'pinjaman')

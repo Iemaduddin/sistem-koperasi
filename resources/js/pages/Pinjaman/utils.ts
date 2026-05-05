@@ -84,12 +84,7 @@ export function hitungSisaHutang(pinjaman: PinjamanRow): number {
         ? pinjaman.angsuran.reduce(
               (sum, a) =>
                   sum +
-                  Number(a.pokok ?? 0) *
-                      (a.status === 'lunas'
-                          ? 1
-                          : a.status === 'sebagian'
-                            ? Number(a.jumlah_dibayar) / Number(a.total_tagihan)
-                            : 0),
+                  Number(a.pokok ?? 0) * (a.status === 'lunas' ? 1 : 0),
               0,
           )
         : 0;
@@ -152,8 +147,7 @@ export function getLabelStatusPinjaman(status: string): string {
 // ─── Badge status angsuran ────────────────────────────────────────────────────
 export function getLabelStatusAngsuran(status: string): string {
     const labels: Record<string, string> = {
-        belum_bayar: 'Belum Bayar',
-        sebagian: 'Sebagian Bayar',
+        belum_bayar: 'Belum Terbayar',
         lunas: 'Lunas',
     };
     return labels[status] ?? status;
@@ -214,14 +208,15 @@ export async function buildInvoiceHtml(
 
     const totalPokokBungaTerbayar =
         angsuran.transaksi?.reduce(
-            (sum, t) => sum + Number(t.jumlah_bayar),
+            (sum, t) => sum + Number(t.jumlah_bayar ?? 0),
             0,
         ) ?? 0;
     const dendaTerbayar =
         angsuran.transaksi?.reduce(
-            (sum, t) => sum + Number(t.denda_dibayar),
+            (sum, t) => sum + Number(t.denda_dibayar ?? 0),
             0,
         ) ?? 0;
+    const totalDibayarAktual = totalPokokBungaTerbayar + dendaTerbayar;
 
     const pokokTerbayar = Math.min(
         totalPokokBungaTerbayar,
@@ -239,7 +234,7 @@ export async function buildInvoiceHtml(
             <td>${escapeHtml(formatRupiah(pokokTerbayar))}</td>
             <td>${escapeHtml(formatRupiah(bungaTerbayar))}</td>
             <td>${escapeHtml(formatRupiah(dendaTerbayar))}</td>
-            <td>${escapeHtml(formatRupiah(angsuran.jumlah_dibayar))}</td>
+            <td>${escapeHtml(formatRupiah(totalDibayarAktual))}</td>
         </tr>
     `;
 
@@ -305,7 +300,7 @@ export async function buildInvoiceHtml(
                         <th>Deskripsi</th>
                         <th>Pokok</th>
                         <th>Bagi Hasil</th>
-                        <th>Denda</th>
+                        <th>Denda Terbayar</th>
                         <th>Total Dibayar</th>
                     </tr>
                 </thead>
@@ -313,7 +308,7 @@ export async function buildInvoiceHtml(
                     ${rowsHtml}
                     <tr>
                         <td colspan="5" style="text-align:right; font-weight:700;">Total Keseluruhan</td>
-                        <td style="font-weight:700;">${formatRupiah(angsuran.jumlah_dibayar)}</td>
+                        <td style="font-weight:700;">${formatRupiah(totalDibayarAktual)}</td>
                     </tr>
                 </tbody>
             </table>
@@ -362,22 +357,47 @@ export async function buildPelunasanInvoiceHtml(
         pinjaman.angsuran?.reduce((sum, a) => sum + Number(a.denda), 0) ?? 0;
     const totalBayar =
         pinjaman.angsuran?.reduce(
-            (sum, a) => sum + Number(a.jumlah_dibayar),
+            (sum, a) =>
+                sum +
+                (a.transaksi?.reduce(
+                    (as, t) =>
+                        as +
+                        Number(t.jumlah_bayar ?? 0) +
+                        Number(t.denda_dibayar ?? 0),
+                    0,
+                ) ?? 0),
             0,
         ) ?? 0;
 
     const rowsHtml = (pinjaman.angsuran ?? [])
         .map(
-            (a, index) => `
+            (a, index) => {
+                const dendaTerbayarRow =
+                    a.transaksi?.reduce(
+                        (ds, t) => ds + Number(t.denda_dibayar ?? 0),
+                        0,
+                    ) ?? Number(a.denda ?? 0);
+                return `
         <tr>
             <td>${index + 1}</td>
             <td>ANGSURAN KE-${a.angsuran_ke} (${a.status === 'lunas' ? 'LUNAS' : 'DILUNASI'})</td>
             <td>${escapeHtml(formatRupiah(a.pokok))}</td>
             <td>${escapeHtml(formatRupiah(a.bunga))}</td>
-            <td>${escapeHtml(formatRupiah(a.denda))}</td>
-            <td>${escapeHtml(formatRupiah(a.jumlah_dibayar))}</td>
+            <td>${escapeHtml(formatRupiah(dendaTerbayarRow))}</td>
+            <td>${escapeHtml(
+                formatRupiah(
+                    (a.transaksi?.reduce(
+                        (as, t) =>
+                            as +
+                            Number(t.jumlah_bayar ?? 0) +
+                            Number(t.denda_dibayar ?? 0),
+                        0,
+                    ) ?? 0),
+                ),
+            )}</td>
         </tr>
-    `,
+    `;
+            },
         )
         .join('');
 
@@ -443,7 +463,7 @@ export async function buildPelunasanInvoiceHtml(
                         <th>Deskripsi</th>
                         <th>Total Pokok</th>
                         <th>Total Bagi Hasil</th>
-                        <th>Total Denda</th>
+                        <th>Denda Terbayar</th>
                         <th>Total Bayar</th>
                     </tr>
                 </thead>

@@ -506,37 +506,64 @@ export default function PinjamanShow() {
                                                 </td>
                                             )}
                                             <td className="px-4 py-3 text-right">
-                                                {terlambat && !isLunas ? (
-                                                    <div className="flex flex-col items-end gap-0.5">
-                                                        <span className="font-semibold text-red-600">
-                                                            {formatRupiah(
-                                                                estimasiDenda,
+                                                {(() => {
+                                                    const dendaTerbayar =
+                                                        angsuran.transaksi?.reduce(
+                                                            (sum, t) => sum + Number(t.denda_dibayar ?? 0),
+                                                            0,
+                                                        ) ?? 0;
+
+                                                    const dendaEstimasiTampil = isLunas 
+                                                        ? Number(angsuran.denda) 
+                                                        : (terlambat ? estimasiDenda : 0);
+
+                                                    if (dendaEstimasiTampil <= 0 && dendaTerbayar <= 0) {
+                                                        return <span className="text-neutral-400">–</span>;
+                                                    }
+
+                                                    return (
+                                                        <div className="flex flex-col items-end gap-0.5">
+                                                            {/* Bagian Atas: Estimasi Denda (Warna Merah jika belum lunas, abu jika sudah) */}
+                                                            {dendaEstimasiTampil > 0 && (
+                                                                <div className="flex flex-col items-end leading-tight">
+                                                                    <span className={`font-semibold ${isLunas ? 'text-neutral-500' : 'text-red-600'}`}>
+                                                                        {formatRupiah(dendaEstimasiTampil)}
+                                                                    </span>
+                                                                    <span className="text-[10px] text-neutral-400 uppercase tracking-tighter">
+                                                                        Estimasi
+                                                                    </span>
+                                                                </div>
                                                             )}
-                                                        </span>
-                                                        {Number(
-                                                            angsuran.denda,
-                                                        ) === 0 && (
-                                                            <span className="text-xs text-red-400">
-                                                                estimasi
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-neutral-700">
-                                                        {formatRupiah(
-                                                            angsuran.denda,
-                                                        )}
-                                                    </span>
-                                                )}
+                                                            
+                                                            {/* Bagian Bawah: Realita Denda yang Dibayar (Warna Hijau) */}
+                                                            {dendaTerbayar > 0 && (
+                                                                <div className="mt-1 flex flex-col items-end leading-tight border-t border-neutral-100 pt-1 w-full">
+                                                                    <span className="font-bold text-green-600">
+                                                                        {formatRupiah(dendaTerbayar)}
+                                                                    </span>
+                                                                    <span className="text-[10px] text-green-500 uppercase tracking-tighter">
+                                                                        Terbayar
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })()}
                                             </td>
                                             <td className="px-4 py-3 text-right font-medium text-neutral-800">
                                                 {formatRupiah(
                                                     totalTagihanTampil,
                                                 )}
                                             </td>
-                                            <td className="px-4 py-3 text-right text-neutral-700">
+                                            <td className="px-4 py-3 text-right text-neutral-700 font-medium">
                                                 {formatRupiah(
-                                                    angsuran.jumlah_dibayar,
+                                                    angsuran.transaksi?.reduce(
+                                                        (sum, t) =>
+                                                            sum +
+                                                            Number(t.jumlah_bayar ?? 0) +
+                                                            Number(t.denda_dibayar ?? 0),
+                                                        0,
+                                                    ) ?? 0,
                                                 )}
                                             </td>
                                             <td className="px-4 py-3 text-center">

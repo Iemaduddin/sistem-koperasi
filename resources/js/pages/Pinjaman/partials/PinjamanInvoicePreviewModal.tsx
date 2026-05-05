@@ -107,7 +107,15 @@ export default function PinjamanInvoicePreviewModal({
                                 Total Dibayar
                             </p>
                             <p className="mt-1 font-semibold text-slate-900">
-                                {formatRupiah(selectedAngsuran.jumlah_dibayar)}
+                                {formatRupiah(
+                                    selectedAngsuran.transaksi?.reduce(
+                                        (sum, t) =>
+                                            sum +
+                                            Number(t.jumlah_bayar ?? 0) +
+                                            Number(t.denda_dibayar ?? 0),
+                                        0,
+                                    ) ?? 0,
+                                )}
                             </p>
                         </div>
                     </div>
@@ -127,7 +135,7 @@ export default function PinjamanInvoicePreviewModal({
                                     Bagi Hasil
                                 </th>
                                 <th className="px-4 py-3 text-right font-semibold">
-                                    Denda
+                                    Denda Terbayar
                                 </th>
                                 <th className="px-4 py-3 text-right font-semibold">
                                     Subtotal
@@ -150,7 +158,13 @@ export default function PinjamanInvoicePreviewModal({
                                 </td>
                                 <td className="px-4 py-3 text-right font-bold text-slate-900">
                                     {formatRupiah(
-                                        selectedAngsuran.jumlah_dibayar,
+                                        selectedAngsuran.transaksi?.reduce(
+                                            (sum, t) =>
+                                                sum +
+                                                Number(t.jumlah_bayar ?? 0) +
+                                                Number(t.denda_dibayar ?? 0),
+                                            0,
+                                        ) ?? 0,
                                     )}
                                 </td>
                             </tr>

@@ -8,7 +8,7 @@ export type AnggotaOption = {
 
 // ─── Status pinjaman & angsuran ──────────────────────────────────────────────
 export type StatusPinjaman = 'aktif' | 'lunas';
-export type StatusAngsuran = 'belum_bayar' | 'sebagian' | 'lunas';
+export type StatusAngsuran = 'belum_bayar' | 'lunas';
 
 // ─── Transaksi pembayaran angsuran ───────────────────────────────────────────
 export type TransaksiPinjaman = {
