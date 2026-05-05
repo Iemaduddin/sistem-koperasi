@@ -25,6 +25,11 @@ class ImportRekapanAnggotaService
     private const HEADER_ROW = 3;
     private const MAX_TABLE_ROWS = 300;
 
+    private array $anggotaCache = [];
+    private array $rekeningCache = [];
+    private array $pinjamanCache = [];
+    private array $batchCache = [];
+
     /**
      * @return array<string, mixed>
      */
@@ -444,6 +449,21 @@ class ImportRekapanAnggotaService
             ? \App\Models\RekeningKoperasi::query()->find($rekeningKoperasiId)
             : null;
 
+        // Reset caches for a fresh run
+        $this->anggotaCache = [];
+        $this->rekeningCache = [];
+        $this->pinjamanCache = [];
+        $this->batchCache = [];
+
+        // Pre-load all members involved in this import to avoid N+1
+        $noAnggotaList = array_unique(array_filter(array_map(fn($r) => (string)($r['no_anggota'] ?? ''), $rows)));
+        if (!empty($noAnggotaList)) {
+            $existingAnggota = Anggota::query()->whereIn('no_anggota', $noAnggotaList)->get();
+            foreach ($existingAnggota as $a) {
+                $this->anggotaCache[$a->no_anggota] = $a;
+            }
+        }
+
         return DB::transaction(function () use ($rows, $userId, $jenisByKode, $rekeningKoperasi): array {
             $summary = [
                 'anggota_created' => 0,
@@ -553,7 +573,19 @@ class ImportRekapanAnggotaService
 
                         if ($transaksiPinjaman->wasRecentlyCreated) {
                             $summary['transaksi_pinjaman_created']++;
-                            $this->refreshAngsuranStatusFromTransaksi($angsuran);
+                            
+                            // Optimization: Incremental update instead of re-querying SUM()
+                            $angsuran->jumlah_dibayar = round((float) $angsuran->jumlah_dibayar + $jumlahBayar, 2);
+                            $totalTagihan = (float) $angsuran->total_tagihan;
+                            
+                            if ($angsuran->jumlah_dibayar <= 0) {
+                                $angsuran->status = 'belum_bayar';
+                            } elseif ($angsuran->jumlah_dibayar >= $totalTagihan) {
+                                $angsuran->status = 'lunas';
+                            } else {
+                                $angsuran->status = 'sebagian';
+                            }
+                            $angsuran->save();
 
                             // Record Cash In for Installment Payment
                             if ($rekeningKoperasi && $jumlahBayar > 0) {
@@ -590,7 +622,7 @@ class ImportRekapanAnggotaService
                 }
 
                 if ($pinjaman !== null) {
-                    $this->refreshPinjamanStatus($pinjaman);
+                    $this->refreshPinjamanStatus($pinjaman, $angsuranByKe);
                 }
             }
 
@@ -608,8 +640,14 @@ class ImportRekapanAnggotaService
         $nama = (string) $row['nama'];
         $tanggalBergabung = Carbon::parse((string) $row['tanggal_masuk'])->toDateString();
 
-        $existing = Anggota::query()->where('no_anggota', $noAnggota)->first();
+        $existing = $this->anggotaCache[$noAnggota] ?? null;
+        
+        if ($existing === null) {
+            $existing = Anggota::query()->where('no_anggota', $noAnggota)->first();
+        }
+
         if ($existing instanceof Anggota) {
+            $this->anggotaCache[$noAnggota] = $existing; // Update cache
             $wasUpdated = false;
 
             if ($existing->nama !== $nama || (string) $existing->tanggal_bergabung !== $tanggalBergabung) {
@@ -638,6 +676,8 @@ class ImportRekapanAnggotaService
             'tanggal_bergabung' => $tanggalBergabung,
         ]);
 
+        $this->anggotaCache[$noAnggota] = $anggota;
+
         return [
             'anggota' => $anggota,
             'created' => true,
@@ -660,19 +700,30 @@ class ImportRekapanAnggotaService
         $jumlahAngsuran = $this->toAmount($row['angsuran'] ?? null);
         $bungaPersen = $this->normalizeBungaPersen($row['bunga_persen_hasil'] ?? null);
 
-        $pinjaman = Pinjaman::query()->firstOrCreate(
-            [
+        $cacheKey = $anggota->id . '|' . $tanggalMulai . '|' . $jumlahPinjaman . '|' . $tenor;
+        if (isset($this->pinjamanCache[$cacheKey])) {
+            return $this->pinjamanCache[$cacheKey];
+        }
+
+        $pinjaman = Pinjaman::query()->where([
+            'anggota_id' => $anggota->id,
+            'tanggal_mulai' => $tanggalMulai,
+            'jumlah_pinjaman' => $jumlahPinjaman,
+            'tenor_bulan' => $tenor,
+        ])->first();
+
+        if ($pinjaman === null) {
+            $pinjaman = Pinjaman::query()->create([
                 'anggota_id' => $anggota->id,
                 'tanggal_mulai' => $tanggalMulai,
                 'jumlah_pinjaman' => $jumlahPinjaman,
                 'tenor_bulan' => $tenor,
-            ],
-            [
                 'bunga_persen' => $bungaPersen,
                 'jumlah_angsuran' => $jumlahAngsuran,
                 'status' => 'aktif',
-            ],
-        );
+            ]);
+            $pinjaman->wasRecentlyCreated = true;
+        }
 
         if (!$pinjaman->wasRecentlyCreated) {
             $pinjaman->bunga_persen = $bungaPersen;
@@ -682,6 +733,8 @@ class ImportRekapanAnggotaService
             }
             $pinjaman->save();
         }
+
+        $this->pinjamanCache[$cacheKey] = $pinjaman;
 
         return $pinjaman;
     }
@@ -702,17 +755,19 @@ class ImportRekapanAnggotaService
         $totalTagihan = round($pokokPerBulan + $bungaPerBulan, 2);
 
         $tanggalMulai = Carbon::parse((string) $pinjaman->tanggal_mulai);
-        $result = [];
+        $existingAngsuran = AngsuranPinjaman::query()
+            ->where('pinjaman_id', $pinjaman->id)
+            ->get()
+            ->keyBy('angsuran_ke');
 
         for ($i = 1; $i <= $tenor; $i++) {
             $jatuhTempo = $tanggalMulai->copy()->addMonths($i)->toDateString();
+            $angsuran = $existingAngsuran->get($i);
 
-            $angsuran = AngsuranPinjaman::query()->firstOrCreate(
-                [
+            if ($angsuran === null) {
+                $angsuran = AngsuranPinjaman::query()->create([
                     'pinjaman_id' => $pinjaman->id,
                     'angsuran_ke' => $i,
-                ],
-                [
                     'tanggal_jatuh_tempo' => $jatuhTempo,
                     'pokok' => $pokokPerBulan,
                     'bunga' => $bungaPerBulan,
@@ -720,17 +775,26 @@ class ImportRekapanAnggotaService
                     'total_tagihan' => $totalTagihan,
                     'jumlah_dibayar' => 0,
                     'status' => 'belum_bayar',
-                ],
-            );
+                ]);
+                $angsuran->wasRecentlyCreated = true;
+            }
 
             if ($angsuran->wasRecentlyCreated) {
                 $summary['angsuran_created']++;
             } else {
-                $angsuran->tanggal_jatuh_tempo = $jatuhTempo;
-                $angsuran->pokok = $pokokPerBulan;
-                $angsuran->bunga = $bungaPerBulan;
-                $angsuran->total_tagihan = $totalTagihan;
-                $angsuran->save();
+                // Only save if data actually changed
+                if (
+                    $angsuran->tanggal_jatuh_tempo !== $jatuhTempo ||
+                    (float) $angsuran->pokok !== $pokokPerBulan ||
+                    (float) $angsuran->bunga !== $bungaPerBulan ||
+                    (float) $angsuran->total_tagihan !== $totalTagihan
+                ) {
+                    $angsuran->tanggal_jatuh_tempo = $jatuhTempo;
+                    $angsuran->pokok = $pokokPerBulan;
+                    $angsuran->bunga = $bungaPerBulan;
+                    $angsuran->total_tagihan = $totalTagihan;
+                    $angsuran->save();
+                }
             }
 
             $result[$i] = $angsuran;
@@ -756,15 +820,24 @@ class ImportRekapanAnggotaService
         $angsuran->save();
     }
 
-    private function refreshPinjamanStatus(Pinjaman $pinjaman): void
+    /**
+     * @param array<int, AngsuranPinjaman> $angsuranByKe
+     */
+    private function refreshPinjamanStatus(Pinjaman $pinjaman, array $angsuranByKe): void
     {
-        $countBelumLunas = AngsuranPinjaman::query()
-            ->where('pinjaman_id', $pinjaman->id)
-            ->where('status', '!=', 'lunas')
-            ->count();
+        $hasActive = false;
+        foreach ($angsuranByKe as $angsuran) {
+            if ($angsuran->status !== 'lunas') {
+                $hasActive = true;
+                break;
+            }
+        }
 
-        $pinjaman->status = $countBelumLunas === 0 ? 'lunas' : 'aktif';
-        $pinjaman->save();
+        $newStatus = $hasActive ? 'aktif' : 'lunas';
+        if ($pinjaman->status !== $newStatus) {
+            $pinjaman->status = $newStatus;
+            $pinjaman->save();
+        }
     }
 
     /**
@@ -809,8 +882,8 @@ class ImportRekapanAnggotaService
             $this->createSimpananTransaksi($rekening, $batch, $sukarela, $keterangan, $importKey . '|SUKARELA', $tanggal, $summary, $rekeningKoperasi, $userId);
         }
 
-        $batchTotal = (float) Simpanan::query()->where('batch_id', $batch->id)->sum('jumlah');
-        $batch->total = round($batchTotal, 2);
+        // Optimization: Update batch total incrementally
+        $batch->total = round((float) $batch->total + $pokok + $wajib + $sukarela, 2);
         $batch->save();
     }
 
@@ -824,6 +897,10 @@ class ImportRekapanAnggotaService
         array &$summary,
     ): TransaksiSimpananBatch {
         $kode = 'IMP-' . strtoupper(substr(md5($anggota->id . '|' . $tanggal->toDateString()), 0, 12));
+
+        if (isset($this->batchCache[$kode])) {
+            return $this->batchCache[$kode];
+        }
 
         $batch = TransaksiSimpananBatch::query()->firstOrCreate(
             ['kode_transaksi' => $kode],
@@ -839,6 +916,8 @@ class ImportRekapanAnggotaService
             $summary['batch_simpanan_created']++;
         }
 
+        $this->batchCache[$kode] = $batch;
+
         return $batch;
     }
 
@@ -850,6 +929,11 @@ class ImportRekapanAnggotaService
         JenisSimpanan $jenis,
         array &$summary,
     ): RekeningSimpanan {
+        $cacheKey = $anggota->id . '|' . $jenis->id;
+        if (isset($this->rekeningCache[$cacheKey])) {
+            return $this->rekeningCache[$cacheKey];
+        }
+
         $rekening = RekeningSimpanan::query()->firstOrCreate(
             [
                 'anggota_id' => $anggota->id,
@@ -863,6 +947,8 @@ class ImportRekapanAnggotaService
         if ($rekening->wasRecentlyCreated) {
             $summary['rekening_simpanan_created']++;
         }
+
+        $this->rekeningCache[$cacheKey] = $rekening;
 
         return $rekening;
     }
