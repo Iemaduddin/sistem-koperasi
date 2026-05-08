@@ -786,13 +786,11 @@ export default function PinjamanShow() {
                                 setBayarForm((prev) => ({
                                     ...prev,
                                     jumlah_bayar: String(
-                                        Math.max(
-                                            0,
-                                            Math.floor(value.numeric ?? 0),
-                                        ),
+                                        Math.max(0, value.numeric ?? 0),
                                     ),
                                 }))
                             }
+                            disabled
                             required
                         />
                     </div>
@@ -804,7 +802,7 @@ export default function PinjamanShow() {
                             setBayarForm((prev) => ({
                                 ...prev,
                                 denda_dibayar: String(
-                                    Math.max(0, Math.floor(value.numeric ?? 0)),
+                                    Math.max(0, value.numeric ?? 0),
                                 ),
                             }))
                         }
@@ -897,10 +895,7 @@ export default function PinjamanShow() {
                                                     String(
                                                         Math.max(
                                                             0,
-                                                            Math.floor(
-                                                                value.numeric ??
-                                                                    0,
-                                                            ),
+                                                            value.numeric ?? 0,
                                                         ),
                                                     ),
                                                 )

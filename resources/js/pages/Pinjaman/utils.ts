@@ -64,7 +64,10 @@ export function formatTanggal(value: string | null | undefined): string {
 
 // ─── Hitung sisa angsuran yang belum lunas ────────────────────────────────────
 export function hitungSisaAngsuran(pinjaman: PinjamanRow): number {
-    if (pinjaman.angsuran_count !== undefined && pinjaman.angsuran_lunas_count !== undefined) {
+    if (
+        pinjaman.angsuran_count !== undefined &&
+        pinjaman.angsuran_lunas_count !== undefined
+    ) {
         return pinjaman.angsuran_count - pinjaman.angsuran_lunas_count;
     }
     if (!pinjaman.angsuran) return pinjaman.tenor_bulan;
@@ -86,8 +89,7 @@ export function hitungSisaHutang(pinjaman: PinjamanRow): number {
     const totalDibayarPokok = pinjaman.angsuran
         ? pinjaman.angsuran.reduce(
               (sum, a) =>
-                  sum +
-                  Number(a.pokok ?? 0) * (a.status === 'lunas' ? 1 : 0),
+                  sum + Number(a.pokok ?? 0) * (a.status === 'lunas' ? 1 : 0),
               0,
           )
         : 0;
@@ -133,9 +135,14 @@ export function hitungEstimasiDenda(
 
 // ─── Hitung progress pembayaran (persen) ─────────────────────────────────────
 export function hitungProgressPersen(pinjaman: PinjamanRow): number {
-    if (pinjaman.angsuran_count !== undefined && pinjaman.angsuran_lunas_count !== undefined) {
+    if (
+        pinjaman.angsuran_count !== undefined &&
+        pinjaman.angsuran_lunas_count !== undefined
+    ) {
         if (pinjaman.angsuran_count === 0) return 0;
-        return Math.round((pinjaman.angsuran_lunas_count / pinjaman.angsuran_count) * 100);
+        return Math.round(
+            (pinjaman.angsuran_lunas_count / pinjaman.angsuran_count) * 100,
+        );
     }
     if (!pinjaman.angsuran || pinjaman.angsuran.length === 0) return 0;
     const lunas = pinjaman.angsuran.filter((a) => a.status === 'lunas').length;
@@ -280,7 +287,7 @@ export async function buildInvoiceHtml(
                 <img class="logo" src="${logoHorizontalUrl}" alt="Logo" onerror="this.src='${logoPngUrl}'" />
                 <div class="detail-company">
                     <h3>Koperasi Azzahwa</h3>
-                    <p>Jl. Contoh Koperasi No. 1, Kota Contoh</p>
+                    <p>Jl. Contoh Koperasi No. 1, Pasuruan</p>
                     <p>Telp. (021) 000000 | Email: info@azzahwa.test</p>
                 </div>
             </div>
@@ -377,14 +384,13 @@ export async function buildPelunasanInvoiceHtml(
         ) ?? 0;
 
     const rowsHtml = (pinjaman.angsuran ?? [])
-        .map(
-            (a, index) => {
-                const dendaTerbayarRow =
-                    a.transaksi?.reduce(
-                        (ds, t) => ds + Number(t.denda_dibayar ?? 0),
-                        0,
-                    ) ?? Number(a.denda ?? 0);
-                return `
+        .map((a, index) => {
+            const dendaTerbayarRow =
+                a.transaksi?.reduce(
+                    (ds, t) => ds + Number(t.denda_dibayar ?? 0),
+                    0,
+                ) ?? Number(a.denda ?? 0);
+            return `
         <tr>
             <td>${index + 1}</td>
             <td>ANGSURAN KE-${a.angsuran_ke} (${a.status === 'lunas' ? 'LUNAS' : 'DILUNASI'})</td>
@@ -393,19 +399,18 @@ export async function buildPelunasanInvoiceHtml(
             <td>${escapeHtml(formatRupiah(dendaTerbayarRow))}</td>
             <td>${escapeHtml(
                 formatRupiah(
-                    (a.transaksi?.reduce(
+                    a.transaksi?.reduce(
                         (as, t) =>
                             as +
                             Number(t.jumlah_bayar ?? 0) +
                             Number(t.denda_dibayar ?? 0),
                         0,
-                    ) ?? 0),
+                    ) ?? 0,
                 ),
             )}</td>
         </tr>
     `;
-            },
-        )
+        })
         .join('');
 
     return `
@@ -443,7 +448,7 @@ export async function buildPelunasanInvoiceHtml(
                 <img class="logo" src="${logoHorizontalUrl}" alt="Logo" onerror="this.src='${logoPngUrl}'" />
                 <div class="detail-company">
                     <h3>Koperasi Azzahwa</h3>
-                    <p>Jl. Contoh Koperasi No. 1, Kota Contoh</p>
+                    <p>Jl. Contoh Koperasi No. 1, Pasuruan</p>
                     <p>Telp. (021) 000000 | Email: info@azzahwa.test</p>
                 </div>
             </div>
