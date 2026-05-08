@@ -19,7 +19,6 @@ export default function RekapanSummaryTable({
                 id: 'no_anggota',
                 header: 'Nomor',
                 accessor: 'no_anggota',
-                sortable: true,
                 searchable: true,
             },
             {
@@ -37,7 +36,7 @@ export default function RekapanSummaryTable({
             },
             {
                 id: 'simpanan_pokok',
-                header: 'Tabungan Pokok',
+                header: 'Pokok',
                 sortable: true,
                 sortValue: (row) => row.simpanan_pokok,
                 cellClassName: 'text-right',
@@ -45,7 +44,7 @@ export default function RekapanSummaryTable({
             },
             {
                 id: 'simpanan_wajib',
-                header: 'Tabungan Wajib',
+                header: 'Wajib',
                 sortable: true,
                 sortValue: (row) => row.simpanan_wajib,
                 cellClassName: 'text-right',
@@ -53,7 +52,7 @@ export default function RekapanSummaryTable({
             },
             {
                 id: 'simpanan_sukarela',
-                header: 'Tabungan Sukarela',
+                header: 'Sukarela',
                 sortable: true,
                 sortValue: (row) => row.simpanan_sukarela,
                 cellClassName: 'text-right',
@@ -61,7 +60,7 @@ export default function RekapanSummaryTable({
             },
             {
                 id: 'pinjaman_pokok',
-                header: 'Pinjaman Pokok',
+                header: 'Pokok',
                 sortable: true,
                 sortValue: (row) => row.pinjaman_pokok,
                 cellClassName: 'text-right',
@@ -69,11 +68,19 @@ export default function RekapanSummaryTable({
             },
             {
                 id: 'pinjaman_total',
-                header: 'Pinjaman Total',
+                header: 'Total',
                 sortable: true,
                 sortValue: (row) => row.pinjaman_total,
                 cellClassName: 'text-right',
                 render: (row) => formatCurrency(row.pinjaman_total),
+            },
+            {
+                id: 'angsuran',
+                header: 'Angsuran',
+                sortable: true,
+                sortValue: (row) => (row as any).angsuran ?? 0,
+                cellClassName: 'text-right',
+                render: (row) => formatCurrency((row as any).angsuran),
             },
             {
                 id: 'angsuran_terbayar',
@@ -125,6 +132,29 @@ export default function RekapanSummaryTable({
                 stickyHeader
                 stickyColumnCount={2}
                 tableContainerClassName="max-h-[70vh]"
+                headerGroups={[
+                    {
+                        id: 'tabungan',
+                        label: 'Tabungan',
+                        columnIds: [
+                            'simpanan_pokok',
+                            'simpanan_wajib',
+                            'simpanan_sukarela',
+                        ],
+                    },
+                    {
+                        id: 'pinjaman',
+                        label: 'Pinjaman',
+                        columnIds: [
+                            'pinjaman_pokok',
+                            'pinjaman_total',
+                            'angsuran',
+                            'angsuran_terbayar',
+                            'sisa_pinjaman',
+                            'status',
+                        ],
+                    },
+                ]}
             />
         </div>
     );

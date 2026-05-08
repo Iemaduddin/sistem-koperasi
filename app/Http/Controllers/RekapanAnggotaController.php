@@ -161,8 +161,9 @@ class RekapanAnggotaController extends Controller
                 ->where('jenis_simpanan_id', 3)
                 ->sum(fn ($item) => (float) $item->saldo);
 
-            $pinjamanTotal = $pinjaman->sum(fn ($item) => (float) $item->jumlah_pinjaman);
             $totalAngsuran = (float) ($totalAngsuranByAnggota[$anggota->id] ?? 0);
+            // pinjaman total: total angsuran per bulan * tenor (jumlah_angsuran * tenor_bulan)
+            $pinjamanTotal = $pinjaman->sum(fn ($item) => (float) ((float) $item->jumlah_angsuran * (int) $item->tenor_bulan));
             $hasActiveLoan = $pinjaman->contains(fn ($item) => $item->status === 'aktif');
             $pinjamanPertama = $pinjaman->first();
 
@@ -175,6 +176,7 @@ class RekapanAnggotaController extends Controller
                 'simpanan_wajib' => (int) $simpananWajib,
                 'simpanan_sukarela' => (int) $simpananSukarela,
                 'pinjaman_pokok' => (int) ($pinjamanPertama?->jumlah_pinjaman ?? 0),
+                    'angsuran' => (int) ($pinjamanPertama?->jumlah_angsuran ?? 0),
                 'pinjaman_total' => (int) $pinjamanTotal,
                 'angsuran_terbayar' => (int) $totalAngsuran,
                 'sisa_pinjaman' => max(0, (int) $pinjamanTotal - (int) $totalAngsuran),

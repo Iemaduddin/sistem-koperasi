@@ -3,7 +3,6 @@ import { Head, router, usePage } from '@inertiajs/react';
 import { ReactElement, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 import ImportFormCard from './partials/ImportFormCard';
-import ImportSummaryCard from './partials/ImportSummaryCard';
 import RekapanTabsCard from './partials/RekapanTabsCard';
 import { PageProps } from './type';
 
@@ -13,7 +12,6 @@ export default function RekapanAnggotaIndex() {
     const anggotaList = pageProps.anggota_list ?? [];
     const anggotaDetailRows = pageProps.anggota_detail_rows ?? [];
     const monthColumns = pageProps.month_columns ?? [];
-    const summary = pageProps.import_summary;
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
