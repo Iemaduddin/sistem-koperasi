@@ -2,6 +2,7 @@ import { forwardRef, useEffect, useState } from 'react';
 import { formatDateOnly, formatDateTimeLong } from '@/utils/text';
 import Button from '@/components/button';
 import ConfirmDialog from '@/components/confirm-dialog';
+import DepositoInvoicePreviewModal from './DepositoInvoicePreviewModal';
 import Tooltip from '@/components/tooltip';
 import {
     formatRupiah,
@@ -9,6 +10,7 @@ import {
     type SimpananDepositoRow,
 } from '../types';
 import { LuEqualApproximately } from 'react-icons/lu';
+import { buildDepositoInvoiceHtml } from '../utils';
 
 export type VisibleLogRow = {
     id?: number;
@@ -48,6 +50,8 @@ const DepositoDetailBagiHasilSection = forwardRef<HTMLElement, Props>(
             useState<VisibleLogRow | null>(null);
         const [isConfirmKumulatifOpen, setIsConfirmKumulatifOpen] =
             useState(false);
+        const [selectedLogPreview, setSelectedLogPreview] =
+            useState<VisibleLogRow | null>(null);
 
         useEffect(() => {
             if (isTarikSingleSubmittingId === null) {
@@ -60,6 +64,22 @@ const DepositoDetailBagiHasilSection = forwardRef<HTMLElement, Props>(
                 setIsConfirmKumulatifOpen(false);
             }
         }, [isTarikKumulatifSubmitting]);
+
+        // Determine whether the last tenor's due date has passed
+        const lastLog =
+            visibleLogs && visibleLogs.length > 0
+                ? visibleLogs.reduce((prev, curr) =>
+                      prev.parsedDate > curr.parsedDate ? prev : curr,
+                  )
+                : null;
+
+        const isLastTenorDuePassed = lastLog
+            ? !Number.isNaN(lastLog.parsedDate.getTime()) &&
+              lastLog.parsedDate <= new Date()
+            : false;
+
+        const canShowTarikKumulatif =
+            eligibleLogsCount > 1 && isLastTenorDuePassed;
 
         return (
             <>
@@ -83,7 +103,7 @@ const DepositoDetailBagiHasilSection = forwardRef<HTMLElement, Props>(
                             </p>
                         </div>
                         <div className="flex gap-2">
-                            {eligibleLogsCount > 1 ? (
+                            {canShowTarikKumulatif ? (
                                 <Button
                                     type="button"
                                     size="sm"
@@ -221,6 +241,19 @@ const DepositoDetailBagiHasilSection = forwardRef<HTMLElement, Props>(
                                                         >
                                                             Tarik
                                                         </Button>
+                                                    ) : status === 'sudah' ? (
+                                                        <Button
+                                                            type="button"
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={() =>
+                                                                setSelectedLogPreview(
+                                                                    log,
+                                                                )
+                                                            }
+                                                        >
+                                                            Lihat Rincian
+                                                        </Button>
                                                     ) : (
                                                         <span className="text-xs text-slate-400">
                                                             -
@@ -270,6 +303,34 @@ const DepositoDetailBagiHasilSection = forwardRef<HTMLElement, Props>(
                     isLoading={isTarikKumulatifSubmitting}
                     onCancel={() => setIsConfirmKumulatifOpen(false)}
                     onConfirm={onTarikKumulatif}
+                />
+
+                <DepositoInvoicePreviewModal
+                    selectedRow={selectedRow}
+                    selectedLog={selectedLogPreview}
+                    onClose={() => setSelectedLogPreview(null)}
+                    onExportPdf={async () => {
+                        if (!selectedLogPreview) return;
+                        try {
+                            const html = await buildDepositoInvoiceHtml(
+                                selectedRow,
+                                selectedLogPreview,
+                            );
+                            const w = window.open(
+                                '',
+                                '_blank',
+                                'width=1200,height=900',
+                            );
+                            if (!w) return;
+                            w.document.open();
+                            w.document.write(html);
+                            w.document.close();
+                            w.focus();
+                            setTimeout(() => w.print(), 300);
+                        } catch (error) {
+                            // noop
+                        }
+                    }}
                 />
             </>
         );
