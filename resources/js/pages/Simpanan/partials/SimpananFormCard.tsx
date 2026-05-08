@@ -8,7 +8,6 @@ type Props = {
     formData: SimpananForm;
     isSubmitting: boolean;
     isLoadingOptions?: boolean;
-    isRekeningMinus?: boolean;
     isPokokLocked: boolean;
     pokokInfoText: string;
     isWajibLocked: boolean;
@@ -26,7 +25,6 @@ export default function SimpananFormCard({
     formData,
     isSubmitting,
     isLoadingOptions,
-    isRekeningMinus = false,
     isPokokLocked,
     pokokInfoText,
     isWajibLocked,
@@ -68,7 +66,7 @@ export default function SimpananFormCard({
                                 onChangeField('anggota_id', value)
                             }
                             searchable
-                            disabled={isLoadingOptions || isRekeningMinus}
+                            disabled={isLoadingOptions}
                             required
                         />
                     </div>
@@ -77,19 +75,12 @@ export default function SimpananFormCard({
                         label="Tanggal Transaksi"
                         type="datetime-local"
                         value={formData.created_at}
-                        disabled={isRekeningMinus}
                         onChange={(event) =>
                             onChangeField('created_at', event.target.value)
                         }
                         required
                     />
                 </div>
-                {isRekeningMinus && (
-                    <p className="mt-3 text-sm text-red-600">
-                        Rekening koperasi yang dipilih bersaldo minus. Semua
-                        input transaksi dinonaktifkan.
-                    </p>
-                )}
 
                 <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
                     <h3 className="text-sm font-semibold text-slate-800">
@@ -131,10 +122,8 @@ export default function SimpananFormCard({
                                             value.raw,
                                         )
                                     }
-                                    disabled={isPokokLocked || isRekeningMinus}
-                                    required={
-                                        !isPokokLocked && !isRekeningMinus
-                                    }
+                                    disabled={isPokokLocked}
+                                    required={!isPokokLocked}
                                     placeholder={
                                         isPokokLocked
                                             ? 'Simpanan pokok sudah terpenuhi'
@@ -153,7 +142,7 @@ export default function SimpananFormCard({
                                         )
                                     }
                                     placeholder="Opsional"
-                                    disabled={isPokokLocked || isRekeningMinus}
+                                    disabled={isPokokLocked}
                                 />
                             </div>
                             {pokokInfoText ? (
@@ -185,7 +174,7 @@ export default function SimpananFormCard({
                                             value.raw,
                                         )
                                     }
-                                    disabled={isWajibLocked || isRekeningMinus}
+                                    disabled={isWajibLocked}
                                     required={false}
                                     placeholder={
                                         isWajibLocked
@@ -205,7 +194,6 @@ export default function SimpananFormCard({
                                         )
                                     }
                                     placeholder="Opsional"
-                                    disabled={isWajibLocked || isRekeningMinus}
                                 />
                             </div>
                             {wajibInfoText ? (
@@ -237,7 +225,6 @@ export default function SimpananFormCard({
                                             value.raw,
                                         )
                                     }
-                                    disabled={isRekeningMinus}
                                     placeholder="Opsional"
                                 />
                             </div>
@@ -253,7 +240,6 @@ export default function SimpananFormCard({
                                             event.target.value,
                                         )
                                     }
-                                    disabled={isRekeningMinus}
                                     placeholder="Opsional"
                                 />
                             </div>
@@ -265,7 +251,7 @@ export default function SimpananFormCard({
                     <Button
                         type="submit"
                         loading={isSubmitting}
-                        disabled={isSubmitting || isRekeningMinus}
+                        disabled={isSubmitting}
                     >
                         Simpan Transaksi Simpanan
                     </Button>

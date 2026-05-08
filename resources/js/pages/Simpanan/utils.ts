@@ -277,7 +277,7 @@ export async function buildInvoiceHtml(
                 <img class="logo" src="${escapeHtml(logoHorizontalUrl)}" alt="Logo Koperasi" decoding="async" />
                 <div class="detail-company">
                     <h3>Koperasi Azzahwa</h3>
-                    <p class="desc-kop">Jl. Contoh Koperasi No. 1, Kota Contoh</p>
+                    <p class="desc-kop">Jl. Contoh Koperasi No. 1, Pasuruan</p>
                     <p class="desc-kop">Telp. (021) 000000 | Email: info@azzahwa.test</p>
                 </div>
             </div>

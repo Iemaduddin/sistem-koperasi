@@ -8,17 +8,23 @@ import { buildAmountLabel } from '../utils';
 type Props = {
     data: AnggotaNominalRow[];
     onSelectAnggota: (row: AnggotaNominalRow) => void;
-    onRequestTarik: (payload: {
+    onRequestTarikSukarela: (payload: {
         anggotaId: string;
         anggotaLabel: string;
         maxTarikSukarela: number;
+    }) => void;
+    onRequestTarikOperasional: (payload: {
+        anggotaId: string;
+        anggotaLabel: string;
+        maxTarikOperasional: number;
     }) => void;
 };
 
 export default function SimpananTableNominalSection({
     data,
     onSelectAnggota,
-    onRequestTarik,
+    onRequestTarikSukarela,
+    onRequestTarikOperasional,
 }: Props) {
     const columns = useMemo<DataTableColumn<AnggotaNominalRow>[]>(
         () => [
@@ -69,6 +75,13 @@ export default function SimpananTableNominalSection({
                 sortValue: (row) => row.total,
             },
             {
+                id: 'operasional',
+                header: 'Nominal Operasional',
+                sortable: true,
+                render: (row) => buildAmountLabel(row.operasional),
+                sortValue: (row) => row.operasional,
+            },
+            {
                 id: 'actions',
                 header: 'Aksi',
                 render: (row) => (
@@ -90,7 +103,7 @@ export default function SimpananTableNominalSection({
                                     return;
                                 }
 
-                                onRequestTarik({
+                                onRequestTarikSukarela({
                                     anggotaId: row.anggota_id,
                                     anggotaLabel: `${row.no_anggota} - ${row.nama}`,
                                     maxTarikSukarela: row.sukarela,
@@ -99,11 +112,29 @@ export default function SimpananTableNominalSection({
                         >
                             Tarik Sukarela
                         </Button>
+                        <Button
+                            size="sm"
+                            variant="secondary"
+                            disabled={!row.anggota_id || row.operasional <= 0}
+                            onClick={() => {
+                                if (!row.anggota_id || row.operasional <= 0) {
+                                    return;
+                                }
+
+                                onRequestTarikOperasional({
+                                    anggotaId: row.anggota_id,
+                                    anggotaLabel: `${row.no_anggota} - ${row.nama}`,
+                                    maxTarikOperasional: row.operasional,
+                                });
+                            }}
+                        >
+                            Tarik Operasional
+                        </Button>
                     </div>
                 ),
             },
         ],
-        [onRequestTarik, onSelectAnggota],
+        [onRequestTarikSukarela, onRequestTarikOperasional, onSelectAnggota],
     );
 
     return (

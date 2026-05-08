@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Exceptions\PerluKonfirmasiAlihSisaWajibException;
+use App\Models\Anggota;
 use App\Http\Requests\Simpanan\StoreSimpananRequest;
 use App\Http\Requests\Simpanan\TarikSukarelaRequest;
 use App\Http\Requests\Simpanan\UpdateSimpananRequest;
 use App\Models\Simpanan;
 use App\Services\SimpananService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -45,6 +47,16 @@ class SimpananController extends Controller
     {
         return [
             'rekening_simpanan' => $this->simpananService->getRekeningSimpananForForm(),
+        ];
+    }
+
+    /**
+     * Get all simpanan transactions for one anggota to build the batch section.
+     */
+    public function getBatchTransactionsByAnggota(Anggota $anggota): array
+    {
+        return [
+            'simpanan' => $this->simpananService->getTransactionsByAnggota($anggota->id),
         ];
     }
 
@@ -97,6 +109,30 @@ class SimpananController extends Controller
         return redirect()
             ->route('simpanan.index')
             ->with('success', 'Tarik saldo simpanan sukarela berhasil diproses.');
+    }
+
+    public function tarikOperasional(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'anggota_id' => ['required', 'uuid', 'exists:anggota,id'],
+            'rekening_koperasi_id' => ['required', 'uuid', 'exists:rekening_koperasi,id'],
+            'jumlah' => ['required', 'numeric', 'min:0'],
+            'keterangan' => ['nullable', 'string', 'max:500'],
+            'created_at' => ['required', 'date_format:Y-m-d\TH:i'],
+        ]);
+        $validated['user_id'] = $request->user()?->id;
+
+        try {
+            $this->simpananService->tarikOperasional($validated);
+        } catch (\Throwable $exception) {
+            return redirect()
+                ->route('simpanan.index')
+                ->with('error', $exception->getMessage());
+        }
+
+        return redirect()
+            ->route('simpanan.index')
+            ->with('success', 'Tarik saldo simpanan operasional berhasil diproses.');
     }
 
     /**

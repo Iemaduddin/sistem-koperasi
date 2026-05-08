@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import Button from '@/components/button';
 import DataTable, { type DataTableColumn } from '@/components/data-table';
 import type { PinjamanRow } from '../types';
@@ -17,6 +17,12 @@ type Props = {
 };
 
 export default function PinjamanTableCard({ rows, onRequestDelete }: Props) {
+    const { props } = usePage();
+    const roles: string[] = (props as any)?.auth?.user?.roles ?? [];
+    const isAllowedToDelete = roles.some((r) =>
+        ['master admin', 'super admin'].includes(String(r).toLowerCase()),
+    );
+
     const columns = useMemo<DataTableColumn<PinjamanRow>[]>(
         () => [
             {
@@ -123,7 +129,7 @@ export default function PinjamanTableCard({ rows, onRequestDelete }: Props) {
                         >
                             Detail
                         </Button>
-                        {row.status === 'aktif' && (
+                        {row.status === 'aktif' && isAllowedToDelete && (
                             <Button
                                 type="button"
                                 variant="danger"

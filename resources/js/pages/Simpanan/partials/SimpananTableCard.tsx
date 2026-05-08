@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type {
     SimpananBatch,
     SimpananRow,
@@ -15,17 +15,23 @@ import SimpananTableNominalSection from './SimpananTableNominalSection';
 type Props = {
     rows: SimpananRow[];
     rekeningSimpananData: RekeningSimpananOption[];
-    onRequestTarik: (payload: {
+    onRequestTarikSukarela: (payload: {
         anggotaId: string;
         anggotaLabel: string;
         maxTarikSukarela: number;
+    }) => void;
+    onRequestTarikOperasional: (payload: {
+        anggotaId: string;
+        anggotaLabel: string;
+        maxTarikOperasional: number;
     }) => void;
 };
 
 export default function SimpananTableCard({
     rows,
     rekeningSimpananData,
-    onRequestTarik,
+    onRequestTarikSukarela,
+    onRequestTarikOperasional,
 }: Props) {
     const [selectedAnggota, setSelectedAnggota] =
         useState<AnggotaNominalRow | null>(null);
@@ -34,6 +40,47 @@ export default function SimpananTableCard({
     const [selectedBatchRows, setSelectedBatchRows] = useState<SimpananRow[]>(
         [],
     );
+    const [allBatchRowsForSelectedAnggota, setAllBatchRowsForSelectedAnggota] =
+        useState<SimpananRow[] | null>(null);
+
+    useEffect(() => {
+        if (!selectedAnggota?.anggota_id) {
+            setAllBatchRowsForSelectedAnggota(null);
+            return;
+        }
+
+        let isActive = true;
+
+        const loadBatchRows = async () => {
+            try {
+                const response = await fetch(
+                    `/simpanan/anggota/${selectedAnggota.anggota_id}/batch-transactions`,
+                );
+
+                if (!response.ok) {
+                    throw new Error('Failed to load batch transactions');
+                }
+
+                const payload = (await response.json()) as {
+                    simpanan: SimpananRow[];
+                };
+
+                if (isActive) {
+                    setAllBatchRowsForSelectedAnggota(payload.simpanan ?? []);
+                }
+            } catch (error) {
+                if (isActive) {
+                    setAllBatchRowsForSelectedAnggota(null);
+                }
+            }
+        };
+
+        loadBatchRows();
+
+        return () => {
+            isActive = false;
+        };
+    }, [selectedAnggota?.anggota_id]);
 
     const nominalPerAnggota = useMemo<AnggotaNominalRow[]>(() => {
         const grouped = new Map<string, AnggotaNominalRow>();
@@ -71,6 +118,7 @@ export default function SimpananTableCard({
                 pokok: 0,
                 wajib: 0,
                 sukarela: 0,
+                operasional: 0,
                 total: 0,
             };
 
@@ -80,6 +128,8 @@ export default function SimpananTableCard({
                 current.wajib += saldo;
             } else if (jenisKode === 'SUKARELA') {
                 current.sukarela += saldo;
+            } else if (jenisKode === 'OPERASIONAL') {
+                current.operasional += saldo;
             }
 
             current.total = current.pokok + current.wajib + current.sukarela;
@@ -118,9 +168,12 @@ export default function SimpananTableCard({
             return [];
         }
 
+        const sourceRows =
+            allBatchRowsForSelectedAnggota ?? transaksiAnggotaTerpilih;
+
         const rowsByBatch = new Map<string, SimpananRow[]>();
 
-        for (const row of transaksiAnggotaTerpilih) {
+        for (const row of sourceRows) {
             if (!row.batch) {
                 continue;
             }
@@ -155,7 +208,11 @@ export default function SimpananTableCard({
                     new Date(b.tanggal_transaksi).getTime() -
                     new Date(a.tanggal_transaksi).getTime(),
             );
-    }, [selectedAnggota, transaksiAnggotaTerpilih]);
+    }, [
+        allBatchRowsForSelectedAnggota,
+        selectedAnggota,
+        transaksiAnggotaTerpilih,
+    ]);
 
     const exportInvoiceToPdf = async () => {
         if (!selectedInvoiceBatch) {
@@ -200,7 +257,8 @@ export default function SimpananTableCard({
             <SimpananTableNominalSection
                 data={nominalPerAnggota}
                 onSelectAnggota={setSelectedAnggota}
-                onRequestTarik={onRequestTarik}
+                onRequestTarikSukarela={onRequestTarikSukarela}
+                onRequestTarikOperasional={onRequestTarikOperasional}
             />
 
             <SimpananTableBatchSection

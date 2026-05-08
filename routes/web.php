@@ -81,8 +81,12 @@ Route::middleware(['auth', 'active.user'])->group(function (): void {
 			->name('simpanan.options.anggota');
 		Route::get('/simpanan/options/rekening-simpanan', [SimpananController::class, 'getRekeningSimpananOptions'])
 			->name('simpanan.options.rekening-simpanan');
+		Route::get('/simpanan/anggota/{anggota}/batch-transactions', [SimpananController::class, 'getBatchTransactionsByAnggota'])
+			->name('simpanan.batch-transactions-by-anggota');
 		Route::post('/simpanan/tarik-sukarela', [SimpananController::class, 'tarikSukarela'])
 			->name('simpanan.tarik-sukarela');
+		Route::post('/simpanan/tarik-operasional', [SimpananController::class, 'tarikOperasional'])
+			->name('simpanan.tarik-operasional');
 		Route::resource('/simpanan', SimpananController::class)
 			->parameters(['simpanan' => 'simpanan'])
 			->except(['show', 'create', 'edit', 'update', 'destroy']);

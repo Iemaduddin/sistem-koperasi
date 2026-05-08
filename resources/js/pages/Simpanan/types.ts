@@ -140,6 +140,7 @@ export type AnggotaNominalRow = {
     pokok: number;
     wajib: number;
     sukarela: number;
+    operasional: number;
     total: number;
 };
 

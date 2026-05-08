@@ -30,7 +30,20 @@ type TarikSukarelaTarget = {
     maxTarikSukarela: number;
 };
 
+type TarikOperasionalTarget = {
+    anggotaId: string;
+    anggotaLabel: string;
+    maxTarikOperasional: number;
+};
+
 type TarikSukarelaForm = {
+    rekening_koperasi_id: string;
+    jumlah: string;
+    keterangan: string;
+    created_at: string;
+};
+
+type TarikOperasionalForm = {
     rekening_koperasi_id: string;
     jumlah: string;
     keterangan: string;
@@ -50,6 +63,13 @@ function toDatetimeLocalValue(value: Date): string {
 }
 
 const initialTarikSukarelaForm = (): TarikSukarelaForm => ({
+    rekening_koperasi_id: '',
+    jumlah: '',
+    keterangan: '',
+    created_at: toDatetimeLocalValue(new Date()),
+});
+
+const initialTarikOperasionalForm = (): TarikOperasionalForm => ({
     rekening_koperasi_id: '',
     jumlah: '',
     keterangan: '',
@@ -101,6 +121,11 @@ export default function SimpananIndex() {
     const [tarikForm, setTarikForm] = useState<TarikSukarelaForm>(
         initialTarikSukarelaForm,
     );
+
+    const [tarikOperasionalTarget, setTarikOperasionalTarget] =
+        useState<TarikOperasionalTarget | null>(null);
+    const [tarikOperasionalForm, setTarikOperasionalForm] =
+        useState<TarikOperasionalForm>(initialTarikOperasionalForm);
 
     // Load form data (anggota & rekening simpanan) once when component mounts
     useEffect(() => {
@@ -188,28 +213,6 @@ export default function SimpananIndex() {
 
         return map;
     }, [rekeningKoperasiData]);
-
-    const isSelectedRekeningMinus = useMemo(() => {
-        if (!formData.rekening_koperasi_id) {
-            return false;
-        }
-
-        return (
-            (rekeningKoperasiSaldoById.get(formData.rekening_koperasi_id) ??
-                0) < 0
-        );
-    }, [formData.rekening_koperasi_id, rekeningKoperasiSaldoById]);
-
-    const isSelectedTarikRekeningMinus = useMemo(() => {
-        if (!tarikForm.rekening_koperasi_id) {
-            return false;
-        }
-
-        return (
-            (rekeningKoperasiSaldoById.get(tarikForm.rekening_koperasi_id) ??
-                0) < 0
-        );
-    }, [rekeningKoperasiSaldoById, tarikForm.rekening_koperasi_id]);
 
     const pokokSaldoByAnggota = useMemo(() => {
         const map = new Map<string, number>();
@@ -385,6 +388,7 @@ export default function SimpananIndex() {
     const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         submitSimpanan(false);
+        router.get('/simpanan', {}, { preserveScroll: true });
     };
 
     const handleConfirmOverflowTransfer = () => {
@@ -392,17 +396,85 @@ export default function SimpananIndex() {
         submitSimpanan(true);
     };
 
-    const openTarikModal = (payload: TarikSukarelaTarget) => {
+    const openTarikSukarelaModal = (payload: TarikSukarelaTarget) => {
         setTarikTarget(payload);
         setTarikForm({
             ...initialTarikSukarelaForm(),
-            jumlah: String(Math.max(0, Math.floor(payload.maxTarikSukarela))),
+            jumlah: String(payload.maxTarikSukarela),
         });
     };
 
     const closeTarikModal = () => {
         setTarikTarget(null);
         setTarikForm(initialTarikSukarelaForm());
+    };
+
+    const openTarikOperasionalModal = (payload: TarikOperasionalTarget) => {
+        setTarikOperasionalTarget(payload);
+        setTarikOperasionalForm({
+            ...initialTarikOperasionalForm(),
+            jumlah: String(payload.maxTarikOperasional),
+        });
+    };
+
+    const closeTarikOperasionalModal = () => {
+        setTarikOperasionalTarget(null);
+        setTarikOperasionalForm(initialTarikOperasionalForm());
+    };
+
+    const submitTarikOperasional = () => {
+        if (!tarikOperasionalTarget) {
+            return;
+        }
+
+        if (!tarikOperasionalForm.rekening_koperasi_id) {
+            toast.error('Rekening koperasi wajib dipilih');
+            return;
+        }
+
+        const jumlah = Number(tarikOperasionalForm.jumlah || 0);
+        if (Number.isNaN(jumlah) || jumlah <= 0) {
+            toast.error('Nominal tarik harus lebih dari 0');
+            return;
+        }
+
+        if (jumlah > tarikOperasionalTarget.maxTarikOperasional) {
+            toast.error(
+                'Nominal tarik tidak boleh melebihi saldo simpanan operasional',
+            );
+            return;
+        }
+
+        setIsTarikSubmitting(true);
+
+        router.post(
+            '/simpanan/tarik-operasional',
+            {
+                anggota_id: tarikOperasionalTarget.anggotaId,
+                rekening_koperasi_id: tarikOperasionalForm.rekening_koperasi_id,
+                jumlah,
+                keterangan: tarikOperasionalForm.keterangan,
+                created_at: tarikOperasionalForm.created_at,
+            },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    closeTarikOperasionalModal();
+                    router.get('/simpanan', {}, { preserveScroll: true });
+                },
+                onError: (errors) => {
+                    const firstError = Object.values(errors)[0];
+                    toast.error(
+                        firstError
+                            ? String(firstError)
+                            : 'Terjadi kesalahan saat memproses tarik operasional',
+                    );
+                },
+                onFinish: () => {
+                    setIsTarikSubmitting(false);
+                },
+            },
+        );
     };
 
     const submitTarikSukarela = () => {
@@ -477,7 +549,6 @@ export default function SimpananIndex() {
                     formData={formData}
                     isSubmitting={isSubmitting}
                     isLoadingOptions={isLoadingFormData}
-                    isRekeningMinus={isSelectedRekeningMinus}
                     isPokokLocked={isPokokLocked}
                     pokokInfoText={pokokInfoText}
                     isWajibLocked={isWajibLocked}
@@ -491,7 +562,8 @@ export default function SimpananIndex() {
                 <SimpananTableCard
                     rows={rows}
                     rekeningSimpananData={rekeningSimpananData}
-                    onRequestTarik={openTarikModal}
+                    onRequestTarikSukarela={openTarikSukarelaModal}
+                    onRequestTarikOperasional={openTarikOperasionalModal}
                 />
                 {simpananMeta && (
                     <div className="mt-4 flex items-center justify-between">
@@ -556,10 +628,7 @@ export default function SimpananIndex() {
                             type="button"
                             variant="warning"
                             loading={isTarikSubmitting}
-                            disabled={
-                                isTarikSubmitting ||
-                                isSelectedTarikRekeningMinus
-                            }
+                            disabled={isTarikSubmitting}
                             onClick={submitTarikSukarela}
                         >
                             Proses Tarik
@@ -586,7 +655,6 @@ export default function SimpananIndex() {
                         label="Nominal Tarik"
                         type="rupiah"
                         value={tarikForm.jumlah}
-                        disabled={isSelectedTarikRekeningMinus}
                         helperText={
                             tarikTarget
                                 ? `Maksimal: Rp ${tarikTarget.maxTarikSukarela.toLocaleString('id-ID')}`
@@ -602,9 +670,7 @@ export default function SimpananIndex() {
 
                             setTarikForm((prev) => ({
                                 ...prev,
-                                jumlah: String(
-                                    Math.max(0, Math.floor(clampedValue)),
-                                ),
+                                jumlah: String(Math.max(0, clampedValue)),
                             }));
                         }}
                         required
@@ -613,7 +679,6 @@ export default function SimpananIndex() {
                     <FloatingInput
                         label="Keterangan (Opsional)"
                         value={tarikForm.keterangan}
-                        disabled={isSelectedTarikRekeningMinus}
                         onChange={(event) =>
                             setTarikForm((prev) => ({
                                 ...prev,
@@ -626,7 +691,6 @@ export default function SimpananIndex() {
                         label="Tanggal Transaksi"
                         type="datetime-local"
                         value={tarikForm.created_at}
-                        disabled={isSelectedTarikRekeningMinus}
                         onChange={(event) =>
                             setTarikForm((prev) => ({
                                 ...prev,
@@ -635,12 +699,105 @@ export default function SimpananIndex() {
                         }
                         required
                     />
-                    {isSelectedTarikRekeningMinus && (
-                        <p className="text-xs text-red-600">
-                            Rekening koperasi yang dipilih bersaldo minus.
-                            Proses tarik dinonaktifkan.
-                        </p>
-                    )}
+                </div>
+            </Modal>
+
+            <Modal
+                open={tarikOperasionalTarget !== null}
+                title="Tarik Saldo Simpanan Operasional"
+                description={
+                    tarikOperasionalTarget
+                        ? `Anggota: ${tarikOperasionalTarget.anggotaLabel}`
+                        : undefined
+                }
+                onClose={closeTarikOperasionalModal}
+                footer={
+                    <>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={closeTarikOperasionalModal}
+                            disabled={isTarikSubmitting}
+                        >
+                            Batal
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="warning"
+                            loading={isTarikSubmitting}
+                            disabled={isTarikSubmitting}
+                            onClick={submitTarikOperasional}
+                        >
+                            Proses Tarik
+                        </Button>
+                    </>
+                }
+            >
+                <div className="mt-2 grid grid-cols-1 gap-4">
+                    <FloatingSelect
+                        label="Rekening Koperasi"
+                        value={tarikOperasionalForm.rekening_koperasi_id}
+                        options={rekeningKoperasiOptions}
+                        onValueChange={(value) =>
+                            setTarikOperasionalForm((prev) => ({
+                                ...prev,
+                                rekening_koperasi_id: value,
+                            }))
+                        }
+                        searchable
+                        required
+                    />
+
+                    <FloatingInput
+                        label="Nominal Tarik"
+                        type="rupiah"
+                        value={tarikOperasionalForm.jumlah}
+                        helperText={
+                            tarikOperasionalTarget
+                                ? `Maksimal: Rp ${tarikOperasionalTarget.maxTarikOperasional.toLocaleString('id-ID')}`
+                                : undefined
+                        }
+                        onCurrencyValueChange={(value) => {
+                            const maxTarik =
+                                tarikOperasionalTarget?.maxTarikOperasional ??
+                                0;
+                            const numericValue = value.numeric ?? 0;
+                            const clampedValue = Math.min(
+                                numericValue,
+                                maxTarik,
+                            );
+
+                            setTarikOperasionalForm((prev) => ({
+                                ...prev,
+                                jumlah: String(Math.max(0, clampedValue)),
+                            }));
+                        }}
+                        required
+                    />
+
+                    <FloatingInput
+                        label="Keterangan (Opsional)"
+                        value={tarikOperasionalForm.keterangan}
+                        onChange={(event) =>
+                            setTarikOperasionalForm((prev) => ({
+                                ...prev,
+                                keterangan: event.target.value,
+                            }))
+                        }
+                    />
+
+                    <FloatingInput
+                        label="Tanggal Transaksi"
+                        type="datetime-local"
+                        value={tarikOperasionalForm.created_at}
+                        onChange={(event) =>
+                            setTarikOperasionalForm((prev) => ({
+                                ...prev,
+                                created_at: event.target.value,
+                            }))
+                        }
+                        required
+                    />
                 </div>
             </Modal>
 
