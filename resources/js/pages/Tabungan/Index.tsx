@@ -175,28 +175,6 @@ export default function TabunganIndex() {
         return map;
     }, [rekeningKoperasiData]);
 
-    const isSelectedRekeningMinus = useMemo(() => {
-        if (!formData.rekening_koperasi_id) {
-            return false;
-        }
-
-        return (
-            (rekeningKoperasiSaldoById.get(formData.rekening_koperasi_id) ??
-                0) < 0
-        );
-    }, [formData.rekening_koperasi_id, rekeningKoperasiSaldoById]);
-
-    const isSelectedTarikRekeningMinus = useMemo(() => {
-        if (!tarikForm.rekening_koperasi_id) {
-            return false;
-        }
-
-        return (
-            (rekeningKoperasiSaldoById.get(tarikForm.rekening_koperasi_id) ??
-                0) < 0
-        );
-    }, [rekeningKoperasiSaldoById, tarikForm.rekening_koperasi_id]);
-
     const nominalPerAnggota = useMemo<TabunganNominalRow[]>(() => {
         const grouped = new Map<string, TabunganNominalRow>();
 
@@ -267,6 +245,7 @@ export default function TabunganIndex() {
             preserveScroll: true,
             onSuccess: () => {
                 resetForm();
+                router.get('/tabungan', {}, { preserveScroll: true });
             },
             onError: (errors) => {
                 const firstError = Object.values(errors)[0];
@@ -286,7 +265,7 @@ export default function TabunganIndex() {
         setTarikTarget(payload);
         setTarikForm({
             ...initialTarikTabunganForm(),
-            jumlah: String(Math.max(0, Math.floor(payload.maxTarikTabungan))),
+            jumlah: String(payload.maxTarikTabungan),
         });
     };
 
@@ -362,7 +341,6 @@ export default function TabunganIndex() {
                     formData={formData}
                     isSubmitting={isSubmitting}
                     isLoadingOptions={isLoadingFormData}
-                    isRekeningMinus={isSelectedRekeningMinus}
                     rekeningKoperasiOptions={rekeningKoperasiOptions}
                     anggotaOptions={anggotaOptions}
                     onSubmit={handleSubmit}
@@ -409,10 +387,7 @@ export default function TabunganIndex() {
                             type="button"
                             variant="warning"
                             loading={isTarikSubmitting}
-                            disabled={
-                                isTarikSubmitting ||
-                                isSelectedTarikRekeningMinus
-                            }
+                            disabled={isTarikSubmitting}
                             onClick={submitTarikTabungan}
                         >
                             Proses Tarik
@@ -439,7 +414,6 @@ export default function TabunganIndex() {
                         label="Nominal Tarik"
                         type="rupiah"
                         value={tarikForm.jumlah}
-                        disabled={isSelectedTarikRekeningMinus}
                         helperText={
                             tarikTarget
                                 ? `Maksimal: Rp ${tarikTarget.maxTarikTabungan.toLocaleString('id-ID')}`
@@ -455,9 +429,7 @@ export default function TabunganIndex() {
 
                             setTarikForm((prev) => ({
                                 ...prev,
-                                jumlah: String(
-                                    Math.max(0, Math.floor(clampedValue)),
-                                ),
+                                jumlah: String(Math.max(0, clampedValue)),
                             }));
                         }}
                         required
@@ -466,7 +438,6 @@ export default function TabunganIndex() {
                     <FloatingInput
                         label="Keterangan (Opsional)"
                         value={tarikForm.keterangan}
-                        disabled={isSelectedTarikRekeningMinus}
                         onChange={(event) =>
                             setTarikForm((prev) => ({
                                 ...prev,
@@ -479,7 +450,6 @@ export default function TabunganIndex() {
                         label="Tanggal Transaksi"
                         type="datetime-local"
                         value={tarikForm.created_at}
-                        disabled={isSelectedTarikRekeningMinus}
                         onChange={(event) =>
                             setTarikForm((prev) => ({
                                 ...prev,
@@ -488,12 +458,6 @@ export default function TabunganIndex() {
                         }
                         required
                     />
-                    {isSelectedTarikRekeningMinus && (
-                        <p className="text-xs text-red-600">
-                            Rekening koperasi yang dipilih bersaldo minus.
-                            Proses tarik dinonaktifkan.
-                        </p>
-                    )}
                 </div>
             </Modal>
         </>

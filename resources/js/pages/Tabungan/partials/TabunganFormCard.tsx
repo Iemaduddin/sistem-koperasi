@@ -15,7 +15,6 @@ type Props = {
     formData: TabunganForm;
     isSubmitting: boolean;
     isLoadingOptions?: boolean;
-    isRekeningMinus?: boolean;
     rekeningKoperasiOptions: Array<{ value: string; label: string }>;
     anggotaOptions: Array<{ value: string; label: string }>;
     onSubmit: (event: FormEvent<HTMLFormElement>) => void;
@@ -30,7 +29,6 @@ export default function TabunganFormCard({
     formData,
     isSubmitting,
     isLoadingOptions,
-    isRekeningMinus = false,
     rekeningKoperasiOptions,
     anggotaOptions,
     onSubmit,
@@ -70,7 +68,7 @@ export default function TabunganFormCard({
                         onChangeField('rekening_koperasi_id', value)
                     }
                     searchable
-                    disabled={isSubmitting || isRekeningMinus}
+                    disabled={isSubmitting}
                     required
                 />
 
@@ -78,7 +76,6 @@ export default function TabunganFormCard({
                     label="Jumlah Setoran Tabungan"
                     type="rupiah"
                     value={formData.jumlah}
-                    disabled={isSubmitting || isRekeningMinus}
                     onCurrencyValueChange={(value) => {
                         onChangeField(
                             'jumlah',
@@ -92,7 +89,6 @@ export default function TabunganFormCard({
                     label="Tanggal Transaksi"
                     type="datetime-local"
                     value={formData.created_at}
-                    disabled={isSubmitting || isRekeningMinus}
                     onChange={(event) =>
                         onChangeField('created_at', event.target.value)
                     }
@@ -103,28 +99,18 @@ export default function TabunganFormCard({
                     <FloatingInput
                         label="Keterangan (Opsional)"
                         value={formData.keterangan}
-                        disabled={isSubmitting || isRekeningMinus}
                         onChange={(event) =>
                             onChangeField('keterangan', event.target.value)
                         }
                     />
                 </div>
 
-                {isRekeningMinus && (
-                    <p className="text-xs text-red-600 sm:col-span-2">
-                        Rekening koperasi yang dipilih bersaldo minus. Form
-                        dinonaktifkan.
-                    </p>
-                )}
-
                 <div className="flex gap-2 sm:col-span-2">
                     <Button
                         type="submit"
                         variant="primary"
                         loading={isSubmitting}
-                        disabled={
-                            isSubmitting || isLoadingOptions || isRekeningMinus
-                        }
+                        disabled={isSubmitting || isLoadingOptions}
                     >
                         Simpan Tabungan
                     </Button>
