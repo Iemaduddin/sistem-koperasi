@@ -428,7 +428,7 @@ const menuSections: SidebarSection[] = [
                 label: 'Anggota',
                 icon: LuUserCog,
                 routeName: 'anggota.index',
-                roles: ['Master Admin', 'Super Admin'],
+                roles: ['Master Admin', 'Super Admin', 'Admin'],
             },
             {
                 id: 'jenis-simpanan',
@@ -556,6 +556,7 @@ const menuSections: SidebarSection[] = [
                 label: 'Riwayat Audit',
                 routeName: 'audit.index',
                 icon: LuChartColumnIncreasing,
+                roles: ['Master Admin', 'Super Admin'],
             },
             {
                 id: 'riwayat-transaksi',

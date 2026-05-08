@@ -143,7 +143,6 @@ export default function StatisticCard({ stats }: Props) {
                                 searchable={false}
                                 containerClassName="max-w-24"
                                 size="xs"
-                                className="!h-7 text-[10px]"
                             />
                         </div>
                         <div className="text-2xl font-bold text-slate-900">

@@ -749,6 +749,7 @@ class ImportRekapanAnggotaService
         $tenor = (int) $pinjaman->tenor_bulan;
         $jumlahPinjaman = (float) $pinjaman->jumlah_pinjaman;
         $angsuranBulanan = $this->toAmount($row['angsuran'] ?? null);
+        $result = [];
 
         $pokokPerBulan = $tenor > 0 ? round($jumlahPinjaman / $tenor, 2) : 0;
         $bungaPerBulan = round(max(0, $angsuranBulanan - $pokokPerBulan), 2);
@@ -869,17 +870,17 @@ class ImportRekapanAnggotaService
 
         if ($pokok > 0) {
             $rekening = $this->getOrCreateRekeningSimpanan($anggota, $jenisByKode['POKOK'], $summary);
-            $this->createSimpananTransaksi($rekening, $batch, $pokok, $keterangan, $importKey . '|POKOK', $tanggal, $summary, $rekeningKoperasi, $userId);
+            $this->createSimpananTransaksi($rekening, $batch, $pokok, $keterangan, $tanggal, $summary, $rekeningKoperasi, $userId);
         }
 
         if ($wajib > 0) {
             $rekening = $this->getOrCreateRekeningSimpanan($anggota, $jenisByKode['WAJIB'], $summary);
-            $this->createSimpananTransaksi($rekening, $batch, $wajib, $keterangan, $importKey . '|WAJIB', $tanggal, $summary, $rekeningKoperasi, $userId);
+            $this->createSimpananTransaksi($rekening, $batch, $wajib, $keterangan, $tanggal, $summary, $rekeningKoperasi, $userId);
         }
 
         if ($sukarela > 0) {
             $rekening = $this->getOrCreateRekeningSimpanan($anggota, $jenisByKode['SUKARELA'], $summary);
-            $this->createSimpananTransaksi($rekening, $batch, $sukarela, $keterangan, $importKey . '|SUKARELA', $tanggal, $summary, $rekeningKoperasi, $userId);
+            $this->createSimpananTransaksi($rekening, $batch, $sukarela, $keterangan, $tanggal, $summary, $rekeningKoperasi, $userId);
         }
 
         // Optimization: Update batch total incrementally
@@ -961,24 +962,24 @@ class ImportRekapanAnggotaService
         TransaksiSimpananBatch $batch,
         float $jumlah,
         string $keterangan,
-        string $importKey,
         Carbon $tanggal,
         array &$summary,
         ?\App\Models\RekeningKoperasi $rekeningKoperasi = null,
         ?string $userId = null,
     ): void {
-        $keteranganWithKey = $keterangan . ' [IMP:' . $importKey . ']';
+        $keteranganClean = $this->buildImportKeterangan($keterangan, $rekening->jenisSimpanan->nama ?? '');
 
-        $trx = Simpanan::query()->firstOrCreate(
+        $trx = Simpanan::query()->updateOrCreate(
             [
                 'rekening_simpanan_id' => $rekening->id,
                 'batch_id' => $batch->id,
                 'jenis_transaksi' => 'setor',
                 'jumlah' => $jumlah,
-                'keterangan' => $keteranganWithKey,
                 'created_at' => $tanggal->toDateTimeString(),
             ],
-            [],
+            [
+                'keterangan' => $keteranganClean,
+            ],
         );
 
         if ($trx->wasRecentlyCreated) {
@@ -1003,6 +1004,18 @@ class ImportRekapanAnggotaService
                 );
             }
         }
+    }
+
+    private function buildImportKeterangan(string $keterangan, string $jenisNama): string
+    {
+        $keterangan = trim($keterangan);
+        $jenisNama = trim($jenisNama);
+
+        if ($jenisNama === '') {
+            return $keterangan;
+        }
+
+        return $keterangan . ' (' . $jenisNama . ')';
     }
 
     private function recordCashFlow(

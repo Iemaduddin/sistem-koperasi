@@ -43,13 +43,18 @@ class DashboardController extends Controller
         $asetTotal = $totalSimpananAll + $totalRekeningKoperasiAll;
 
         // --- Metric: Aset Mengendap ---
-        $totalPokokBungaAngsuranBelumLunas = (float) AngsuranPinjaman::where('status', '!=', 'lunas')
-            ->sum(\Illuminate\Support\Facades\DB::raw('pokok + bunga'));
-            
-        $totalDibayarPadaAngsuranBelumLunas = (float) \App\Models\TransaksiPinjaman::whereHas('angsuran', function($q) {
-            $q->where('status', '!=', 'lunas');
-        })->sum('jumlah_bayar');
-        
+        // Aset mengendap: consider unpaid installments (angsuran) within the selected date range
+        $angsuranQuery = AngsuranPinjaman::where('status', 'belum_bayar');
+        $this->applyDateFilter($angsuranQuery, $startDate, $endDate, 'tanggal_jatuh_tempo');
+        $totalPokokBungaAngsuranBelumLunas = (float) $angsuranQuery->sum(\Illuminate\Support\Facades\DB::raw('pokok + bunga'));
+
+        // Sum of payments applied to those unpaid angsuran (limit by angsuran due date range)
+        $transaksiPinjamanQuery = \App\Models\TransaksiPinjaman::whereHas('angsuran', function($q) use ($startDate, $endDate) {
+            $q->where('status', 'belum_bayar');
+            $this->applyDateFilter($q, $startDate, $endDate, 'tanggal_jatuh_tempo');
+        });
+        $totalDibayarPadaAngsuranBelumLunas = (float) $transaksiPinjamanQuery->sum('jumlah_bayar');
+
         $asetMengendapValue = $totalPokokBungaAngsuranBelumLunas - $totalDibayarPadaAngsuranBelumLunas;
 
         // --- Metric: Kas Masuk & Keluar (Arus Kas) ---
