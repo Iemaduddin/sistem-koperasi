@@ -5,7 +5,7 @@ export default function Footbar() {
                 © {new Date().getFullYear()} Azzahwa Mitra Koperasi. All rights
                 reserved.
             </span>
-            <span>Created by ___</span>
+            <span>Created by IB Studio26</span>
         </footer>
     );
 }

@@ -49,7 +49,7 @@ class UserSeeder extends Seeder
             'email' => 'masteradmin@azzahwa.com',
         ], [
             'name' => 'Master Admin',
-            'password' => Hash::make('password'),
+            'password' => Hash::make('ibstudio26'),
         ]);
         $masterAdmin->assignRole($masterAdminRole['name']);
 
@@ -57,7 +57,7 @@ class UserSeeder extends Seeder
             'email' => 'superadmin@azzahwa.com',
         ], [
             'name' => 'Super Admin',
-            'password' => Hash::make('password'),
+            'password' => Hash::make('Mitra_001'),
         ]);
         $superAdmin->assignRole($superAdminRole['name']);
 
