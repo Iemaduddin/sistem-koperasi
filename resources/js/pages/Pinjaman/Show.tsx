@@ -1,0 +1,1044 @@
+import type { ReactElement } from 'react';
+import { useState } from 'react';
+import { Head, router, usePage } from '@inertiajs/react';
+import { toast } from 'react-toastify';
+import DashboardLayout from '@/layouts/Dashboard/DasboardLayout';
+import Button from '@/components/button';
+import Modal from '@/components/modal';
+import FloatingInput from '@/components/floating-input/input';
+import type {
+    AngsuranPinjaman,
+    BayarAngsuranForm,
+    PelunasanSummary,
+    PinjamanShowProps,
+} from './types';
+import { initialBayarAngsuranForm } from './types';
+import {
+    buildInvoiceHtml,
+    buildPelunasanInvoiceHtml,
+    formatRupiah,
+    formatTanggal,
+    getLabelStatusAngsuran,
+    getLabelStatusPinjaman,
+    hitungEstimasiDenda,
+    hitungHariTerlambat,
+    hitungProgressPersen,
+    isTerlambat,
+} from './utils';
+import PinjamanInvoicePreviewModal from './partials/PinjamanInvoicePreviewModal';
+import PinjamanPelunasanInvoicePreviewModal from './partials/PinjamanPelunasanInvoicePreviewModal';
+import { LuEye } from 'react-icons/lu';
+
+export default function PinjamanShow() {
+    const { props } = usePage<{ props: PinjamanShowProps }>();
+    const pageProps = props as unknown as PinjamanShowProps;
+    const pinjaman = pageProps.pinjaman;
+    const angsuranList = pinjaman.angsuran ?? [];
+
+    const lunasCount = angsuranList.filter((a) => a.status === 'lunas').length;
+    const canPelunasanAwal =
+        pinjaman.status !== 'lunas' &&
+        lunasCount < angsuranList.length &&
+        lunasCount >= angsuranList.length * 0.5;
+
+    const [bayarForm, setBayarForm] = useState<BayarAngsuranForm>(
+        initialBayarAngsuranForm(),
+    );
+    const [selectedAngsuran, setSelectedAngsuran] =
+        useState<AngsuranPinjaman | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const [pelunasanConfirmOpen, setPelunasanConfirmOpen] = useState(false);
+    const [isPelunasanSubmitting, setIsPelunasanSubmitting] = useState(false);
+
+    const [invoiceAngsuran, setInvoiceAngsuran] =
+        useState<AngsuranPinjaman | null>(null);
+    const [showPelunasanInvoice, setShowPelunasanInvoice] = useState(false);
+
+    const [pelunasanSummary, setPelunasanSummary] =
+        useState<PelunasanSummary | null>(null);
+    const [isLoadingSummary, setIsLoadingSummary] = useState(false);
+    const [pelunasanDenda, setPelunasanDenda] = useState('0');
+
+    const openBayarModal = (angsuran: AngsuranPinjaman) => {
+        const totalPokokBungaDibayar =
+            angsuran.transaksi?.reduce(
+                (sum, t) => sum + Number(t.jumlah_bayar),
+                0,
+            ) ?? 0;
+        const sisaPokokBunga =
+            Number(angsuran.pokok) +
+            Number(angsuran.bunga) -
+            totalPokokBungaDibayar;
+
+        const estimasiDenda = hitungEstimasiDenda(
+            angsuran,
+            pinjaman.jumlah_pinjaman,
+        );
+
+        setBayarForm({
+            angsuran_id: angsuran.id,
+            jumlah_bayar: String(Math.max(0, sisaPokokBunga)),
+            denda_dibayar: String(estimasiDenda),
+            tanggal_bayar: new Date().toISOString().substring(0, 10),
+        });
+        setSelectedAngsuran(angsuran);
+    };
+
+    const closeBayarModal = () => {
+        setSelectedAngsuran(null);
+        setBayarForm(initialBayarAngsuranForm());
+    };
+
+    const handleBayar = () => {
+        if (!selectedAngsuran) return;
+
+        const jumlah = Number(bayarForm.jumlah_bayar);
+        if (Number.isNaN(jumlah) || jumlah <= 0) {
+            toast.error('Jumlah bayar harus lebih dari 0.');
+            return;
+        }
+
+        setIsSubmitting(true);
+
+        router.post(`/pinjaman/${pinjaman.id}/bayar`, bayarForm, {
+            preserveScroll: true,
+            onSuccess: (page) => {
+                const flash = (page.props as any).flash;
+                if (!flash?.error) {
+                    closeBayarModal();
+                }
+            },
+            onError: (errors) => {
+                const firstError = Object.values(errors)[0];
+                toast.error(
+                    firstError
+                        ? String(firstError)
+                        : 'Gagal memproses pembayaran.',
+                );
+            },
+            onFinish: () => {
+                setIsSubmitting(false);
+            },
+        });
+    };
+
+    const openPelunasanModal = async () => {
+        setIsLoadingSummary(true);
+        setPelunasanConfirmOpen(true);
+        try {
+            const response = await fetch(
+                `/pinjaman/${pinjaman.id}/simulasi-pelunasan`,
+            );
+            const data = await response.json();
+            setPelunasanSummary(data);
+            setPelunasanDenda(String(data.total_denda));
+        } catch (error) {
+            toast.error('Gagal mengambil rincian pelunasan.');
+        } finally {
+            setIsLoadingSummary(false);
+        }
+    };
+
+    const handlePelunasan = () => {
+        setIsPelunasanSubmitting(true);
+        router.post(
+            `/pinjaman/${pinjaman.id}/pelunasan`,
+            {
+                tanggal_pelunasan: new Date().toISOString().substring(0, 10),
+                denda_pelunasan: pelunasanDenda,
+            },
+            {
+                preserveScroll: true,
+                onSuccess: (page) => {
+                    const flash = (page.props as any).flash;
+                    if (!flash?.error) {
+                        setPelunasanConfirmOpen(false);
+                    }
+                },
+                onError: () => {
+                    toast.error('Gagal memproses pelunasan pinjaman.');
+                },
+                onFinish: () => {
+                    setIsPelunasanSubmitting(false);
+                },
+            },
+        );
+    };
+
+    const exportInvoiceToPdf = async () => {
+        if (!invoiceAngsuran) return;
+
+        const previewWindow = window.open(
+            '',
+            '_blank',
+            'width=1200,height=900',
+        );
+
+        if (!previewWindow) {
+            toast.error(
+                'Gagal membuka jendela preview. Pastikan popup tidak diblokir.',
+            );
+            return;
+        }
+
+        const invoiceHtml = await buildInvoiceHtml(pinjaman, invoiceAngsuran);
+
+        previewWindow.document.open();
+        previewWindow.document.write(invoiceHtml);
+        previewWindow.document.close();
+        previewWindow.focus();
+
+        setTimeout(() => {
+            previewWindow.print();
+        }, 300);
+    };
+
+    const exportPelunasanPdf = async () => {
+        const previewWindow = window.open(
+            '',
+            '_blank',
+            'width=1200,height=900',
+        );
+
+        if (!previewWindow) {
+            toast.error(
+                'Gagal membuka jendela preview. Pastikan popup tidak diblokir.',
+            );
+            return;
+        }
+
+        const invoiceHtml = await buildPelunasanInvoiceHtml(pinjaman);
+
+        previewWindow.document.open();
+        previewWindow.document.write(invoiceHtml);
+        previewWindow.document.close();
+        previewWindow.focus();
+
+        setTimeout(() => {
+            previewWindow.print();
+        }, 300);
+    };
+
+    const progressPersen = hitungProgressPersen(pinjaman);
+
+    const statusBadgeClass =
+        pinjaman.status === 'lunas'
+            ? 'bg-green-100 text-green-800'
+            : 'bg-blue-100 text-blue-800';
+
+    // Hitung breakdown bagi hasil untuk modal bayar
+    const computeInterestBreakdown = (angsuran: AngsuranPinjaman) => {
+        const persenBunga = Number(pinjaman.bunga_persen);
+        const jumlahPinjaman = Number(pinjaman.jumlah_pinjaman);
+        const tenor = Number(pinjaman.tenor_bulan);
+        const totalBagiHasil = Number(angsuran.bunga);
+        const totalBagiHasilPerAngsuran = totalBagiHasil;
+
+        let bungaKeKas = 0;
+        let bungaKeOperasional = 0;
+        let bungaKeOperasionalPerAngsuran = 0;
+        let bungaKeKasPerAngsuran = 0;
+
+        if (persenBunga > 30) {
+            // Total kontrak
+            bungaKeKas = Math.round(jumlahPinjaman * 0.3 * 100) / 100;
+            bungaKeOperasional =
+                Math.round(jumlahPinjaman * ((persenBunga - 30) / 100) * 100) /
+                100;
+
+            // Per angsuran
+            bungaKeKasPerAngsuran =
+                tenor > 0 ? Math.round((bungaKeKas / tenor) * 100) / 100 : 0;
+            bungaKeOperasionalPerAngsuran =
+                tenor > 0
+                    ? Math.round((bungaKeOperasional / tenor) * 100) / 100
+                    : 0;
+        } else {
+            // Jika ≤ 30%, semua masuk kas
+            bungaKeKas = totalBagiHasil;
+            bungaKeKasPerAngsuran = totalBagiHasilPerAngsuran;
+        }
+
+        return {
+            persenBunga: Math.round(persenBunga * 100) / 100,
+            totalBagiHasil,
+            totalBagiHasilPerAngsuran,
+            bungaKeKas,
+            bungaKeKasPerAngsuran,
+            bungaKeOperasional,
+            bungaKeOperasionalPerAngsuran,
+        };
+    };
+
+    return (
+        <>
+            <Head
+                title={`Detail Pinjaman – ${pinjaman.anggota?.nama ?? '-'}`}
+            />
+
+            <section className="space-y-6">
+                {/* ── Info pinjaman ─────────────────────────────────────────── */}
+                <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
+                    <div className="mb-4 flex items-center justify-between">
+                        <h2 className="text-lg font-semibold text-neutral-800">
+                            Detail Pinjaman
+                        </h2>
+                        <span
+                            className={`rounded-full px-3 py-1 text-sm font-medium ${statusBadgeClass}`}
+                        >
+                            {getLabelStatusPinjaman(pinjaman.status)}
+                        </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                        <InfoItem
+                            label="Anggota"
+                            value={`${pinjaman.anggota?.no_anggota ?? '-'} – ${pinjaman.anggota?.nama ?? '-'}`}
+                        />
+                        <InfoItem
+                            label="Jumlah Pinjaman"
+                            value={formatRupiah(pinjaman.jumlah_pinjaman)}
+                        />
+                        <InfoItem
+                            label="Bagi Hasil / Bulan"
+                            value={`${pinjaman.bunga_persen}%`}
+                        />
+                        <InfoItem
+                            label="Tenor"
+                            value={`${pinjaman.tenor_bulan} bulan`}
+                        />
+                        <InfoItem
+                            label="Angsuran / Bulan"
+                            value={formatRupiah(pinjaman.jumlah_angsuran)}
+                        />
+                        <InfoItem
+                            label="Tanggal Mulai"
+                            value={formatTanggal(pinjaman.tanggal_mulai)}
+                        />
+                    </div>
+
+                    {/* Progress bar */}
+                    <div className="mt-5">
+                        <div className="mb-1 flex justify-between text-sm text-neutral-600">
+                            <span>Progress Pelunasan</span>
+                            <span>{progressPersen}%</span>
+                        </div>
+                        <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-100">
+                            <div
+                                className="h-full rounded-full bg-green-500 transition-all"
+                                style={{ width: `${progressPersen}%` }}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* ── Aksi Tambahan ─────────────────────────────────────────── */}
+                {canPelunasanAwal && (
+                    <div className="rounded-xl border border-green-200 bg-green-50 p-6 shadow-sm">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h3 className="font-semibold text-green-800">
+                                    Pelunasan Lebih Awal
+                                </h3>
+                                <p className="mt-1 text-sm text-green-700">
+                                    Angsuran sudah berjalan {lunasCount} dari{' '}
+                                    {angsuranList.length} bulan (≥ 50%). Anda
+                                    dapat melunasi seluruh sisa pinjaman
+                                    sekaligus dengan diskon bagi hasil untuk{' '}
+                                    {Math.floor(angsuranList.length * 0.2)}{' '}
+                                    bulan angsuran terakhir.
+                                </p>
+                            </div>
+                            <Button
+                                variant="primary"
+                                onClick={openPelunasanModal}
+                            >
+                                Lunasi Semua
+                            </Button>
+                        </div>
+                    </div>
+                )}
+
+                {/* ── Jadwal angsuran ───────────────────────────────────────── */}
+                <div className="rounded-xl border border-neutral-200 bg-white shadow-sm">
+                    <div className="border-b border-neutral-100 px-6 py-4">
+                        <div className="mb-3 flex items-center justify-between">
+                            <h2 className="text-lg font-semibold text-neutral-800">
+                                Jadwal Angsuran
+                            </h2>
+                            {/* ── Tombol Invoice Pelunasan (Muncul jika Lunas) ───────────────── */}
+                            {pinjaman.status === 'lunas' && (
+                                <Button
+                                    variant="primary"
+                                    onClick={() =>
+                                        setShowPelunasanInvoice(true)
+                                    }
+                                >
+                                    <LuEye className="h-6 w-6" />
+                                    Unduh Invoice Pelunasan
+                                </Button>
+                            )}
+                        </div>
+                        {(() => {
+                            const breakdown = computeInterestBreakdown(
+                                angsuranList[0] || { pokok: '0', bunga: '0' },
+                            );
+                            return breakdown.persenBunga > 30 ? (
+                                <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">
+                                    Total Bagi Hasil untuk{' '}
+                                    {pinjaman.tenor_bulan} bulan:
+                                    <span className="ml-1 font-semibold text-blue-900">
+                                        {formatRupiah(breakdown.totalBagiHasil)}
+                                    </span>
+                                    <span className="ml-2 text-xs text-blue-600">
+                                        (Kas:{' '}
+                                        {formatRupiah(breakdown.bungaKeKas)} +
+                                        OPERASIONAL:{' '}
+                                        {formatRupiah(
+                                            breakdown.bungaKeOperasional,
+                                        )}
+                                        )
+                                    </span>
+                                </div>
+                            ) : null;
+                        })()}
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead className="bg-neutral-50 text-xs font-medium tracking-wider text-neutral-500 uppercase">
+                                <tr>
+                                    <th className="px-4 py-3 text-left">Ke</th>
+                                    <th className="px-4 py-3 text-left">
+                                        Jatuh Tempo
+                                    </th>
+                                    <th className="px-4 py-3 text-right">
+                                        Pokok
+                                    </th>
+                                    <th className="px-4 py-3 text-right">
+                                        Bagi Hasil
+                                    </th>
+                                    {Number(pinjaman.bunga_persen) > 30 && (
+                                        <th className="px-4 py-3 text-right">
+                                            Biaya OPERASIONAL
+                                        </th>
+                                    )}
+                                    <th className="px-4 py-3 text-right">
+                                        Denda
+                                    </th>
+                                    <th className="px-4 py-3 text-right">
+                                        Total Tagihan
+                                    </th>
+                                    <th className="px-4 py-3 text-right">
+                                        Dibayar
+                                    </th>
+                                    <th className="px-4 py-3 text-center">
+                                        Status
+                                    </th>
+                                    <th className="px-4 py-3 text-center">
+                                        Aksi
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-neutral-100">
+                                {angsuranList.map((angsuran) => {
+                                    const terlambat = isTerlambat(angsuran);
+                                    const isLunas = angsuran.status === 'lunas';
+                                    const hariTerlambat =
+                                        terlambat && !isLunas
+                                            ? hitungHariTerlambat(angsuran)
+                                            : 0;
+                                    const estimasiDenda =
+                                        terlambat && !isLunas
+                                            ? hitungEstimasiDenda(
+                                                  angsuran,
+                                                  pinjaman.jumlah_pinjaman,
+                                              )
+                                            : 0;
+                                    const statusLabel = getLabelStatusAngsuran(
+                                        angsuran.status,
+                                    );
+                                    const totalTagihanTampil =
+                                        Number(angsuran.pokok) +
+                                        Number(angsuran.bunga) +
+                                        Number(
+                                            isLunas
+                                                ? angsuran.denda
+                                                : estimasiDenda,
+                                        );
+
+                                    const badgeClass = isLunas
+                                        ? 'bg-green-100 text-green-700'
+                                        : terlambat
+                                          ? 'bg-red-100 text-red-700'
+                                          : 'bg-neutral-100 text-neutral-600';
+
+                                    return (
+                                        <tr
+                                            key={angsuran.id}
+                                            className={
+                                                terlambat && !isLunas
+                                                    ? 'bg-red-50'
+                                                    : ''
+                                            }
+                                        >
+                                            <td className="px-4 py-3 font-medium text-neutral-700">
+                                                {angsuran.angsuran_ke}
+                                            </td>
+                                            <td className="px-4 py-3 text-neutral-600">
+                                                <div className="flex flex-col gap-0.5">
+                                                    <span>
+                                                        {formatTanggal(
+                                                            angsuran.tanggal_jatuh_tempo,
+                                                        )}
+                                                    </span>
+                                                    {terlambat && !isLunas && (
+                                                        <span className="inline-flex w-fit items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-600">
+                                                            ⚠ Terlambat{' '}
+                                                            {hariTerlambat} hari
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3 text-right text-neutral-700">
+                                                {formatRupiah(angsuran.pokok)}
+                                            </td>
+                                            <td className="px-4 py-3 text-right text-neutral-700">
+                                                {formatRupiah(angsuran.bunga)}
+                                            </td>
+                                            {Number(pinjaman.bunga_persen) >
+                                                30 && (
+                                                <td className="px-4 py-3 text-right font-medium text-amber-700">
+                                                    {formatRupiah(
+                                                        computeInterestBreakdown(
+                                                            angsuran,
+                                                        )
+                                                            .bungaKeOperasionalPerAngsuran,
+                                                    )}
+                                                </td>
+                                            )}
+                                            <td className="px-4 py-3 text-right">
+                                                {(() => {
+                                                    const dendaTerbayar =
+                                                        angsuran.transaksi?.reduce(
+                                                            (sum, t) =>
+                                                                sum +
+                                                                Number(
+                                                                    t.denda_dibayar ??
+                                                                        0,
+                                                                ),
+                                                            0,
+                                                        ) ?? 0;
+
+                                                    const dendaEstimasiTampil =
+                                                        isLunas
+                                                            ? Number(
+                                                                  angsuran.denda,
+                                                              )
+                                                            : terlambat
+                                                              ? estimasiDenda
+                                                              : 0;
+
+                                                    if (
+                                                        dendaEstimasiTampil <=
+                                                            0 &&
+                                                        dendaTerbayar <= 0
+                                                    ) {
+                                                        return (
+                                                            <span className="text-neutral-400">
+                                                                –
+                                                            </span>
+                                                        );
+                                                    }
+
+                                                    return (
+                                                        <div className="flex flex-col items-end gap-0.5">
+                                                            {/* Bagian Atas: Estimasi Denda (Warna Merah jika belum lunas, abu jika sudah) */}
+                                                            {dendaEstimasiTampil >
+                                                                0 && (
+                                                                <div className="flex flex-col items-end leading-tight">
+                                                                    <span
+                                                                        className={`font-semibold ${isLunas ? 'text-neutral-500' : 'text-red-600'}`}
+                                                                    >
+                                                                        {formatRupiah(
+                                                                            dendaEstimasiTampil,
+                                                                        )}
+                                                                    </span>
+                                                                    <span className="text-[10px] tracking-tighter text-neutral-400 uppercase">
+                                                                        Estimasi
+                                                                    </span>
+                                                                </div>
+                                                            )}
+
+                                                            {/* Bagian Bawah: Realita Denda yang Dibayar (Warna Hijau) */}
+                                                            {dendaTerbayar >
+                                                                0 && (
+                                                                <div className="mt-1 flex w-full flex-col items-end border-t border-neutral-100 pt-1 leading-tight">
+                                                                    <span className="font-bold text-green-600">
+                                                                        {formatRupiah(
+                                                                            dendaTerbayar,
+                                                                        )}
+                                                                    </span>
+                                                                    <span className="text-[10px] tracking-tighter text-green-500 uppercase">
+                                                                        Terbayar
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })()}
+                                            </td>
+                                            <td className="px-4 py-3 text-right font-medium text-neutral-800">
+                                                {formatRupiah(
+                                                    totalTagihanTampil,
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3 text-right font-medium text-neutral-700">
+                                                {formatRupiah(
+                                                    angsuran.transaksi?.reduce(
+                                                        (sum, t) =>
+                                                            sum +
+                                                            Number(
+                                                                t.jumlah_bayar ??
+                                                                    0,
+                                                            ) +
+                                                            Number(
+                                                                t.denda_dibayar ??
+                                                                    0,
+                                                            ),
+                                                        0,
+                                                    ) ?? 0,
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                <span
+                                                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${badgeClass}`}
+                                                >
+                                                    {statusLabel}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    {!isLunas && (
+                                                        <Button
+                                                            type="button"
+                                                            variant="primary"
+                                                            size="sm"
+                                                            onClick={() =>
+                                                                openBayarModal(
+                                                                    angsuran,
+                                                                )
+                                                            }
+                                                        >
+                                                            Bayar
+                                                        </Button>
+                                                    )}
+                                                    {isLunas && (
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="flex items-center gap-1.5"
+                                                            onClick={() =>
+                                                                setInvoiceAngsuran(
+                                                                    angsuran,
+                                                                )
+                                                            }
+                                                        >
+                                                            <LuEye className="h-4 w-4" />
+                                                            Lihat
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+
+                        {angsuranList.length === 0 && (
+                            <p className="py-8 text-center text-sm text-neutral-400">
+                                Belum ada jadwal angsuran.
+                            </p>
+                        )}
+                    </div>
+                </div>
+                {/* ── Kembali ───────────────────────────────────────────────── */}
+                <div>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => router.visit('/pinjaman')}
+                    >
+                        ← Kembali ke Daftar Pinjaman
+                    </Button>
+                </div>
+            </section>
+
+            <Modal
+                open={selectedAngsuran !== null}
+                title={`Bayar Angsuran ke-${selectedAngsuran?.angsuran_ke ?? ''}`}
+                description={
+                    selectedAngsuran
+                        ? `Tagihan (Pokok + Bagi Hasil): ${formatRupiah(Number(selectedAngsuran.pokok) + Number(selectedAngsuran.bunga))}${isTerlambat(selectedAngsuran) ? ` · Terlambat ${hitungHariTerlambat(selectedAngsuran)} hari` : ''}`
+                        : undefined
+                }
+                onClose={closeBayarModal}
+                footer={
+                    <>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={closeBayarModal}
+                            disabled={isSubmitting}
+                        >
+                            Batal
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="primary"
+                            loading={isSubmitting}
+                            disabled={isSubmitting}
+                            onClick={handleBayar}
+                        >
+                            Proses Pembayaran
+                        </Button>
+                    </>
+                }
+            >
+                <div className="grid grid-cols-1 gap-4">
+                    {selectedAngsuran && isTerlambat(selectedAngsuran) && (
+                        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                            <p className="font-semibold">
+                                ⚠ Angsuran Terlambat{' '}
+                                {hitungHariTerlambat(selectedAngsuran)} Hari
+                            </p>
+                            <p className="mt-0.5 text-red-600">
+                                Denda keterlambatan:{' '}
+                                <span className="font-semibold">
+                                    {formatRupiah(
+                                        hitungEstimasiDenda(
+                                            selectedAngsuran,
+                                            pinjaman.jumlah_pinjaman,
+                                        ),
+                                    )}
+                                </span>
+                                {Number(selectedAngsuran.denda) === 0 &&
+                                    ' (estimasi, dihitung final oleh sistem)'}
+                            </p>
+                        </div>
+                    )}
+
+                    {selectedAngsuran &&
+                        (() => {
+                            const breakdown =
+                                computeInterestBreakdown(selectedAngsuran);
+                            return breakdown.persenBunga > 30 ? (
+                                <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm">
+                                    <p className="font-semibold text-blue-900">
+                                        Rincian Bagi Hasil per Angsuran
+                                    </p>
+                                    <div className="mt-2 space-y-1 text-blue-800">
+                                        <div className="flex justify-between">
+                                            <span>Bagi Hasil per Bulan:</span>
+                                            <span className="font-medium">
+                                                {formatRupiah(
+                                                    breakdown.totalBagiHasilPerAngsuran,
+                                                )}
+                                            </span>
+                                        </div>
+                                        <div className="border-t border-blue-200 pt-1" />
+                                        <ul className="list-outside space-y-1">
+                                            <li className="flex justify-between">
+                                                <span>
+                                                    Kas Koperasi per Bulan:
+                                                </span>
+                                                <span className="font-medium text-green-700">
+                                                    {formatRupiah(
+                                                        breakdown.bungaKeKasPerAngsuran,
+                                                    )}
+                                                </span>
+                                            </li>
+                                            <li className="flex justify-between">
+                                                <span>
+                                                    Simpanan OPERASIONAL per
+                                                    Bulan:
+                                                </span>
+                                                <span className="font-medium text-amber-700">
+                                                    {formatRupiah(
+                                                        breakdown.bungaKeOperasionalPerAngsuran,
+                                                    )}
+                                                </span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            ) : null;
+                        })()}
+
+                    <div className="mt-3">
+                        <FloatingInput
+                            label="Jumlah Bayar (Pokok + Bagi Hasil)"
+                            type="rupiah"
+                            value={bayarForm.jumlah_bayar}
+                            onCurrencyValueChange={(value) =>
+                                setBayarForm((prev) => ({
+                                    ...prev,
+                                    jumlah_bayar: String(
+                                        Math.max(0, value.numeric ?? 0),
+                                    ),
+                                }))
+                            }
+                            disabled
+                            required
+                        />
+                    </div>
+                    <FloatingInput
+                        label="Denda Dibayar (dapat diubah)"
+                        type="rupiah"
+                        value={bayarForm.denda_dibayar}
+                        onCurrencyValueChange={(value) =>
+                            setBayarForm((prev) => ({
+                                ...prev,
+                                denda_dibayar: String(
+                                    Math.max(0, value.numeric ?? 0),
+                                ),
+                            }))
+                        }
+                    />
+                    <FloatingInput
+                        label="Tanggal Bayar"
+                        type="date"
+                        value={bayarForm.tanggal_bayar}
+                        onChange={(e) =>
+                            setBayarForm((prev) => ({
+                                ...prev,
+                                tanggal_bayar: e.target.value,
+                            }))
+                        }
+                        required
+                    />
+                </div>
+            </Modal>
+
+            {/* ── Modal Konfirmasi Pelunasan ─────────────────────────────────────── */}
+            <Modal
+                open={pelunasanConfirmOpen}
+                title="Konfirmasi Pelunasan Pinjaman"
+                description={
+                    pelunasanSummary
+                        ? `Anda akan melunasi seluruh sisa ${pelunasanSummary.rincian.length} bulan angsuran.`
+                        : 'Sedang menghitung rincian pelunasan...'
+                }
+                onClose={() => setPelunasanConfirmOpen(false)}
+                maxWidthClassName="max-w-2xl"
+                footer={
+                    <>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setPelunasanConfirmOpen(false)}
+                            disabled={isPelunasanSubmitting}
+                        >
+                            Batal
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="primary"
+                            loading={isPelunasanSubmitting}
+                            disabled={isPelunasanSubmitting || isLoadingSummary}
+                            onClick={handlePelunasan}
+                        >
+                            Ya, Lunasi Sekarang
+                        </Button>
+                    </>
+                }
+            >
+                {isLoadingSummary ? (
+                    <div className="flex flex-col items-center justify-center py-10">
+                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-neutral-200 border-t-blue-600"></div>
+                        <p className="mt-4 text-sm text-neutral-500">
+                            Menghitung rincian pembayaran...
+                        </p>
+                    </div>
+                ) : (
+                    pelunasanSummary && (
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4 rounded-xl bg-neutral-50 p-4">
+                                <InfoItem
+                                    label="Total Sisa Pokok"
+                                    value={formatRupiah(
+                                        pelunasanSummary.total_pokok,
+                                    )}
+                                />
+                                <InfoItem
+                                    label="Total Bagi Hasil (Setelah Diskon)"
+                                    value={formatRupiah(
+                                        pelunasanSummary.total_bunga,
+                                    )}
+                                />
+                                <InfoItem
+                                    label="Total Denda Terakumulasi"
+                                    value={formatRupiah(
+                                        pelunasanSummary.total_denda,
+                                    )}
+                                />
+                                <div className="col-span-2 border-t border-neutral-200 pt-2">
+                                    <div className="mb-4">
+                                        <FloatingInput
+                                            label="Denda Pelunasan (Opsional/Bisa Diubah)"
+                                            type="rupiah"
+                                            value={pelunasanDenda}
+                                            onCurrencyValueChange={(value) =>
+                                                setPelunasanDenda(
+                                                    String(
+                                                        Math.max(
+                                                            0,
+                                                            value.numeric ?? 0,
+                                                        ),
+                                                    ),
+                                                )
+                                            }
+                                        />
+                                    </div>
+                                    <p className="text-xs text-neutral-400">
+                                        Total Pembayaran
+                                    </p>
+                                    <p className="text-xl font-bold text-blue-600">
+                                        {formatRupiah(
+                                            pelunasanSummary.total_pokok +
+                                                pelunasanSummary.total_bunga +
+                                                Number(pelunasanDenda),
+                                        )}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="rounded-lg border border-green-100 bg-green-50 p-3">
+                                <p className="text-sm font-medium text-green-800">
+                                    ✨ Anda Menghemat{' '}
+                                    {formatRupiah(
+                                        pelunasanSummary.potongan_bunga,
+                                    )}
+                                </p>
+                                <p className="mt-0.5 text-xs text-green-700">
+                                    Bagi Hasil untuk{' '}
+                                    {Math.floor(angsuranList.length * 0.2)}{' '}
+                                    bulan terakhir telah dibebaskan.
+                                </p>
+                            </div>
+
+                            <div className="overflow-hidden rounded-lg border border-neutral-200">
+                                <table className="w-full text-xs">
+                                    <thead className="bg-neutral-50 font-medium text-neutral-500">
+                                        <tr>
+                                            <th className="px-3 py-2 text-left">
+                                                Bulan
+                                            </th>
+                                            <th className="px-3 py-2 text-right">
+                                                Pokok
+                                            </th>
+                                            <th className="px-3 py-2 text-right">
+                                                Bagi Hasil
+                                            </th>
+                                            <th className="px-3 py-2 text-right">
+                                                Denda
+                                            </th>
+                                            <th className="px-3 py-2 text-right">
+                                                Subtotal
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-neutral-100">
+                                        {pelunasanSummary.rincian.map(
+                                            (item) => (
+                                                <tr
+                                                    key={item.angsuran_ke}
+                                                    className={
+                                                        item.is_bebas_bunga
+                                                            ? 'bg-green-50/30'
+                                                            : ''
+                                                    }
+                                                >
+                                                    <td className="px-3 py-2">
+                                                        {item.angsuran_ke}
+                                                    </td>
+                                                    <td className="px-3 py-2 text-right">
+                                                        {formatRupiah(
+                                                            item.pokok,
+                                                        )}
+                                                    </td>
+                                                    <td className="px-3 py-2 text-right">
+                                                        {item.is_bebas_bunga ? (
+                                                            <div className="flex flex-col items-end">
+                                                                <span className="text-[10px] text-neutral-400 line-through decoration-red-400">
+                                                                    {formatRupiah(
+                                                                        item.bunga_original,
+                                                                    )}
+                                                                </span>
+                                                                <span className="font-bold text-green-600">
+                                                                    {formatRupiah(
+                                                                        item.bunga,
+                                                                    )}
+                                                                </span>
+                                                            </div>
+                                                        ) : (
+                                                            formatRupiah(
+                                                                item.bunga,
+                                                            )
+                                                        )}
+                                                    </td>
+                                                    <td className="px-3 py-2 text-right text-red-600">
+                                                        {item.denda > 0
+                                                            ? formatRupiah(
+                                                                  item.denda,
+                                                              )
+                                                            : '-'}
+                                                    </td>
+                                                    <td className="px-3 py-2 text-right font-medium">
+                                                        {formatRupiah(
+                                                            item.subtotal,
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ),
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )
+                )}
+            </Modal>
+
+            <PinjamanInvoicePreviewModal
+                pinjaman={pinjaman}
+                selectedAngsuran={invoiceAngsuran}
+                onClose={() => setInvoiceAngsuran(null)}
+                onExportPdf={exportInvoiceToPdf}
+            />
+
+            <PinjamanPelunasanInvoicePreviewModal
+                pinjaman={pinjaman}
+                open={showPelunasanInvoice}
+                onClose={() => setShowPelunasanInvoice(false)}
+                onExportPdf={exportPelunasanPdf}
+            />
+        </>
+    );
+}
+
+// Helper kecil pure component
+function InfoItem({ label, value }: { label: string; value: string }) {
+    return (
+        <div>
+            <p className="text-xs text-neutral-400">{label}</p>
+            <p className="mt-0.5 font-medium text-neutral-800">{value}</p>
+        </div>
+    );
+}
+
+PinjamanShow.layout = (page: ReactElement) => (
+    <DashboardLayout title="Detail Pinjaman">{page}</DashboardLayout>
+);

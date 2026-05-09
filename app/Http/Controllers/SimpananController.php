@@ -1,0 +1,191 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Exceptions\PerluKonfirmasiAlihSisaWajibException;
+use App\Models\Anggota;
+use App\Http\Requests\Simpanan\StoreSimpananRequest;
+use App\Http\Requests\Simpanan\TarikSukarelaRequest;
+use App\Http\Requests\Simpanan\UpdateSimpananRequest;
+use App\Models\Simpanan;
+use App\Services\SimpananService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Database\QueryException;
+use Illuminate\Validation\ValidationException;
+use Inertia\Inertia;
+use Inertia\Response;
+
+class SimpananController extends Controller
+{
+    public function __construct(private readonly SimpananService $simpananService)
+    {
+    }
+
+    /**
+     * Display a listing of the resource.
+     */
+    public function index(): Response
+    {
+        return Inertia::render('Simpanan/Index', $this->simpananService->getIndexData());
+    }
+
+    /**
+     * Get anggota dropdown data for form (lazy load)
+     */
+    public function getAnggotaOptions(): array
+    {
+        return [
+            'anggota' => $this->simpananService->getAnggotaForForm(),
+        ];
+    }
+
+    /**
+     * Get rekening simpanan data for form (lazy load)
+     */
+    public function getRekeningSimpananOptions(): array
+    {
+        return [
+            'rekening_simpanan' => $this->simpananService->getRekeningSimpananForForm(),
+        ];
+    }
+
+    /**
+     * Get all simpanan transactions for one anggota to build the batch section.
+     */
+    public function getBatchTransactionsByAnggota(Anggota $anggota): array
+    {
+        return [
+            'simpanan' => $this->simpananService->getTransactionsByAnggota($anggota->id),
+        ];
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        //
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(StoreSimpananRequest $request): RedirectResponse
+    {
+        $validated = $request->validated();
+        $validated['user_id'] = $request->user()?->id;
+
+        try {
+            $this->simpananService->create($validated);
+        } catch (PerluKonfirmasiAlihSisaWajibException $exception) {
+            throw ValidationException::withMessages([
+                'alihkan_sisa_wajib_ke_sukarela' => $exception->getMessage(),
+            ]);
+        } catch (QueryException|\RuntimeException $exception) {
+            return redirect()
+                ->route('simpanan.index')
+                ->with('error', $exception->getMessage());
+        }
+
+        return redirect()
+            ->route('simpanan.index')
+            ->with('success', 'Transaksi simpanan berhasil ditambahkan.');
+    }
+
+    public function tarikSukarela(TarikSukarelaRequest $request): RedirectResponse
+    {
+        $validated = $request->validated();
+        $validated['user_id'] = $request->user()?->id;
+
+        try {
+            $this->simpananService->tarikSukarela($validated);
+        } catch (QueryException|\RuntimeException $exception) {
+            return redirect()
+                ->route('simpanan.index')
+                ->with('error', $exception->getMessage());
+        }
+
+        return redirect()
+            ->route('simpanan.index')
+            ->with('success', 'Tarik saldo simpanan sukarela berhasil diproses.');
+    }
+
+    public function tarikOperasional(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'anggota_id' => ['required', 'uuid', 'exists:anggota,id'],
+            'rekening_koperasi_id' => ['required', 'uuid', 'exists:rekening_koperasi,id'],
+            'jumlah' => ['required', 'numeric', 'min:0'],
+            'keterangan' => ['nullable', 'string', 'max:500'],
+            'created_at' => ['required', 'date_format:Y-m-d\TH:i'],
+        ]);
+        $validated['user_id'] = $request->user()?->id;
+
+        try {
+            $this->simpananService->tarikOperasional($validated);
+        } catch (\Throwable $exception) {
+            return redirect()
+                ->route('simpanan.index')
+                ->with('error', $exception->getMessage());
+        }
+
+        return redirect()
+            ->route('simpanan.index')
+            ->with('success', 'Tarik saldo simpanan operasional berhasil diproses.');
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(Simpanan $simpanan)
+    {
+        //
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(Simpanan $simpanan)
+    {
+        //
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(UpdateSimpananRequest $request, Simpanan $simpanan): RedirectResponse
+    {
+        $validated = $request->validated();
+
+        try {
+            $this->simpananService->update($simpanan, $validated);
+        } catch (QueryException|\RuntimeException $exception) {
+            return redirect()
+                ->route('simpanan.index')
+                ->with('error', $exception->getMessage());
+        }
+
+        return redirect()
+            ->route('simpanan.index')
+            ->with('success', 'Transaksi simpanan berhasil diperbarui.');
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(Simpanan $simpanan): RedirectResponse
+    {
+        try {
+            $this->simpananService->delete($simpanan);
+        } catch (QueryException|\RuntimeException $exception) {
+            return redirect()
+                ->route('simpanan.index')
+                ->with('error', $exception->getMessage());
+        }
+
+        return redirect()
+            ->route('simpanan.index')
+            ->with('success', 'Transaksi simpanan berhasil dihapus.');
+    }
+}
