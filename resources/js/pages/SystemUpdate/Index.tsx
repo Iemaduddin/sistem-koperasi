@@ -47,10 +47,10 @@ export default function SystemUpdate({ version }: SystemUpdateProps) {
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                         <div>
                             <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
-                                Tentang Sistem
+                                Tentang Sistem 
                             </p>
                             <h1 className="mt-2 text-2xl font-semibold text-slate-900">
-                                Update Versi Sistem
+                                Update Versi Sistem COBA COBA
                             </h1>
                         </div>
                         <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
