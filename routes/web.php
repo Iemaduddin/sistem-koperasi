@@ -144,9 +144,10 @@ Route::middleware(['auth', 'active.user'])->group(function (): void {
 	});
 });
 
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'active.user', 'role:Master Admin|Super Admin'])->group(function (): void {
+    Route::get('/tentang-sistem', [SystemUpdateController::class, 'index'])
+        ->name('system.about');
 
     Route::post('/system-update', [SystemUpdateController::class, 'update'])
         ->name('system.update');
-
 });
