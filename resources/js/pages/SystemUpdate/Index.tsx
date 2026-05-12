@@ -65,7 +65,7 @@ export default function SystemUpdate({ version }: SystemUpdateProps) {
                             </h2>
                             <p className="mt-3 text-sm leading-6 text-slate-600">
                                 Tombol di bawah ini akan memicu skrip pembaruan sistem di server.
-                                Pastikan Anda memiliki izin Super Admin atau Master Admin untuk
+                                Pastikan Anda memiliki izin Super Admin untuk
                                 menjalankan proses ini.
                             </p>
 
@@ -95,14 +95,14 @@ export default function SystemUpdate({ version }: SystemUpdateProps) {
                             <h2 className="text-lg font-semibold text-slate-900">Informasi Sistem</h2>
                             <p className="mt-3 text-sm leading-6 text-slate-600">
                                 Jika Anda ingin memperbarui versi sistem, gunakan tombol di atas.
-                                Pastikan hanya Super Admin atau Master Admin yang memiliki akses tombol ini.
+                                Pastikan hanya Super Admin yang memiliki akses tombol ini.
                             </p>
 
                             <div className="mt-6 space-y-3 rounded-2xl bg-slate-50 p-4 text-sm text-slate-700">
                                 <div className="flex items-center justify-between gap-4">
                                     <span className="font-medium text-slate-900">Akses</span>
                                     <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
-                                        Super Admin / Master Admin
+                                        Super Admin
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between gap-4">
