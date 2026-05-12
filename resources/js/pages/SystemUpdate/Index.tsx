@@ -50,7 +50,7 @@ export default function SystemUpdate({ version }: SystemUpdateProps) {
                                 Tentang Sistem 
                             </p>
                             <h1 className="mt-2 text-2xl font-semibold text-slate-900">
-                                Update Versi Sistem COBA COBA
+                                Update Versi Sistem
                             </h1>
                         </div>
                         <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
