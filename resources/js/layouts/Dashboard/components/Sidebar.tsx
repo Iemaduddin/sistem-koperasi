@@ -129,6 +129,7 @@ const routeNameToUrl: Record<string, () => string> = {
     'deposito.bagi-hasil': () => '/deposito/bagi-hasil',
     'riwayat-transaksi.index': () => '/riwayat-transaksi',
     'rekapan-anggota.index': () => '/rekapan-anggota',
+    'system.about': () => '/tentang-sistem',
 };
 
 const resolveItemHref = (item: SidebarItem): string | undefined => {
@@ -571,6 +572,19 @@ const menuSections: SidebarSection[] = [
                 routeName: 'rekapan-anggota.index',
                 icon: LuGitCompareArrows,
                 roles: ['Master Admin', 'Super Admin', 'Admin'],
+            },
+        ],
+    },
+    {
+        id: 'system',
+        title: 'Sistem',
+        items: [
+            {
+                id: 'tentang-sistem',
+                label: 'Tentang Sistem',
+                routeName: 'system.about',
+                icon: LuGitCompareArrows,
+                roles: ['Master Admin', 'Super Admin'],
             },
         ],
     },

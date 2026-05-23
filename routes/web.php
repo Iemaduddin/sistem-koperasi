@@ -14,6 +14,7 @@ use App\Http\Controllers\GuestPortalController;
 use App\Http\Controllers\RiwayatTransaksiController;
 use App\Http\Controllers\RekapanAnggotaController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\SystemUpdateController;
 
 Route::redirect('/', '/login')->name('home');
 
@@ -141,4 +142,12 @@ Route::middleware(['auth', 'active.user'])->group(function (): void {
 				->name('rekapan-anggota.import');
 		});
 	});
+});
+
+Route::middleware(['auth', 'active.user', 'role:Master Admin|Super Admin'])->group(function (): void {
+    Route::get('/tentang-sistem', [SystemUpdateController::class, 'index'])
+        ->name('system.about');
+
+    Route::post('/system-update', [SystemUpdateController::class, 'update'])
+        ->name('system.update');
 });
