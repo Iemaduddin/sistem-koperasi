@@ -315,7 +315,7 @@ class ImportRekapanAnggotaService
                 $bulanan[] = [
                     'bulan_ke' => $bulanKe,
                     'kolom_range' => $this->columnLabelFromIndex($startColumnIndex) . '-' . $this->columnLabelFromIndex($startColumnIndex + 2),
-                    'tanggal' => $tanggalMasuk->copy()->addMonths($bulanKe)->toDateString(),
+                    'tanggal' => $tanggalMasuk->copy()->addMonthsNoOverflow($bulanKe)->toDateString(),
                     'angsuran_dibayar' => $angsuranDibayar,
                     'simpanan_wajib_dibayar' => $simpananWajibDibayar,
                     'simpanan_sukarela_dibayar' => $simpananSukarelaDibayar,
@@ -537,7 +537,7 @@ class ImportRekapanAnggotaService
                         continue;
                     }
 
-                    $tanggalBayar = Carbon::parse((string) ($entry['tanggal'] ?? $tanggalMasuk->copy()->addMonths($bulanKe)->toDateString()));
+                    $tanggalBayar = Carbon::parse((string) ($entry['tanggal'] ?? $tanggalMasuk->copy()->addMonthsNoOverflow($bulanKe)->toDateString()));
                     $angsuran = $angsuranByKe[$bulanKe] ?? null;
                     $jumlahBayar = $this->toAmount($entry['angsuran_dibayar'] ?? null);
 
@@ -762,7 +762,7 @@ class ImportRekapanAnggotaService
             ->keyBy('angsuran_ke');
 
         for ($i = 1; $i <= $tenor; $i++) {
-            $jatuhTempo = $tanggalMulai->copy()->addMonths($i)->toDateString();
+            $jatuhTempo = $tanggalMulai->copy()->addMonthsNoOverflow($i)->toDateString();
             $angsuran = $existingAngsuran->get($i);
 
             if ($angsuran === null) {
