@@ -51,10 +51,20 @@ export type PinjamanRow = {
     angsuran?: AngsuranPinjaman[];
 };
 
+// ─── Tipe data Rekening Koperasi ────────────────────────────────────────────────
+export type RekeningKoperasiOption = {
+    id: string;
+    nama: string;
+    jenis: string;
+    nomor_rekening: string;
+    saldo: string | number;
+};
+
 // ─── Props halaman index ──────────────────────────────────────────────────────
 export type PinjamanPageProps = {
     pinjaman: PinjamanRow[];
     anggota: AnggotaOption[];
+    rekening_koperasi: RekeningKoperasiOption[];
     flash?: {
         success?: string;
         error?: string;
@@ -73,6 +83,7 @@ export type PinjamanShowProps = {
 // ─── Form tambah pinjaman ─────────────────────────────────────────────────────
 export type PinjamanForm = {
     anggota_id: string;
+    rekening_koperasi_id: string;
     jumlah_pinjaman: string;
     bunga_persen: string;
     tenor_bulan: string;
@@ -81,6 +92,7 @@ export type PinjamanForm = {
 
 export const initialPinjamanForm: PinjamanForm = {
     anggota_id: '',
+    rekening_koperasi_id: '',
     jumlah_pinjaman: '',
     bunga_persen: '25',
     tenor_bulan: '12',

@@ -19,6 +19,7 @@ class StorePinjamanRequest extends FormRequest
     {
         return [
             'anggota_id'       => ['required', 'uuid', Rule::exists('anggota', 'id')],
+            'rekening_koperasi_id' => ['required', 'uuid', Rule::exists('rekening_koperasi', 'id')],
             'jumlah_pinjaman'  => ['required', 'numeric', 'min:1'],
             'bunga_persen'     => ['required', 'numeric', 'min:0', 'max:100'],
             'tenor_bulan'      => ['required', 'integer', 'min:1', 'max:360'],
@@ -31,6 +32,8 @@ class StorePinjamanRequest extends FormRequest
         return [
             'anggota_id.required'      => 'Anggota wajib dipilih.',
             'anggota_id.exists'        => 'Anggota tidak ditemukan.',
+            'rekening_koperasi_id.required' => 'Rekening Koperasi wajib dipilih.',
+            'rekening_koperasi_id.exists'   => 'Rekening Koperasi tidak ditemukan.',
             'jumlah_pinjaman.required' => 'Jumlah pinjaman wajib diisi.',
             'jumlah_pinjaman.min'      => 'Jumlah pinjaman minimal Rp 1.',
             'bunga_persen.required'    => 'Bunga persen wajib diisi.',

@@ -3,10 +3,16 @@ import FloatingSelect from '@/components/floating-input/select';
 import Button from '@/components/button';
 import type { PinjamanForm } from '../types';
 
-const BUNGA_OPTIONS = [
-    { value: '25', label: '25% per bulan' },
-    { value: '30', label: '30% per bulan' },
-    { value: '35', label: '35% per bulan' },
+const BAGI_HASIL_OPTIONS = [
+    { value: '25', label: '25%' },
+    { value: '30', label: '30%' },
+    { value: '35', label: '35%' },
+];
+
+const TENOR_OPTIONS = [
+    { value: '6', label: '6 Bulan' },
+    { value: '10', label: '10 Bulan' },
+    { value: '12', label: '12 Bulan' },
 ];
 
 type SelectOption = { value: string; label: string };
@@ -14,6 +20,7 @@ type SelectOption = { value: string; label: string };
 type Props = {
     formData: PinjamanForm;
     anggotaOptions: SelectOption[];
+    rekeningOptions: SelectOption[];
     isSubmitting: boolean;
     onChangeField: <K extends keyof PinjamanForm>(field: K, value: PinjamanForm[K]) => void;
     onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
@@ -22,6 +29,7 @@ type Props = {
 export default function PinjamanFormCard({
     formData,
     anggotaOptions,
+    rekeningOptions,
     isSubmitting,
     onChangeField,
     onSubmit,
@@ -30,9 +38,10 @@ export default function PinjamanFormCard({
     const jumlah = Number(formData.jumlah_pinjaman) || 0;
     const bunga = Number(formData.bunga_persen) || 0;
     const tenor = Number(formData.tenor_bulan) || 1;
-    const bungaPerBulan = (jumlah * bunga) / 100;
+    const bungaTotal = (jumlah * bunga) / 100;
+    const bungaPerBulan = bungaTotal / tenor;
     const pokokPerBulan = jumlah / tenor;
-    const angsuranPerBulan = pokokPerBulan + bungaPerBulan;
+    const angsuranPerBulan = (jumlah + bungaTotal) / tenor;
 
     return (
         <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
@@ -67,19 +76,26 @@ export default function PinjamanFormCard({
                     />
 
                     <FloatingSelect
-                        label="Bunga per Bulan"
+                        label="Rekening Koperasi"
+                        value={formData.rekening_koperasi_id}
+                        options={rekeningOptions}
+                        onValueChange={(value) => onChangeField('rekening_koperasi_id', value)}
+                        required
+                    />
+
+                    <FloatingSelect
+                        label="Bagi Hasil"
                         value={formData.bunga_persen}
-                        options={BUNGA_OPTIONS}
+                        options={BAGI_HASIL_OPTIONS}
                         onValueChange={(value) => onChangeField('bunga_persen', value)}
                         required
                     />
 
-                    <FloatingInput
+                    <FloatingSelect
                         label="Tenor (bulan)"
-                        type="number"
                         value={formData.tenor_bulan}
-                        onChange={(e) => onChangeField('tenor_bulan', e.target.value)}
-                        min={1}
+                        options={TENOR_OPTIONS}
+                        onValueChange={(value) => onChangeField('tenor_bulan', value)}
                         required
                     />
 
@@ -101,7 +117,7 @@ export default function PinjamanFormCard({
                             <span className="font-semibold">
                                 Rp {Math.round(pokokPerBulan).toLocaleString('id-ID')}
                             </span>
-                            {' '}+ Bunga:{' '}
+                            {' '}+ Bagi Hasil:{' '}
                             <span className="font-semibold">
                                 Rp {Math.round(bungaPerBulan).toLocaleString('id-ID')}
                             </span>

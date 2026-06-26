@@ -23,16 +23,39 @@ export default function PinjamanShow() {
     const pinjaman = pageProps.pinjaman;
     const angsuranList = pinjaman.angsuran ?? [];
 
+    const lunasCount = angsuranList.filter((a) => a.status === 'lunas').length;
+    const canPelunasanAwal = pinjaman.status !== 'lunas' && lunasCount >= (angsuranList.length * 0.5);
+
     const [bayarForm, setBayarForm] = useState<BayarAngsuranForm>(initialBayarAngsuranForm());
     const [selectedAngsuran, setSelectedAngsuran] = useState<AngsuranPinjaman | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const [pelunasanConfirmOpen, setPelunasanConfirmOpen] = useState(false);
+    const [isPelunasanSubmitting, setIsPelunasanSubmitting] = useState(false);
+
     const openBayarModal = (angsuran: AngsuranPinjaman) => {
         const sisaTagihan = Number(angsuran.total_tagihan) - Number(angsuran.jumlah_dibayar);
+        
+        let otomatisDenda = 0;
+        if (isTerlambat(angsuran)) {
+            const jatuhTempo = new Date(angsuran.tanggal_jatuh_tempo);
+            const sekarang = new Date();
+            jatuhTempo.setHours(0,0,0,0);
+            const today = new Date(sekarang);
+            today.setHours(0,0,0,0);
+            
+            const diffTime = today.getTime() - jatuhTempo.getTime();
+            if (diffTime > 0) {
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                const totalPinjaman = Number(pinjaman.jumlah_pinjaman ?? 0);
+                otomatisDenda = Math.floor(totalPinjaman * 0.001 * diffDays);
+            }
+        }
+
         setBayarForm({
             angsuran_id: angsuran.id,
             jumlah_bayar: String(Math.max(0, sisaTagihan)),
-            denda_dibayar: '0',
+            denda_dibayar: String(otomatisDenda),
             tanggal_bayar: new Date().toISOString().substring(0, 10),
         });
         setSelectedAngsuran(angsuran);
@@ -56,9 +79,11 @@ export default function PinjamanShow() {
 
         router.post(`/pinjaman/${pinjaman.id}/bayar`, bayarForm, {
             preserveScroll: true,
-            onSuccess: () => {
-                closeBayarModal();
-                toast.success('Pembayaran angsuran berhasil dicatat.');
+            onSuccess: (page) => {
+                const flash = (page.props as any).flash;
+                if (!flash?.error) {
+                    closeBayarModal();
+                }
             },
             onError: (errors) => {
                 const firstError = Object.values(errors)[0];
@@ -66,6 +91,25 @@ export default function PinjamanShow() {
             },
             onFinish: () => {
                 setIsSubmitting(false);
+            },
+        });
+    };
+
+    const handlePelunasan = () => {
+        setIsPelunasanSubmitting(true);
+        router.post(`/pinjaman/${pinjaman.id}/pelunasan`, { tanggal_pelunasan: new Date().toISOString().substring(0, 10) }, {
+            preserveScroll: true,
+            onSuccess: (page) => {
+                const flash = (page.props as any).flash;
+                if (!flash?.error) {
+                    setPelunasanConfirmOpen(false);
+                }
+            },
+            onError: () => {
+                toast.error('Gagal memproses pelunasan pinjaman.');
+            },
+            onFinish: () => {
+                setIsPelunasanSubmitting(false);
             },
         });
     };
@@ -116,6 +160,23 @@ export default function PinjamanShow() {
                         </div>
                     </div>
                 </div>
+
+                {/* ── Aksi Tambahan ─────────────────────────────────────────── */}
+                {canPelunasanAwal && (
+                    <div className="rounded-xl border border-green-200 bg-green-50 p-6 shadow-sm">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h3 className="font-semibold text-green-800">Pelunasan Lebih Awal</h3>
+                                <p className="text-sm text-green-700 mt-1">
+                                    Angsuran sudah berjalan {lunasCount} dari {angsuranList.length} bulan (≥ 50%). Anda dapat melunasi seluruh sisa pinjaman sekaligus dengan diskon bunga untuk {Math.floor(angsuranList.length * 0.2)} bulan angsuran terakhir.
+                                </p>
+                            </div>
+                            <Button variant="primary" onClick={() => setPelunasanConfirmOpen(true)}>
+                                Pelunasi Semua
+                            </Button>
+                        </div>
+                    </div>
+                )}
 
                 {/* ── Jadwal angsuran ───────────────────────────────────────── */}
                 <div className="rounded-xl border border-neutral-200 bg-white shadow-sm">
@@ -291,6 +352,35 @@ export default function PinjamanShow() {
                     />
                 </div>
             </Modal>
+
+            {/* ── Modal Konfirmasi Pelunasan ─────────────────────────────────────── */}
+            <Modal
+                open={pelunasanConfirmOpen}
+                title="Konfirmasi Pelunasan Pinjaman"
+                description="Anda akan melunasi seluruh sisa angsuran pinjaman ini. Sesuai ketentuan, beban bunga untuk persentase sisa bulan terakhir akan dibebaskan. Lanjutkan?"
+                onClose={() => setPelunasanConfirmOpen(false)}
+                footer={
+                    <>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setPelunasanConfirmOpen(false)}
+                            disabled={isPelunasanSubmitting}
+                        >
+                            Batal
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="primary"
+                            loading={isPelunasanSubmitting}
+                            disabled={isPelunasanSubmitting}
+                            onClick={handlePelunasan}
+                        >
+                            Ya, Pelunasi Semua
+                        </Button>
+                    </>
+                }
+            />
         </>
     );
 }

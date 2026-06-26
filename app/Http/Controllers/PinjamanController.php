@@ -31,7 +31,9 @@ class PinjamanController extends Controller
     public function store(StorePinjamanRequest $request): RedirectResponse
     {
         try {
-            $this->pinjamanService->create($request->validated());
+            $validated = $request->validated();
+            $validated['user_id'] = $request->user()?->id;
+            $this->pinjamanService->create($validated);
         } catch (QueryException|\RuntimeException $exception) {
             return redirect()
                 ->route('pinjaman.index')
@@ -67,6 +69,26 @@ class PinjamanController extends Controller
         return redirect()
             ->route('pinjaman.show', $pinjaman)
             ->with('success', 'Pembayaran angsuran berhasil dicatat.');
+    }
+
+    /**
+     * Pelunasan Pinjaman Lebih Awal
+     */
+    public function pelunasan(\Illuminate\Http\Request $request, Pinjaman $pinjaman): RedirectResponse
+    {
+        try {
+            $tanggalPelunasan = Carbon\Carbon::parse($request->input('tanggal_pelunasan', now()));
+            $userId = $request->user()?->id ?? '';
+            $this->pinjamanService->pelunasan($pinjaman, $userId, $tanggalPelunasan);
+        } catch (QueryException|\RuntimeException $exception) {
+            return redirect()
+                ->route('pinjaman.show', $pinjaman)
+                ->with('error', $exception->getMessage());
+        }
+
+        return redirect()
+            ->route('pinjaman.show', $pinjaman)
+            ->with('success', 'Pelunasan pinjaman awal berhasil!');
     }
 
     /**

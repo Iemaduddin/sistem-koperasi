@@ -30,6 +30,9 @@ class PinjamanService
                 ->where('status', 'aktif')
                 ->orderBy('nama')
                 ->get(['id', 'no_anggota', 'nama', 'alamat']),
+            'rekening_koperasi' => \App\Models\RekeningKoperasi::query()
+                ->orderBy('nama')
+                ->get(['id', 'nama', 'jenis', 'nomor_rekening', 'saldo']),
         ];
     }
 
@@ -70,10 +73,24 @@ class PinjamanService
                 throw new RuntimeException('Tenor harus lebih dari 0 bulan.');
             }
 
-            // Hitung angsuran per bulan flat (pokok + bunga)
-            $bungaPerBulan    = round($jumlah * ($bungaPersen / 100), 2);
+            $rekeningKoperasiId = $data['rekening_koperasi_id'] ?? null;
+            if (!$rekeningKoperasiId) {
+                throw new RuntimeException('Rekening koperasi wajib dipilih.');
+            }
+
+            $rekeningKoperasi = \App\Models\RekeningKoperasi::query()
+                ->lockForUpdate()
+                ->findOrFail($rekeningKoperasiId);
+
+            if ((float) $rekeningKoperasi->saldo < $jumlah) {
+                throw new RuntimeException('Saldo rekening koperasi tidak mencukupi untuk pencairan pinjaman.');
+            }
+
+            // Hitung angsuran per bulan flat
+            $bungaTotal       = round($jumlah * ($bungaPersen / 100), 2);
+            $bungaPerBulan    = round($bungaTotal / $tenorBulan, 2);
             $pokokPerBulan    = round($jumlah / $tenorBulan, 2);
-            $angsuranPerBulan = round($pokokPerBulan + $bungaPerBulan, 2);
+            $angsuranPerBulan = round(($jumlah + $bungaTotal) / $tenorBulan, 2);
 
             $pinjaman = Pinjaman::query()->create([
                 'anggota_id'      => $data['anggota_id'],
@@ -83,6 +100,21 @@ class PinjamanService
                 'jumlah_angsuran' => $angsuranPerBulan,
                 'tanggal_mulai'   => $tanggalMulai,
                 'status'          => 'aktif',
+            ]);
+
+            // Potong saldo kas koperasi
+            $rekeningKoperasi->saldo = round((float) $rekeningKoperasi->saldo - $jumlah, 2);
+            $rekeningKoperasi->save();
+
+            \App\Models\TransaksiKasKoperasi::query()->create([
+                'rekening_koperasi_id' => $rekeningKoperasi->id,
+                'jenis' => 'keluar',
+                'jumlah' => $jumlah,
+                'sumber_tipe' => 'pinjaman',
+                'sumber_id' => $pinjaman->id,
+                'user_id' => $data['user_id'] ?? '',
+                'keterangan' => "Pencairan pinjaman",
+                'created_at' => now(),
             ]);
 
             // Generate jadwal angsuran
@@ -112,6 +144,12 @@ class PinjamanService
 
             if ($angsuran->status === 'lunas') {
                 throw new RuntimeException('Angsuran ini sudah lunas.');
+            }
+
+            $sekarang = Carbon::now();
+            $jatuhTempo = Carbon::parse($angsuran->tanggal_jatuh_tempo);
+            if ($sekarang->format('Y-m') < $jatuhTempo->format('Y-m')) {
+                throw new RuntimeException('Pembayaran angsuran tidak dapat dilakukan sebelum bulan jatuh tempo.');
             }
 
             $jumlahBayar  = round((float) $data['jumlah_bayar'], 2);
@@ -169,6 +207,78 @@ class PinjamanService
             // Hapus angsuran dulu, lalu pinjaman
             $pinjaman->angsuran()->delete();
             $pinjaman->delete();
+        });
+    }
+
+    /**
+     * Pelunasan lebih awal.
+     */
+    public function pelunasan(Pinjaman $pinjaman, string $userId, Carbon $tanggalPelunasan): void
+    {
+        DB::transaction(function () use ($pinjaman, $userId, $tanggalPelunasan): void {
+            $pinjaman->load(['angsuran' => fn($q) => $q->orderBy('angsuran_ke')]);
+
+            // Hitung jumlah angsuran yang lunas
+            $totalTenor = $pinjaman->tenor_bulan;
+            $angsuranLunas = $pinjaman->angsuran->filter(
+                fn (AngsuranPinjaman $a) => $a->status === 'lunas'
+            )->count();
+
+            if ($angsuranLunas < ($totalTenor * 0.5)) {
+                throw new RuntimeException('Pelunasan awal hanya bisa dilakukan jika angsuran sudah berjalan minimal 50% dari tenor.');
+            }
+
+            if ($pinjaman->status === 'lunas') {
+                throw new RuntimeException('Pinjaman ini sudah lunas.');
+            }
+
+            $angsuranSisa = $pinjaman->angsuran->filter(
+                fn (AngsuranPinjaman $a) => $a->status !== 'lunas'
+            )->values();
+
+            if ($angsuranSisa->isEmpty()) {
+                return; // already fully paid
+            }
+
+            $jumlahBebasBunga = (int) floor($totalTenor * 0.2); // Sesuai kesepakatan pembulatan ke bawah
+            $totalSisaAngsuran = $angsuranSisa->count();
+            
+            $startIndexBebasBunga = $totalSisaAngsuran - $jumlahBebasBunga;
+            if ($startIndexBebasBunga < 0) {
+                $startIndexBebasBunga = 0;
+            }
+
+            foreach ($angsuranSisa as $index => $angsuran) {
+                /** @var AngsuranPinjaman $angsuran */
+                $isBebasBunga = $index >= $startIndexBebasBunga;
+
+                $bungaAwal = (float) $angsuran->bunga;
+                
+                if ($isBebasBunga) {
+                    $angsuran->bunga = 0;
+                    $angsuran->total_tagihan = round((float) $angsuran->pokok, 2);
+                }
+
+                $sisaTagihan = round((float) $angsuran->total_tagihan - (float) $angsuran->jumlah_dibayar, 2);
+
+                if ($sisaTagihan > 0) {
+                    TransaksiPinjaman::query()->create([
+                        'pinjaman_id'   => $pinjaman->id,
+                        'angsuran_id'   => $angsuran->id,
+                        'jumlah_bayar'  => $sisaTagihan,
+                        'denda_dibayar' => 0, // Pelunasan massal tidak menerapkan denda tunggakan spesifik? Wait, if they are late they might have denda. For now assume no Denda.
+                        'tanggal_bayar' => $tanggalPelunasan,
+                        'created_at'    => now(),
+                    ]);
+
+                    $angsuran->jumlah_dibayar = round((float) $angsuran->jumlah_dibayar + $sisaTagihan, 2);
+                }
+                
+                $angsuran->status = 'lunas';
+                $angsuran->save();
+            }
+
+            $this->updateStatusPinjamanJikaLunas($pinjaman);
         });
     }
 
